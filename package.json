@@ -1,0 +1,81 @@
+{
+  "name": "mock-debug",
+  "displayName": "Mock Debug",
+  "version": "0.10.18",
+  "publisher": "andreweinand",
+  "description": "Starter extension for developing debug adapters for VS Code.",
+  "author": {
+    "name": "Microsoft Corporation"
+  },
+  "engines": {
+    "vscode": "^0.10.1"
+  },
+  "icon": "images/mock-debug-icon.svg",
+  "categories": [
+    "Debuggers"
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Microsoft/vscode-mock-debug.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Microsoft/vscode-mock-debug/issues"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.4.13",
+    "moment": "^2.10.6",
+    "vscode-debugadapter": "^1.0.3",
+    "vscode-debugprotocol": "^1.0.1",
+    "xml2js": "^0.4.15"
+  },
+  "devDependencies": {
+    "typescript": "^1.6.2",
+    "mocha": "*"
+  },
+  "scripts": {
+    "compile": "tsc -p ./src",
+    "watch": "tsc -w -p ./src",
+    "test": "mocha out/tests"
+  },
+  "contributes": {
+    "debuggers": [
+      {
+        "type": "php",
+        "label": "PHP XDebug",
+        "enableBreakpointsFor": {
+          "languageIds": [
+            "php"
+          ]
+        },
+        "program": "./out/mockDebug.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": [],
+            "properties": {
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": true
+              },
+              "port": {
+                "type": "number",
+                "description": "Port on which to listen for XDebug",
+                "default": 9000
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "name": "Listen for XDebug",
+            "type": "php",
+            "request": "launch",
+            "port": 9000
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Extension",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceRoot}"
+            ],
+            "sourceMaps": true,
+            "outDir": "./out"
+        },
+        {
+            "name": "Debug adapter",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "--harmony"
+            ],
+            "program": "./src/phpDebug.ts",
+            "stopOnEntry": false,
+            "args": [
+                "--server=4711"
+            ],
+            "sourceMaps": true,
+            "outDir": "./out"
+        },
+        {
+            "name": "Run Tests",
+            "type": "node",
+            "request": "launch",
+            "program": "node_modules/mocha/bin/_mocha",
+            "args": [
+                "./out/tests",
+                "--timeout",
+                "999999",
+                "--colors"
+            ],
+            "sourceMaps": true,
+            "outDir": "./out"
+        }
+    ]
+}
