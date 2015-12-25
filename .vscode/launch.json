@@ -2,17 +2,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Extension",
-            "type": "extensionHost",
-            "request": "launch",
-            "runtimeExecutable": "${execPath}",
-            "args": [
-                "--extensionDevelopmentPath=${workspaceRoot}"
-            ],
-            "sourceMaps": true,
-            "outDir": "./out"
-        },
-        {
             "name": "Debug adapter",
             "type": "node",
             "request": "launch",
@@ -23,6 +12,20 @@
             "stopOnEntry": false,
             "args": [
                 "--server=4711"
+            ],
+            "env": {
+                "NODE_ENV": "development"
+            },
+            "sourceMaps": true,
+            "outDir": "./out"
+        },
+        {
+            "name": "Launch Extension",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceRoot}"
             ],
             "sourceMaps": true,
             "outDir": "./out"

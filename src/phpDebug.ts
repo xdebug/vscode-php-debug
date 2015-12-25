@@ -1,7 +1,3 @@
-/*---------------------------------------------------------
- * Copyright (C) Microsoft Corporation. All rights reserved.
- *--------------------------------------------------------*/
-
 import {
     DebugSession,
     InitializedEvent,
@@ -44,16 +40,11 @@ function uri2path(uri: string): string {
 /**
  * This interface should always match the schema found in the mock-debug extension manifest.
  */
-export interface LaunchRequestArguments {
+export interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     /** The port where the adapter should listen for XDebug connections (default: 9000) */
     port: number;
     /** Automatically stop target after launch. If not specified, target does not stop. */
     stopOnEntry?: boolean;
-    /**
-     * The types of Exceptions the adapter should break on.
-     * If true, will default to ['Throwable'] for PHP7 and ['Exception'] for PHP <7
-     */
-    breakOnExceptions?: boolean|string[];
 }
 
 class XDebugStackFrame {
@@ -91,12 +82,16 @@ class PhpDebugSession extends DebugSession {
     /** All XDebug Connections. XDebug makes a new connection for each request to the webserver. */
     private _connections = new Map<number, XDebugConnection>();
     /** The first connection we receive, because we only have to set breakpoints once. */
-    private _mainConnection: XDebugConnection;
+    private _mainConnection: XDebugConnection = null;
+    /** A map of file URIs to lines: breakpoints received from VS Code */
+    private _breakpoints = new Map<string, number[]>();
+    /** The activated exception breakpoint settings */
+    private _exceptionBreakpoints: string[] = [];
     /** A counter for unique stackframe IDs */
     private _stackFrameIdCounter = 1;
     /** Maps a stackframe ID to its connection and the level inside the stacktrace for scope requests */
     private _stackFrames = new Map<number, XDebugStackFrame>();
-    /** A counter for unique scope and variable IDs (as the content of a scope is requestet by a VariableRequest by VS Code) */
+    /** A counter for unique context and variable IDs (as the content of a scope is requested by a VariableRequest from VS Code) */
     private _variableIdCounter = 1;
     /** A map that maps a unique VS Code variable ID to an XDebug contextId and an XDebug stackframe */
     private _contexts = new Map<number, XDebugContext>();
@@ -107,6 +102,11 @@ class PhpDebugSession extends DebugSession {
         super(debuggerLinesStartAt1, isServer);
     }
 
+    protected attachRequest(response: DebugProtocol.AttachResponse, args: DebugProtocol.AttachRequestArguments) {
+        this.sendErrorResponse(response, 0, 'Attach requests are not supported');
+        this.shutdown();
+    }
+
     protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
         this._args = args;
         const server = this._server = net.createServer();
@@ -114,29 +114,31 @@ class PhpDebugSession extends DebugSession {
             // new XDebug connection
             const connection = new XDebugConnection(socket);
             this._connections.set(connection.id, connection);
-            if (this._connections.size > 1) {
+            if (this._mainConnection) {
                 // this is a new connection, for example triggered by a seperate, parallel request to the webserver.
                 // We tell VS Code that this is a new thread, but do not have to set breakpoints again as they are shared automatically.
                 this.sendEvent(new ThreadEvent('started', connection.id));
                 connection.waitForInitPacket().then(() => this._runOrStopOnEntry(connection));
             } else {
-                // this is the first connection. We wait for the init event and then tell VS Code that we're ready to receive breakpoints.
+                // this is the first connection
                 this._mainConnection = connection;
-                connection.waitForInitPacket().then(() => {
-                    this.sendEvent(new InitializedEvent());
-                    // VS Code first calls setBreakPointsRequest multiple times and then setExceptionBreakPointsRequest ONCE.
-                    // thats our sign that we can run the script
-                    this.on('exception_breakpoints_set', () => {
-                        this._runOrStopOnEntry(connection);
+                connection.waitForInitPacket()
+                    // set max_depth to 1 since VS Code requests nested structures individually anyway
+                    .then(() => connection.setFeature('max_depth', '1'))
+                    // raise default of 32
+                    .then(() => connection.setFeature('max_children', '1000'))
+                    .then(() => {
+                        // tell VS Code we are ready to accept breakpoints
+                        // once VS Code has set all breakpoints setExceptionBreakpointsRequest will automatically call _runOrStopOnEntry with the mainConnection.
+                        this.sendEvent(new InitializedEvent());
                     });
-                });
             }
         });
         server.listen(args.port);
         this.sendResponse(response);
     }
 
-    private _runOrStopOnEntry(connection: XDebugConnection) {
+    private _runOrStopOnEntry(connection: XDebugConnection): void {
         // either tell VS Code we stopped on entry or run the script
         if (this._args.stopOnEntry) {
             this.sendEvent(new StoppedEvent('entry', connection.id));
@@ -147,34 +149,50 @@ class PhpDebugSession extends DebugSession {
 
     private _checkStatus(response: XMLNode, connection: XDebugConnection): void {
         const status = response.attributes['status'];
-        const reason = response.attributes['reason'];
-        if (status === 'stopping' || status === 'stopped') {
-            this.sendEvent(new TerminatedEvent());
+        const command = response.attributes['command'];
+        if (status === 'stopping') {
+            connection.stop().then(response => this._checkStatus(response, connection));
+        } else if (status === 'stopped') {
+            connection.close().then(() => {
+                this._connections.delete(connection.id);
+                if (this._mainConnection === connection) {
+                    this._mainConnection = null;
+                }
+                this.sendEvent(new ThreadEvent('exited', connection.id));
+            });
         } else if (status === 'break') {
-            // StoppedEvent reason can be 'step', 'breakpoint', 'exception', 'pause'
-            let stoppedEventReason;
-            if (reason === 'exception' || reason === 'error') {
+            // StoppedEvent reason can be 'step', 'breakpoint', 'exception' or 'pause'
+            let stoppedEventReason: string;
+            let exceptionText: string;
+            const xdebugMessage = response.childNodes['xdebug:message'][0];
+            if (xdebugMessage.attributes['exception']) {
                 stoppedEventReason = 'exception';
-            } else if (reason === 'ok') {
-                // TODO: do we have to check if there is a breakpoint on that line?
+                exceptionText = xdebugMessage.attributes['exception'] + ': ' + xdebugMessage.content; // this seems to be ignored currently by VS Code
+            } else if (command === 'step_over' || command === 'step_into' || command === 'step_out') {
+                stoppedEventReason = 'step';
+            } else {
                 stoppedEventReason = 'breakpoint';
             }
-            this.sendEvent(new StoppedEvent('breakpoint', connection.id));
+            this.sendEvent(new StoppedEvent(stoppedEventReason, connection.id, exceptionText));
         }
+    }
+
+    protected dispatchRequest(request: DebugProtocol.Request) {
+        console.log(request.command + 'Request');
+        super.dispatchRequest(request);
     }
 
     /**
      * This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change.
      */
-    protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
-        console.log('setBreakPointsRequest');
+    protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
         const file = path2uri(args.source.path);
+        this._breakpoints.set(file, args.lines);
         const breakpoints = [];
-        // TODO: clear breakpoints
-        Promise.all(args.lines.map(line =>
+        return Promise.all(args.lines.map(line =>
             this._mainConnection.setLineBreakpoint(file, line)
-                .then(xdebugReponse => {
-                    if (xdebugReponse.childNodes && xdebugReponse.childNodes['error']) {
+                .then(xdebugResponse => {
+                    if (xdebugResponse.childNodes && xdebugResponse.childNodes['error']) {
                         throw new Error();
                     }
                     breakpoints.push(new Breakpoint(true, line));
@@ -183,33 +201,60 @@ class PhpDebugSession extends DebugSession {
                     console.error('Breakpoint could not be set', args, error);
                     breakpoints.push(new Breakpoint(false, line));
                 })
-        ))
-            .then(() => {
-                response.body = {breakpoints};
-                this.sendResponse(response);
-                this.emit('breakpoints_set');
+        )).then(() => {
+            response.body = {breakpoints};
+            this.sendResponse(response);
+        });
+    }
+
+    private _setBreakpoints(): Promise<void> {
+        // for all connections
+        return Promise.all(Array.from(this._connections.values()).map(connection => {
+            return connection.listBreakpoints().then(response => {
+                // first remove all breakpoints for this connection
+                return Promise.all(response.childNodes['breakpoint'].map(breakpointNode => {
+                    const breakpointId = parseInt(breakpointNode.attributes['id']);
+                    return connection.removeBreakpoint(breakpointId)
+                })).then(() => {
+                    // then, for all saved files, for all lines, set a new breakpoint at that position
+                    return Promise.all(Array.from(this._breakpoints).map(([file, lines]) => {
+                        return Promise.all(lines.map(line => {
+                            return connection.setLineBreakpoint(file, line).then(xdebugResponse => {
+                                // check if it worked
+                                if (xdebugResponse.childNodes && xdebugResponse.childNodes['error']) {
+                                    lines.splice(lines.indexOf(line), 1);
+                                }
+                            });
+                        }));
+                    }));
+                });
             });
+        })).then(() => {});
     }
 
     /**
-     * This is called ONCE after all line breakpoints have been set and I believe whenever the breakpoints settings change
+     * This is called once after all line breakpoints have been set and I believe whenever the breakpoints settings change
      */
     protected setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments): void {
-        console.log('setExceptionBreakPointsRequest');
-        // it appears to me that breaking on caught or uncaught exception is not set with a dbgp command,
-        // but through a php.ini setting. Maybe we can call eval() with ini_set()?
-        // Does remote_mode have to be set to jit?
-        // Can we just set an exception breakpoint for the "Exception" class (or "Throwable" in PHP7), as all Exceptions inherit from it? -> feature_get language_version
-        // maybe add a setting to launch.json?
-        this.sendResponse(response);
-        this.emit('exception_breakpoints_set');
+        // args.filters can contain 'all' and 'uncaught', but 'uncaught' is the only setting XDebug supports
+        Promise.resolve()
+            .then(() => {
+                if (args.filters.indexOf('uncaught') !== -1) {
+                    return this._mainConnection.setExceptionBreakpoint('Warning')
+                        .then(() => this._mainConnection.setExceptionBreakpoint('Exception'))
+                        .then(() => this._mainConnection.setExceptionBreakpoint('Error'));
+                }
+            })
+            .then(() => {
+                this.sendResponse(response);
+                this._runOrStopOnEntry(this._mainConnection);
+            })
     }
 
     /**
      * Executed after a successfull launch or attach request (and whenever VS Code feels the need?!)
      */
     protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
-        console.log('threadsRequest');
         // PHP doesn't have threads, but it may have multiple requests in parallel.
         // Think about a website that makes multiple, parallel AJAX requests to your PHP backend.
         // XDebug opens a new socket connection for each of them, we tell VS Code that these are our threads.
@@ -223,7 +268,6 @@ class PhpDebugSession extends DebugSession {
      * Called by VS Code after a StoppedEvent
      */
     protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
-        console.log('stackTraceRequest');
         const connection = this._connections.get(args.threadId);
         connection.getStack()
             .then(xdebugResponse => {
@@ -257,7 +301,6 @@ class PhpDebugSession extends DebugSession {
     }
 
     protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
-        console.log('scopesRequest');
         const stackFrame = this._stackFrames.get(args.frameId);
         stackFrame.connection.getContextNames(stackFrame.level)
             .then(xdebugResponse => {
@@ -284,7 +327,6 @@ class PhpDebugSession extends DebugSession {
     }
 
     protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
-        console.log('variablesRequest');
         let xdebugRequest: Promise<XMLNode>;
         let context: XDebugContext;
         if (this._contexts.has(args.variablesReference)) {
@@ -299,6 +341,8 @@ class PhpDebugSession extends DebugSession {
                 .then(xdebugResponse => {
                     if (xdebugResponse.childNodes && xdebugResponse.childNodes['error']) {
                         throw new Error();
+                    } else if (!xdebugResponse.childNodes || !xdebugResponse.childNodes['property'] || !xdebugResponse.childNodes['property'][0]) {
+                        return {};
                     } else {
                         return xdebugResponse.childNodes['property'][0];
                     }
@@ -316,32 +360,49 @@ class PhpDebugSession extends DebugSession {
                     response.body = {
                         variables: xdebugResponse.childNodes['property'].map(propertyNode => {
                             const name = propertyNode.attributes['name'];
+                            const type = propertyNode.attributes['type'];
                             let variableReference: number;
                             let value: string;
-                            if (parseInt(propertyNode.attributes['children']) || propertyNode.attributes['type'] === 'array') {
+                            if (parseInt(propertyNode.attributes['children']) || type === 'array') {
                                 // if the attribute "children" is 1, we have to send a variableReference back to VS Code
                                 // so it can receive the child elements in another request.
                                 variableReference = this._variableIdCounter++;
                                 const longName = propertyNode.attributes['fullname'];
                                 this._properties.set(variableReference, new XDebugProperty(context, longName));
                                 // we show the type of the property ("array", "object") as the value
-                                value = propertyNode.attributes['type'];
+                                value = type;
+                                if (type === 'array' && typeof propertyNode.attributes['numchildren'] !== undefined) {
+                                    // show the length, like a var_dump would do
+                                    value += '(' + propertyNode.attributes['numchildren'] + ')';
+                                }
                             } else {
                                 variableReference = 0;
-                                if (propertyNode.attributes['encoding'] === 'base64') {
+                                if (!propertyNode.content) {
+                                    if (type === 'uninitialized' || type === 'null') {
+                                        value = type;
+                                    } else {
+                                        value = '';
+                                    }
+                                } else if (propertyNode.attributes['encoding'] === 'base64') {
                                     value = (new Buffer(propertyNode.content, 'base64')).toString();
                                 } else {
                                     value = propertyNode.content;
                                 }
-                                if (propertyNode.attributes['type'] === 'string') {
+                                if (type === 'string') {
                                     value = '"' + value + '"';
+                                } else if (type === 'bool') {
+                                    value = !!parseInt(propertyNode.content) + '';
                                 }
                             }
                             return new Variable(name, value, variableReference);
                         })
                     }
-                    this.sendResponse(response);
+                    if (parseInt(xdebugResponse.attributes['numchildren']) > parseInt(xdebugResponse.attributes['pagesize'])) {
+                        // indicate that we omitted members from the list
+                        response.body.variables.push(new Variable('...', '...'));
+                    }
                 }
+                this.sendResponse(response);
             })
             .catch(error => {
                 this.sendErrorResponse(response, error.code, error.message);
@@ -349,44 +410,42 @@ class PhpDebugSession extends DebugSession {
     }
 
     protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
-        console.log('continueRequest');
         const connection = this._connections.get(args.threadId);
         connection.run().then(response => this._checkStatus(response, connection));
         this.sendResponse(response);
     }
 
     protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
-        console.log('nextRequest');
         const connection = this._connections.get(args.threadId);
         connection.stepOver().then(response => this._checkStatus(response, connection));
         this.sendResponse(response);
     }
 
 	protected stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments) : void {
-        console.log('stepInRequest');
         const connection = this._connections.get(args.threadId);
         connection.stepInto().then(response => this._checkStatus(response, connection));
 		this.sendResponse(response);
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments) : void {
-        console.log('stepOutRequest');
         const connection = this._connections.get(args.threadId);
         connection.stepOut().then(response => this._checkStatus(response, connection));
 		this.sendResponse(response);
 	}
 
 	protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments) : void {
-        console.log('pauseRequest');
 		this.sendErrorResponse(response, 0, 'Pausing the execution is not supported by XDebug');
 	}
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
-        console.log('disconnectRequest');
         Promise.all(Array.from(this._connections).map(([id, connection]) =>
             connection.stop()
+                .then(response => connection.close())
                 .then(() => {
-                    this._connections.delete(id)
+                    this._connections.delete(id);
+                    if (this._mainConnection === connection) {
+                        this._mainConnection = null;
+                    }
                 })
         )).then(() => {
             this._server.close(() => {
@@ -396,14 +455,19 @@ class PhpDebugSession extends DebugSession {
         });
 	}
 
-    //protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
-    //    console.log('evaluateRequest');
-    //    response.body = {
-    //        result: `evaluate(${args.expression})`,
-    //        variablesReference: 0
-    //    };
-    //    this.sendResponse(response);
-    //}
+    protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
+        this._stackFrames.get(args.frameId).connection.eval(args.expression).then(xdebugResponse => {
+            if (xdebugResponse.childNodes['error']) {
+                this.sendErrorResponse(response, 0, JSON.stringify(xdebugResponse.childNodes['error']));
+            } else if (xdebugResponse.childNodes['property']) {
+                response.body = {
+                    result: xdebugResponse.childNodes['property'][0].content,
+                    variablesReference: 0
+                };
+            }
+            this.sendResponse(response);
+        })
+    }
 }
 
 DebugSession.run(PhpDebugSession);

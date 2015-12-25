@@ -29,7 +29,7 @@ export interface XMLNode {
 interface Command {
     name: string;
     args?: string;
-    //data?: any;
+    data?: string;
     resolveFn: (response: XMLNode) => any;
     rejectFn: (error?: Error) => any;
 }
@@ -89,34 +89,37 @@ export class XDebugConnection extends EventEmitter {
     private _handleResponse(data: Buffer): void {
         // XDebug sent us a packet
         // Anatomy: [data length] [NULL] [xml] [NULL]
-        const firstNullByte = data.indexOf(0);
-        const secondNullByte = data.indexOf(0, firstNullByte + 1);
-        if (firstNullByte === -1 || secondNullByte === -1) {
-            this._pendingCommand.rejectFn(new InvalidMessageError(data));
+        const command = this._pendingCommand;
+        if (!command) {
+            console.error('XDebug sent a response, but there was no pending command');
             return;
         }
-        const dataLength = parseInt(data.toString('ascii', 0, firstNullByte));
-        const xmlData = data.slice(firstNullByte + 1, secondNullByte);
-        const xml = iconv.decode(xmlData, 'iso-8859-1');
-        parseString(xml, {attrkey: 'attributes', childkey: 'childNodes', charkey: 'content', explicitCharkey: true, explicitArray: true, explicitChildren: true, explicitRoot: false}, (err?: Error, result?: XMLNode) => {
-            //console.log('#' + this._connectionId + ' received packet from XDebug, packet length ' + dataLength, result);
-            //const transactionId = parseInt(result.attributes['transaction_id']);
-            const command = this._pendingCommand;
-            if (!command) {
-                console.error('XDebug sent a response, but there was no pending command');
-            } else {
-                this._pendingCommand = null;
+        this._pendingCommand = null;
+        try {
+            const firstNullByte = data.indexOf(0);
+            const secondNullByte = data.indexOf(0, firstNullByte + 1);
+            if (firstNullByte === -1 || secondNullByte === -1) {
+                throw new InvalidMessageError(data);
+            }
+            const dataLength = parseInt(data.toString('ascii', 0, firstNullByte));
+            const xmlData = data.slice(firstNullByte + 1, secondNullByte);
+            const xml = iconv.decode(xmlData, 'iso-8859-1');
+            parseString(xml, {attrkey: 'attributes', childkey: 'childNodes', charkey: 'content', explicitCharkey: true, explicitArray: true, explicitChildren: true, explicitRoot: false}, (err?: Error, result?: XMLNode) => {
+                //console.log('#' + this._connectionId + ' received packet from XDebug, packet length ' + dataLength, result);
+                //const transactionId = parseInt(result.attributes['transaction_id']);
                 if (err) {
                     command.rejectFn(err);
                 } else {
                     command.resolveFn(result);
                 }
-            }
-            if (this._queue.length > 0) {
-                const command = this._queue.shift();
-                this._executeCommand(command);
-            }
-        });
+                if (this._queue.length > 0) {
+                    const command = this._queue.shift();
+                    this._executeCommand(command);
+                }
+            });
+        } catch (err) {
+            command.rejectFn(err);
+        }
     }
 
     /**
@@ -124,9 +127,9 @@ export class XDebugConnection extends EventEmitter {
      * If the queue is empty AND there are no pending transactions (meaning we already received a response and XDebug is waiting for
      * commands) the command will be executed emidiatly.
      */
-    private _enqueueCommand(name: string, args?: string): Promise<XMLNode> {
+    private _enqueueCommand(name: string, args?: string, data?: string): Promise<XMLNode> {
         return new Promise((resolveFn, rejectFn) => {
-            const command = {name, args, resolveFn, rejectFn};
+            const command = {name, args, data, resolveFn, rejectFn};
             if (this._queue.length === 0 && !this._pendingCommand) {
                 this._executeCommand(command);
             } else {
@@ -146,10 +149,20 @@ export class XDebugConnection extends EventEmitter {
         if (command.args) {
             commandString += ' ' + command.args;
         }
+        if (command.data) {
+            commandString += ' -- ' + (new Buffer(command.data, 'utf8')).toString('base64');
+        }
         commandString += '\0';
         const data = iconv.encode(commandString, 'iso-8859-1');
         this._socket.write(data);
         this._pendingCommand = command;
+    }
+
+    public close(): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            this._socket.once('close', resolve);
+            this._socket.end();
+        });
     }
 
     // ------------------------ status --------------------------------------------
@@ -221,6 +234,14 @@ export class XDebugConnection extends EventEmitter {
         return this._enqueueCommand('breakpoint_set', `-t exception -x ${name}`);
     }
 
+    public listBreakpoints(): Promise<XMLNode> {
+        return this._enqueueCommand('breakpoint_list');
+    }
+
+    public removeBreakpoint(breakpointId: number): Promise<XMLNode> {
+        return this._enqueueCommand('breakpoint_remove', `-d ${breakpointId}`);
+    }
+
     // ----------------------------- continuation ---------------------------------
 
     public run(): Promise<XMLNode> {
@@ -240,10 +261,7 @@ export class XDebugConnection extends EventEmitter {
     }
 
     public stop(): Promise<XMLNode> {
-        return this._enqueueCommand('stop').then(response => {
-            this._socket.end();
-            return response;
-        });
+        return this._enqueueCommand('stop');
     }
 
     // ------------------------------ stack ----------------------------------------
@@ -268,5 +286,11 @@ export class XDebugConnection extends EventEmitter {
     /** Sends a property_value command */
     public getProperty(stackDepth: number, contextId: number, longPropertyName: string): Promise<XMLNode> {
         return this._enqueueCommand('property_get', `-d ${stackDepth} -c ${contextId} -n ${longPropertyName}`);
+    }
+
+    // ------------------------------- eval -----------------------------------------
+
+    public eval(expression: string): Promise<XMLNode> {
+        return this._enqueueCommand('eval', null, expression);
     }
 }
