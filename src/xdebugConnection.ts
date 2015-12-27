@@ -1,36 +1,24 @@
 
 import * as net from 'net';
 import {EventEmitter} from 'events';
-import {parseString} from 'xml2js';
 import {Thread} from 'vscode-debugadapter';
 import * as iconv from 'iconv-lite';
+import {DOMParser} from 'xmldom';
 
-export class InvalidMessageError extends Error {
-    public data: Buffer;
-    constructor(data: Buffer) {
-        super('Invalid message from XDebug: ' + data.toString('ascii'));
-        this.data = data;
-    }
-}
+const ENCODING = 'iso-8859-1';
 
-export interface XMLNode {
-    /** The attributes of the XML Node */
-    attributes: {
-        [attributeName: string]: string;
-    };
-    /** An array of child nodes */
-    childNodes?: {
-        [childNodeName: string]: XMLNode[];
-    };
-    /** Text inside the XML tag */
-    content?: string;
+export interface InitResponse {
+    fileUri: string;
+    protocolVersion: string;
+    language: string;
+    ideKey: string;
 }
 
 interface Command {
     name: string;
     args?: string;
     data?: string;
-    resolveFn: (response: XMLNode) => any;
+    resolveFn: (response: Document) => any;
     rejectFn: (error?: Error) => any;
 }
 
@@ -51,7 +39,7 @@ export class XDebugConnection extends EventEmitter {
     }
     private _socket: net.Socket;
     private _transactionCounter = 0;
-    private _initPromise: Promise<XMLNode>;
+    private _initPromise: Promise<InitResponse>;
 
     /**
      * The currently pending command that has been sent to XDebug and is awaiting a response
@@ -71,13 +59,25 @@ export class XDebugConnection extends EventEmitter {
         this._socket = socket;
         this._timeEstablished = new Date();
         socket.on('data', (data: Buffer) => this._handleResponse(data));
-        this._initPromise = new Promise((resolveFn, rejectFn) => {
-            this._pendingCommand = {name: null, rejectFn, resolveFn};
+        this._initPromise = new Promise<InitResponse>((resolve, reject) => {
+            this._pendingCommand = {
+                name: null,
+                rejectFn: reject,
+                resolveFn: (document: Document) => {
+                    const documentElement = document.documentElement;
+                    resolve({
+                        fileUri: documentElement.getAttribute('fileuri'),
+                        language: documentElement.getAttribute('language'),
+                        protocolVersion: documentElement.getAttribute('protocolversion'),
+                        ideKey: documentElement.getAttribute('idekey')
+                    });
+                }
+            };
         });
         console.log('New XDebug Connection #' + this._id);
     }
 
-    public waitForInitPacket(): Promise<XMLNode> {
+    public waitForInitPacket(): Promise<Document> {
         return this._initPromise;
     }
 
@@ -101,24 +101,20 @@ export class XDebugConnection extends EventEmitter {
             if (firstNullByte === -1 || secondNullByte === -1) {
                 throw new InvalidMessageError(data);
             }
-            const dataLength = parseInt(data.toString('ascii', 0, firstNullByte));
-            const xmlData = data.slice(firstNullByte + 1, secondNullByte);
-            const xml = iconv.decode(xmlData, 'iso-8859-1');
-            parseString(xml, {attrkey: 'attributes', childkey: 'childNodes', charkey: 'content', explicitCharkey: true, explicitArray: true, explicitChildren: true, explicitRoot: false}, (err?: Error, result?: XMLNode) => {
-                //console.log('#' + this._connectionId + ' received packet from XDebug, packet length ' + dataLength, result);
-                //const transactionId = parseInt(result.attributes['transaction_id']);
-                if (err) {
-                    command.rejectFn(err);
-                } else {
-                    command.resolveFn(result);
-                }
-                if (this._queue.length > 0) {
-                    const command = this._queue.shift();
-                    this._executeCommand(command);
-                }
-            });
+            const dataLength = parseInt(iconv.decode(data.slice(0, firstNullByte), ENCODING));
+            const xml = iconv.decode(data.slice(firstNullByte + 1, secondNullByte), ENCODING);
+            const parser = new DOMParser();
+            const document = parser.parseFromString(xml, 'application/xml');
+            command.resolveFn(document);
+            //console.log('#' + this._connectionId + ' received packet from XDebug, packet length ' + dataLength, result);
+            //const transactionId = parseInt(result.attributes['transaction_id']);
         } catch (err) {
             command.rejectFn(err);
+        } finally {
+            if (this._queue.length > 0) {
+                const command = this._queue.shift();
+                this._executeCommand(command);
+            }
         }
     }
 
@@ -153,7 +149,7 @@ export class XDebugConnection extends EventEmitter {
             commandString += ' -- ' + (new Buffer(command.data, 'utf8')).toString('base64');
         }
         commandString += '\0';
-        const data = iconv.encode(commandString, 'iso-8859-1');
+        const data = iconv.encode(commandString, ENCODING);
         this._socket.write(data);
         this._pendingCommand = command;
     }

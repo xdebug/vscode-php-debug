@@ -27,7 +27,7 @@
     "moment": "^2.10.6",
     "vscode-debugadapter": "^1.0.3",
     "vscode-debugprotocol": "^1.0.1",
-    "xml2js": "^0.4.15"
+    "xmldom": "^0.1.19"
   },
   "devDependencies": {
     "typescript": "^1.6.2",
