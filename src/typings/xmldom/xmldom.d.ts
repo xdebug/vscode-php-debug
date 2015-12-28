@@ -1,3 +1,5 @@
 declare module 'xmldom' {
-    export const DOMParser: DOMParser;
+    export class DOMParser {
+        parseFromString(xml: string, mimeType: string): XMLDocument;
+    }
 }

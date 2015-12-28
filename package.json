@@ -44,11 +44,9 @@
         "type": "php",
         "label": "PHP XDebug",
         "enableBreakpointsFor": {
-          "languageIds": [
-            "php"
-          ]
+          "languageIds": ["php"]
         },
-        "program": "./out/mockDebug.js",
+        "program": "./out/phpDebug.js",
         "runtime": "node",
         "configurationAttributes": {
           "launch": {

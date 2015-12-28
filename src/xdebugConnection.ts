@@ -1,92 +1,409 @@
 
 import * as net from 'net';
-import {EventEmitter} from 'events';
 import {Thread} from 'vscode-debugadapter';
 import * as iconv from 'iconv-lite';
-import {DOMParser} from 'xmldom';
+import {DbgpConnection} from './dbgp';
 
+/** The encoding all XDebug messages are encoded with */
 const ENCODING = 'iso-8859-1';
 
-export interface InitResponse {
+/** The first packet we receive from XDebug. Returned by waitForInitPacket() */
+export class InitPacket {
+    /** The file that was requested as a file:// URI */
     fileUri: string;
+    /** GDGP version (1.0) */
     protocolVersion: string;
+    /** language being debugged (PHP) */
     language: string;
+    /** an IDE key, by default the PC name */
     ideKey: string;
+    /** a reference to the connection this packet was received from */
+    connection: Connection;
+    /**
+     * @param  {XMLDocument} document - An XML document to read from
+     * @param  {Connection} connection
+     */
+    constructor(document: XMLDocument, connection: Connection) {
+        const documentElement = document.documentElement;
+        this.fileUri = documentElement.getAttribute('fileuri');
+        this.language = documentElement.getAttribute('language');
+        this.protocolVersion = documentElement.getAttribute('protocol_version');
+        this.ideKey = documentElement.getAttribute('idekey');
+        this.connection = connection;
+    }
 }
 
-interface Command {
+export class XDebugError extends Error {
+    code: number;
+    constructor(message: string, code: number) {
+        super(message);
+        this.code = code;
+    }
+}
+
+/** The base class for all XDebug responses to commands executed on a connection */
+export class Response {
+    /** A unique transaction ID that matches the one in the request */
+    transactionId: number;
+    /** The command that this is an answer for */
+    command: string;
+    /** The connection this response was received from */
+    connection: Connection;
+    /**
+     * contructs a new Response object from an XML document.
+     * If there is an error child node, an exception is thrown with the appropiate code and message.
+     * @param  {XMLDocument} document - An XML document to read from
+     * @param  {Connection} connection
+     */
+    constructor(document: XMLDocument, connection: Connection) {
+        const documentElement = document.documentElement;
+        if (documentElement.hasChildNodes() && documentElement.firstChild.nodeName === 'error') {
+            const errorNode = <Element>documentElement.firstChild;
+            const code = parseInt(errorNode.getAttribute('code'));
+            const message = errorNode.textContent;
+            throw new XDebugError(message, code);
+        }
+        this.transactionId = parseInt(documentElement.getAttribute('transaction_id'));
+        this.command = documentElement.getAttribute('command');
+        this.connection = connection;
+    }
+}
+
+/** A response to the status command */
+export class StatusResponse extends Response {
+    /** The current status. Can be 'break', ... */
+    status: string;
+    /** The reason for being in this status, can be 'ok', ... */
+    reason: string;
+    /** Contains the file URI if the status is 'break' */
+    fileUri: string;
+    /** Contains the line number if the status is 'break' */
+    line: number;
+    /** Contains info about the exception if the reason for breaking was an exception */
+    exception: {
+        name: string;
+        message: string;
+    };
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document, connection);
+        const documentElement = document.documentElement;
+        this.status = documentElement.getAttribute('status');
+        this.reason = documentElement.getAttribute('reason');
+        if (documentElement.hasChildNodes()) {
+            const messageNode = <Element>documentElement.firstChild;
+            if (messageNode.hasAttribute('exception')) {
+                this.exception = {
+                    name: messageNode.getAttribute('exception'),
+                    message: messageNode.textContent
+                }
+            }
+            if (messageNode.hasAttribute('filename')) {
+                this.fileUri = messageNode.getAttribute('filename');
+            }
+            if (messageNode.hasAttribute('lineno')) {
+                this.line = parseInt(messageNode.getAttribute('lineno'));
+            }
+        }
+    }
+}
+
+/** Returned by a breakpoint_list command */
+export class Breakpoint {
+    /** Unique ID which is used for modifying the breakpoint */
+    id: number;
+    /** The connection this breakpoint is set on */
+    connection: Connection;
+    /**
+     * @param  {Element} breakpointNode
+     * @param  {Connection} connection
+     */
+    constructor(breakpointNode: Element, connection: Connection) {
+        this.id = parseInt(breakpointNode.getAttribute('id'));
+        this.connection = connection;
+    }
+    /** Removes the breakpoint by sending a breakpoint_remove command */
+    public remove() {
+        return this.connection.sendBreakpointRemoveCommand(this);
+    }
+}
+
+export class BreakpointSetResponse extends Response {
+    breakpointId: number;
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document, connection);
+        this.breakpointId = parseInt(document.documentElement.getAttribute('id'));
+    }
+}
+
+/** The response to a breakpoint_list command */
+export class BreakpointListResponse extends Response {
+    /** The currently set breakpoints for this connection */
+    breakpoints: Breakpoint[];
+    /**
+     * @param  {XMLDocument} document
+     * @param  {Connection} connection
+     */
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document, connection);
+        this.breakpoints = Array.from(document.documentElement.childNodes).map((breakpointNode: Element) => new Breakpoint(breakpointNode, connection));
+    }
+}
+
+/** One stackframe inside a stacktrace retrieved through stack_get */
+export class StackFrame {
+    /** The UI-friendly name of this stack frame, like a function name or "{main}" */
     name: string;
+    /** The file URI where the stackframe was entered */
+    fileUri: string;
+    /** The line number inside file where the stackframe was entered */
+    line: number;
+    /** The level (index) inside the stack trace at which the stack frame receides */
+    level: number;
+    /** The connection this stackframe belongs to */
+    connection: Connection;
+    /**
+     * @param  {Element} stackFrameNode
+     * @param  {Connection} connection
+     */
+    constructor(stackFrameNode: Element, connection: Connection) {
+        this.name = stackFrameNode.getAttribute('where');
+        this.fileUri = stackFrameNode.getAttribute('filename');
+        this.line = parseInt(stackFrameNode.getAttribute('lineno'));
+        this.level = parseInt(stackFrameNode.getAttribute('level'));
+        this.connection = connection;
+    }
+    /** Returns the available contexts (scopes, such as "Local" and "Superglobals") by doing a context_names command */
+    public getContexts(): Promise<Context[]> {
+        return this.connection.sendContextNamesCommand(this).then(response => response.contexts);
+    }
+}
+
+/** The response to a stack_get command */
+export class StackGetResponse extends Response {
+    /** The current stack trace */
+    stack: StackFrame[];
+    /**
+     * @param  {XMLDocument} document
+     * @param  {Connection} connection
+     */
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document, connection);
+        this.stack = Array.from(document.documentElement.childNodes).map((stackFrameNode: Element) => new StackFrame(stackFrameNode, connection));
+    }
+}
+
+/** A context inside a stack frame, like "Local" or "Superglobals" */
+export class Context {
+    /** Unique id that is used for further commands */
+    id: number;
+    /** UI-friendly name like "Local" or "Superglobals" */
+    name: string;
+    /** The stackframe this context belongs to */
+    stackFrame: StackFrame;
+    /**
+     * @param  {Element} contextNode
+     * @param  {StackFrame} stackFrame
+     */
+    constructor(contextNode: Element, stackFrame: StackFrame) {
+        this.id = parseInt(contextNode.getAttribute('id'));
+        this.name = contextNode.getAttribute('name');
+        this.stackFrame = stackFrame;
+    }
+    /**
+     * Returns the properties (variables) inside this context by doing a context_get command
+     * @returns Promise.<Property[]>
+     */
+    public getProperties(): Promise<Property[]> {
+        return this.stackFrame.connection.sendContextGetCommand(this).then(response => response.properties);
+    }
+}
+
+/** Response to a context_names command */
+export class ContextNamesResponse extends Response {
+    /** the available contexts inside the given stack frame */
+    contexts: Context[];
+    /**
+     * @param  {XMLDocument} document
+     * @param  {StackFrame} stackFrame
+     */
+    constructor(document: XMLDocument, stackFrame: StackFrame) {
+        super(document, stackFrame.connection);
+        this.contexts = Array.from(document.documentElement.childNodes).map((contextNode: Element) => new Context(contextNode, stackFrame));
+    }
+}
+
+/** The parent for properties inside a scope and properties retrieved through eval requests */
+export class BaseProperty {
+    /** the short name of the property */
+    name: string;
+    /** the data type of the variable. Can be string, int, float, bool, array, object, uninitialized, null or resource  */
+    type: string;
+    /** a boolean indicating wether children of this property can be received or not. This is true for arrays and objects. */
+    hasChildren: boolean;
+    /** the number of children this property has, if any. Useful for showing array length. */
+    numberOfChildren: number;
+    /** the value of the property for primitive types */
+    value: string;
+    constructor(propertyNode: Element) {
+        this.name = propertyNode.getAttribute('name');
+        this.type = propertyNode.getAttribute('type');
+        this.hasChildren = !!parseInt(propertyNode.getAttribute('children'));
+        this.numberOfChildren = parseInt(propertyNode.getAttribute('numchildren'));
+        const encoding = propertyNode.getAttribute('encoding');
+        if (encoding) {
+            this.value = iconv.decode(new Buffer(propertyNode.nodeValue), encoding);
+        } else {
+            this.value = propertyNode.nodeValue;
+        }
+    }
+}
+
+/** a property (variable) inside a context or a child of another property */
+export class Property extends BaseProperty {
+    /** the fully-qualified name of the property inside the context */
+    fullName: string;
+    /** the context this property belongs to */
+    context: Context;
+    /**
+     * @param  {Element} propertyNode
+     * @param  {Context} context
+     */
+    constructor(propertyNode: Element, context: Context) {
+        super(propertyNode);
+        this.fullName = propertyNode.getAttribute('fullname');
+        this.context = context;
+    }
+    /**
+     * Returns the child properties of this property by doing another property_get
+     * @returns Promise.<Property[]>
+     */
+    public getChildren(): Promise<Property[]> {
+        if (!this.hasChildren) {
+            return Promise.reject<Property[]>(new Error('This property has no children'));
+        }
+        return this.context.stackFrame.connection.sendPropertyGetCommand(this).then(response => response.children);
+    }
+}
+
+/** The response to a context_get command */
+export class ContextGetResponse extends Response {
+    /** the available properties inside the context */
+    properties: Property[];
+    /**
+     * @param  {XMLDocument} document
+     * @param  {Context} context
+     */
+    constructor(document: XMLDocument, context: Context) {
+        super(document, context.stackFrame.connection);
+        this.properties = Array.from(document.documentElement.childNodes).map((propertyNode: Element) => new Property(propertyNode, context));
+    }
+}
+
+/** The response to a property_get command */
+export class PropertyGetResponse extends Response {
+    /** the children of the given property */
+    children: Property[];
+    /**
+     * @param  {XMLDocument} document
+     * @param  {Property} property
+     */
+    constructor(document: XMLDocument, property: Property) {
+        super(document, property.context.stackFrame.connection);
+        this.children = Array.from(document.documentElement.firstChild.childNodes).map((propertyNode: Element) => new Property(propertyNode, property.context));
+    }
+}
+
+export class EvalResultProperty extends BaseProperty {
+    children: EvalResultProperty[];
+    constructor(propertyNode: Element) {
+        super(propertyNode);
+        if (this.hasChildren) {
+            this.children = Array.from(propertyNode.childNodes).map((propertyNode: Element) => new EvalResultProperty(propertyNode));
+        }
+    }
+}
+
+export class EvalResponse extends Response {
+    result: EvalResultProperty;
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document, connection);
+        this.result = new EvalResultProperty(document.documentElement);
+    }
+}
+
+export class FeatureSetResponse extends Response {
+    feature: string;
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document, connection);
+        this.feature = document.documentElement.getAttribute('feature');
+    }
+}
+
+/** A command inside the queue */
+interface Command {
+    /** The name of the command, like breakpoint_list */
+    name: string;
+    /** All arguments as one string */
     args?: string;
+    /** Data that gets appended after an " -- " in base64 */
     data?: string;
-    resolveFn: (response: Document) => any;
+    /** callback that gets called with an XML document when a response arrives that could be parsed */
+    resolveFn: (response: XMLDocument) => any;
+    /** callback that gets called if an error happened while parsing the response */
     rejectFn: (error?: Error) => any;
 }
 
 /**
  * This class represents a connection to XDebug and is instantiated with a socket.
- * Once the socket receives the init package from XDebug, an init event is fired.
  */
-export class XDebugConnection extends EventEmitter {
+export class Connection extends DbgpConnection {
 
+    /** a counter for unique connection IDs */
     private static _connectionCounter = 0;
-    private _id: number;
-    public get id() {
-        return this._id;
-    }
-    private _timeEstablished: Date;
-    public get timeEstablished() {
-        return this._timeEstablished;
-    }
-    private _socket: net.Socket;
+    /** unique connection ID */
+    public id: number;
+    /** the time this connection was established */
+    public timeEstablished: Date;
+    /** a counter for unique transaction IDs */
     private _transactionCounter = 0;
-    private _initPromise: Promise<InitResponse>;
-
-    /**
-     * The currently pending command that has been sent to XDebug and is awaiting a response
-     */
+    /** the promise that gets resolved once we receive the init packet */
+    private _initPromise: Promise<InitPacket>;
+    /** the currently pending command that has been sent to XDebug and is awaiting a response or null */
     private _pendingCommand: Command;
-
     /**
-     * XDebug doesn NOT support async communication.
+     * XDebug does NOT support async communication.
      * This means before sending a new command, we have to wait until we get a response for the previous.
-     * This array is a stack of commands that get passed to _sendCommand once we XDebug can accept commands again.
+     * This array is a stack of commands that get passed to _sendCommand once XDebug can accept commands again.
      */
-    private _queue: Command[] = [];
+    private _commandQueue: Command[] = [];
 
+    /** Constructs a new connection that uses the given socket to communicate with XDebug. */
     constructor(socket: net.Socket) {
-        super();
-        this._id = XDebugConnection._connectionCounter++;
-        this._socket = socket;
-        this._timeEstablished = new Date();
-        socket.on('data', (data: Buffer) => this._handleResponse(data));
-        this._initPromise = new Promise<InitResponse>((resolve, reject) => {
+        super(socket);
+        this.id = Connection._connectionCounter++;
+        this.timeEstablished = new Date();
+        this._initPromise = new Promise<InitPacket>((resolve, reject) => {
             this._pendingCommand = {
                 name: null,
                 rejectFn: reject,
-                resolveFn: (document: Document) => {
-                    const documentElement = document.documentElement;
-                    resolve({
-                        fileUri: documentElement.getAttribute('fileuri'),
-                        language: documentElement.getAttribute('language'),
-                        protocolVersion: documentElement.getAttribute('protocolversion'),
-                        ideKey: documentElement.getAttribute('idekey')
-                    });
+                resolveFn: (document: XMLDocument) => {
+                    resolve(new InitPacket(document, this));
                 }
             };
         });
-        console.log('New XDebug Connection #' + this._id);
+        console.log('New XDebug Connection #' + this.id);
     }
 
-    public waitForInitPacket(): Promise<Document> {
+    /** Returns a promise that gets resolved once the init packet arrives */
+    public waitForInitPacket(): Promise<InitPacket> {
         return this._initPromise;
     }
 
     /**
      * Handles a response by firing and then removing a pending transaction callback.
-     * If the response is an init packet, an init event is emitted instead.
      * After that, the next command in the queue is executed (if there is any).
      */
-    private _handleResponse(data: Buffer): void {
+    protected handleResponse(response: XMLDocument): void {
         // XDebug sent us a packet
         // Anatomy: [data length] [NULL] [xml] [NULL]
         const command = this._pendingCommand;
@@ -95,26 +412,10 @@ export class XDebugConnection extends EventEmitter {
             return;
         }
         this._pendingCommand = null;
-        try {
-            const firstNullByte = data.indexOf(0);
-            const secondNullByte = data.indexOf(0, firstNullByte + 1);
-            if (firstNullByte === -1 || secondNullByte === -1) {
-                throw new InvalidMessageError(data);
-            }
-            const dataLength = parseInt(iconv.decode(data.slice(0, firstNullByte), ENCODING));
-            const xml = iconv.decode(data.slice(firstNullByte + 1, secondNullByte), ENCODING);
-            const parser = new DOMParser();
-            const document = parser.parseFromString(xml, 'application/xml');
-            command.resolveFn(document);
-            //console.log('#' + this._connectionId + ' received packet from XDebug, packet length ' + dataLength, result);
-            //const transactionId = parseInt(result.attributes['transaction_id']);
-        } catch (err) {
-            command.rejectFn(err);
-        } finally {
-            if (this._queue.length > 0) {
-                const command = this._queue.shift();
-                this._executeCommand(command);
-            }
+        command.resolveFn(response);
+        if (this._commandQueue.length > 0) {
+            const command = this._commandQueue.shift();
+            this._executeCommand(command);
         }
     }
 
@@ -123,13 +424,13 @@ export class XDebugConnection extends EventEmitter {
      * If the queue is empty AND there are no pending transactions (meaning we already received a response and XDebug is waiting for
      * commands) the command will be executed emidiatly.
      */
-    private _enqueueCommand(name: string, args?: string, data?: string): Promise<XMLNode> {
+    private _enqueueCommand(name: string, args?: string, data?: string): Promise<XMLDocument> {
         return new Promise((resolveFn, rejectFn) => {
             const command = {name, args, data, resolveFn, rejectFn};
-            if (this._queue.length === 0 && !this._pendingCommand) {
+            if (this._commandQueue.length === 0 && !this._pendingCommand) {
                 this._executeCommand(command);
             } else {
-                this._queue.push(command);
+                this._commandQueue.push(command);
             }
         });
     }
@@ -150,22 +451,15 @@ export class XDebugConnection extends EventEmitter {
         }
         commandString += '\0';
         const data = iconv.encode(commandString, ENCODING);
-        this._socket.write(data);
+        this.write(data);
         this._pendingCommand = command;
-    }
-
-    public close(): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            this._socket.once('close', resolve);
-            this._socket.end();
-        });
     }
 
     // ------------------------ status --------------------------------------------
 
     /** Sends a status command */
-    public status(): Promise<XMLNode> {
-        return this._enqueueCommand('status');
+    public sendStatusCommand(): Promise<StatusResponse> {
+        return this._enqueueCommand('status').then(document => new StatusResponse(document, this));
     }
 
     // ------------------------ feature negotiation --------------------------------
@@ -193,7 +487,7 @@ export class XDebugConnection extends EventEmitter {
      *  - notify_ok
      * or any command.
      */
-    public getFeature(feature: string): Promise<XMLNode> {
+    public sendFeatureGetCommand(feature: string): Promise<XMLDocument> {
         return this._enqueueCommand('feature_get', `-n feature`);
     }
 
@@ -209,8 +503,8 @@ export class XDebugConnection extends EventEmitter {
      *  - show_hidden
      *  - notify_ok
      */
-    public setFeature(feature: string, value: string): Promise<XMLNode> {
-        return this._enqueueCommand('feature_set', `-n ${feature} -v ${value}`);
+    public sendFeatureSetCommand(feature: string, value: string): Promise<FeatureSetResponse> {
+        return this._enqueueCommand('feature_set', `-n ${feature} -v ${value}`).then(document => new FeatureSetResponse(document, this));
     }
 
     // ---------------------------- breakpoints ------------------------------------
@@ -218,75 +512,75 @@ export class XDebugConnection extends EventEmitter {
     /**
      * Sends a breakpoint_set command that sets a line breakpoint.
      */
-    public setLineBreakpoint(file: string, line: number): Promise<XMLNode> {
-        return this._enqueueCommand('breakpoint_set', `-t line -f ${file} -n ${line}`);
+    public sendBreakpointSetCommand(breakpoint: {type: string, file?: string, line?: number, exception?: string}): Promise<BreakpointSetResponse> {
+        let args = `-t ${breakpoint.type} `;
+        if (breakpoint.type === 'line') {
+            args += `-f ${breakpoint.file} -n ${breakpoint.line}`;
+        } else if (breakpoint.type === 'exception') {
+            args += `-x ${breakpoint.exception}`;
+        } else {
+            return Promise.reject<BreakpointSetResponse>(new Error('unsupported breakpoint type'));
+        }
+        return this._enqueueCommand('breakpoint_set', args).then(document => new BreakpointSetResponse(document, this));
     }
 
-    /**
-     * Sends a breakpoint_set command that sets an exception breakpoint
-     * @param {string} name - the name of the exception class/interface to break on, for example "Exception" or "Throwable"
-     */
-    public setExceptionBreakpoint(name: string): Promise<XMLNode> {
-        return this._enqueueCommand('breakpoint_set', `-t exception -x ${name}`);
+    public sendBreakpointListCommand(): Promise<BreakpointListResponse> {
+        return this._enqueueCommand('breakpoint_list').then(document => new BreakpointListResponse(document, this));
     }
 
-    public listBreakpoints(): Promise<XMLNode> {
-        return this._enqueueCommand('breakpoint_list');
-    }
-
-    public removeBreakpoint(breakpointId: number): Promise<XMLNode> {
-        return this._enqueueCommand('breakpoint_remove', `-d ${breakpointId}`);
+    public sendBreakpointRemoveCommand(breakpoint: Breakpoint): Promise<Response> {
+        return this._enqueueCommand('breakpoint_remove', `-d ${breakpoint.id}`).then(document => new Response(document, this));
     }
 
     // ----------------------------- continuation ---------------------------------
 
-    public run(): Promise<XMLNode> {
-        return this._enqueueCommand('run');
+    public sendRunCommand(): Promise<StatusResponse> {
+        return this._enqueueCommand('run').then(document => new StatusResponse(document, this));
     }
 
-    public stepInto(): Promise<XMLNode> {
-        return this._enqueueCommand('step_into');
+    public sendStepIntoCommand(): Promise<StatusResponse> {
+        return this._enqueueCommand('step_into').then(document => new StatusResponse(document, this));
     }
 
-    public stepOver(): Promise<XMLNode> {
-        return this._enqueueCommand('step_over');
+    public sendStepOverCommand(): Promise<StatusResponse> {
+        return this._enqueueCommand('step_over').then(document => new StatusResponse(document, this));
     }
 
-    public stepOut(): Promise<XMLNode> {
-        return this._enqueueCommand('step_out');
+    public sendStepOutCommand(): Promise<StatusResponse> {
+        return this._enqueueCommand('step_out').then(document => new StatusResponse(document, this));
     }
 
-    public stop(): Promise<XMLNode> {
-        return this._enqueueCommand('stop');
+    public sendStopCommand(): Promise<StatusResponse> {
+        return this._enqueueCommand('stop').then(document => new StatusResponse(document, this));
     }
 
     // ------------------------------ stack ----------------------------------------
 
     /** Sends a stack_get request */
-    public getStack(): Promise<XMLNode> {
-        return this._enqueueCommand('stack_get');
+    public sendStackGetCommand(): Promise<StackGetResponse> {
+        return this._enqueueCommand('stack_get').then(document => new StackGetResponse(document, this));
     }
 
     // ------------------------------ context --------------------------------------
 
     /** Sends a context_names command. */
-    public getContextNames(stackDepth: number): Promise<XMLNode> {
-        return this._enqueueCommand('context_names');
+    public sendContextNamesCommand(stackFrame: StackFrame): Promise<ContextNamesResponse> {
+        return this._enqueueCommand('context_names', `-d ${stackFrame.level}`).then(document => new ContextNamesResponse(document, stackFrame));
     }
 
     /** Sends a context_get comand */
-    public getContext(stackDepth: number, contextId: number): Promise<XMLNode> {
-        return this._enqueueCommand('context_get', `-d ${stackDepth} -c ${contextId}`);
+    public sendContextGetCommand(context: Context): Promise<ContextGetResponse> {
+        return this._enqueueCommand('context_get', `-d ${context.stackFrame.level} -c ${context.id}`).then(document => new ContextGetResponse(document, context));
     }
 
-    /** Sends a property_value command */
-    public getProperty(stackDepth: number, contextId: number, longPropertyName: string): Promise<XMLNode> {
-        return this._enqueueCommand('property_get', `-d ${stackDepth} -c ${contextId} -n ${longPropertyName}`);
+    /** Sends a property_get command */
+    public sendPropertyGetCommand(property: Property): Promise<PropertyGetResponse> {
+        return this._enqueueCommand('property_get', `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${property.fullName}`).then(document => new PropertyGetResponse(document, property));
     }
 
     // ------------------------------- eval -----------------------------------------
 
-    public eval(expression: string): Promise<XMLNode> {
-        return this._enqueueCommand('eval', null, expression);
+    public sendEvalCommand(expression: string): Promise<EvalResponse> {
+        return this._enqueueCommand('eval', null, expression).then(document => new EvalResponse(document, this));
     }
 }
