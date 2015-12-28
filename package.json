@@ -1,11 +1,12 @@
 {
-  "name": "mock-debug",
-  "displayName": "Mock Debug",
-  "version": "0.10.18",
-  "publisher": "andreweinand",
-  "description": "Starter extension for developing debug adapters for VS Code.",
+  "name": "php-debug",
+  "displayName": "PHP Debug",
+  "version": "1.0.0",
+  "publisher": "felixfbecker",
+  "description": "Debug support for PHP with XDebug",
   "author": {
-    "name": "Microsoft Corporation"
+    "name": "Felix Becker",
+    "email": "felix.b@outlook.com"
   },
   "engines": {
     "vscode": "^0.10.1"
@@ -17,10 +18,10 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode-mock-debug.git"
+    "url": "https://github.com/felixfbecker/vscode-php-debug.git"
   },
   "bugs": {
-    "url": "https://github.com/Microsoft/vscode-mock-debug/issues"
+    "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
   },
   "dependencies": {
     "iconv-lite": "^0.4.13",
