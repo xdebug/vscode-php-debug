@@ -218,40 +218,51 @@ class PhpDebugSession extends vscode.DebugSession {
     /** This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change. */
     protected setBreakPointsRequest(response: VSCodeDebugProtocol.SetBreakpointsResponse, args: VSCodeDebugProtocol.SetBreakpointsArguments) {
         const file = path2uri(args.source.path);
-        const breakpoints: vscode.Breakpoint[] = [];
         const connections = Array.from(this._connections.values());
-        return Promise.all(connections.map(connection =>
-            // clear breakpoints for this file
-            connection.sendBreakpointListCommand()
-                .then(response => Promise.all(
-                    response.breakpoints
-                        .filter(breakpoint => breakpoint.type === 'line' && breakpoint.fileUri === file)
-                        .map(breakpoint => breakpoint.remove())
-                ))
-                // set them
-                .then(() => Promise.all(args.lines.map(line =>
-                    connection.sendBreakpointSetCommand({type: 'line', file, line})
-                        .then(xdebugResponse => {
-                            // only capture each breakpoint once (for the main connection)
-                            if (connection === this._mainConnection) {
-                                breakpoints.push(new vscode.Breakpoint(true, line));
-                            }
-                        })
-                        .catch(error => {
-                            // only capture each breakpoint once (for the main connection)
-                            if (connection === this._mainConnection) {
-                                console.error('breakpoint could not be set: ', error);
-                                breakpoints.push(new vscode.Breakpoint(false, line));
-                            }
-                        })
-                )))
-        )).then(() => {
-            response.body = {breakpoints};
-            this._breakpoints.set(file, args.lines);
-            this.sendResponse(response);
-        }).catch(error => {
-            this.sendErrorResponse(response, error.code, error.message);
-        });
+        let breakpoints: vscode.Breakpoint[];
+        let breakpointsSetPromise: Promise<any>;
+        if (connections.length === 0) {
+            // if there are no connections yet, we cannot verify any breakpoint
+            breakpoints = args.lines.map(line => new vscode.Breakpoint(false, line));
+            breakpointsSetPromise = Promise.resolve();
+        } else {
+            breakpoints = [];
+            breakpointsSetPromise = Promise.all(connections.map(connection =>
+                // clear breakpoints for this file
+                connection.sendBreakpointListCommand()
+                    .then(response => Promise.all(
+                        response.breakpoints
+                            .filter(breakpoint => breakpoint.type === 'line' && breakpoint.fileUri === file)
+                            .map(breakpoint => breakpoint.remove())
+                    ))
+                    // set them
+                    .then(() => Promise.all(args.lines.map(line =>
+                        connection.sendBreakpointSetCommand({type: 'line', file, line})
+                            .then(xdebugResponse => {
+                                // only capture each breakpoint once (for the main connection)
+                                if (connection === this._mainConnection) {
+                                    breakpoints.push(new vscode.Breakpoint(true, line));
+                                }
+                            })
+                            .catch(error => {
+                                // only capture each breakpoint once (for the main connection)
+                                if (connection === this._mainConnection) {
+                                    console.error('breakpoint could not be set: ', error);
+                                    breakpoints.push(new vscode.Breakpoint(false, line));
+                                }
+                            })
+                    )))
+            ))
+        }
+        breakpointsSetPromise
+            .then(() => {
+                response.body = {breakpoints};
+                this._breakpoints.set(file, args.lines);
+                this.sendResponse(response);
+            })
+            .catch(error => {
+                this.sendErrorResponse(response, error.code, error.message);
+            });
     }
 
     /** This is called once after all line breakpoints have been set and whenever the breakpoints settings change */
