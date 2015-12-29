@@ -70,3 +70,5 @@ PS C:\Users\felix\github\vscode-php-debug> code .\testproject\ --extensionDevelo
 
 VS Code will open an "Extension Development Host" with the debug adapter running.
 Now, you can debug the testproject like specified above and set breakpoints inside your first VS Code instance to step through the adapter code.
+
+[![Gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
