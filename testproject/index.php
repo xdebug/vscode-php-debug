@@ -1,7 +1,11 @@
 LOLOLOL
 <?php
-
+    
     $anArray = array(1, 2, "test" => 3, 4);
+    $aFloat = 1.23;
+    $anInt = 123;
+    $aString = "123";
+    $anEmptyString = "";
     $aBoolean = true;
     $nullValue = null;
     $variableThatsNotSet;

@@ -111,6 +111,16 @@ export class StatusResponse extends Response {
 export class Breakpoint {
     /** Unique ID which is used for modifying the breakpoint */
     id: number;
+    /** The type of the breakpoint: line, call, return, exception, conditional or watch */
+    type: string;
+    /** State of the breakpoint: enabled, disabled */
+    state: string;
+    /** File URI, if type is line */
+    fileUri: string;
+    /** Line, if type is line */
+    line: number;
+    /** Exception, if type is exception */
+    exception: string;
     /** The connection this breakpoint is set on */
     connection: Connection;
     /**
@@ -119,6 +129,12 @@ export class Breakpoint {
      */
     constructor(breakpointNode: Element, connection: Connection) {
         this.id = parseInt(breakpointNode.getAttribute('id'));
+        this.type = breakpointNode.getAttribute('type');
+        if (this.type === 'line') {
+            this.line = parseInt(breakpointNode.getAttribute('line'));
+        } else if (this.type === 'exception') {
+            this.exception = breakpointNode.getAttribute('exception');
+        }
         this.connection = connection;
     }
     /** Removes the breakpoint by sending a breakpoint_remove command */
@@ -233,11 +249,13 @@ export class ContextNamesResponse extends Response {
 }
 
 /** The parent for properties inside a scope and properties retrieved through eval requests */
-export class BaseProperty {
+export abstract class BaseProperty {
     /** the short name of the property */
     name: string;
     /** the data type of the variable. Can be string, int, float, bool, array, object, uninitialized, null or resource  */
     type: string;
+    /** the class if the type is object */
+    class: string;
     /** a boolean indicating wether children of this property can be received or not. This is true for arrays and objects. */
     hasChildren: boolean;
     /** the number of children this property has, if any. Useful for showing array length. */
@@ -245,15 +263,23 @@ export class BaseProperty {
     /** the value of the property for primitive types */
     value: string;
     constructor(propertyNode: Element) {
-        this.name = propertyNode.getAttribute('name');
+        if (propertyNode.hasAttribute('name')) {
+            this.name = propertyNode.getAttribute('name');
+        }
         this.type = propertyNode.getAttribute('type');
+        if (propertyNode.hasAttribute('classname')) {
+            this.class = propertyNode.getAttribute('classname');
+        }
         this.hasChildren = !!parseInt(propertyNode.getAttribute('children'));
-        this.numberOfChildren = parseInt(propertyNode.getAttribute('numchildren'));
-        const encoding = propertyNode.getAttribute('encoding');
-        if (encoding) {
-            this.value = iconv.decode(new Buffer(propertyNode.nodeValue), encoding);
+        if (this.hasChildren) {
+            this.numberOfChildren = parseInt(propertyNode.getAttribute('numchildren'));
         } else {
-            this.value = propertyNode.nodeValue;
+            const encoding = propertyNode.getAttribute('encoding');
+            if (encoding) {
+                this.value = iconv.encode(propertyNode.textContent, encoding) + '';
+            } else {
+                this.value = propertyNode.textContent;
+            }
         }
     }
 }
@@ -327,7 +353,9 @@ export class EvalResponse extends Response {
     result: EvalResultProperty;
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
-        this.result = new EvalResultProperty(document.documentElement);
+        if (document.documentElement.hasChildNodes()) {
+            this.result = new EvalResultProperty(<Element>document.documentElement.firstChild);
+        }
     }
 }
 
@@ -359,7 +387,7 @@ interface Command {
 export class Connection extends DbgpConnection {
 
     /** a counter for unique connection IDs */
-    private static _connectionCounter = 0;
+    private static _connectionCounter = 1;
     /** unique connection ID */
     public id: number;
     /** the time this connection was established */
@@ -447,7 +475,7 @@ export class Connection extends DbgpConnection {
             commandString += ' ' + command.args;
         }
         if (command.data) {
-            commandString += ' -- ' + (new Buffer(command.data, 'utf8')).toString('base64');
+            commandString += ' -- ' + (new Buffer(command.data)).toString('base64');
         }
         commandString += '\0';
         const data = iconv.encode(commandString, ENCODING);
