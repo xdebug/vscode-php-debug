@@ -31,55 +31,56 @@ export abstract class DbgpConnection {
         this._parsingState = ParsingState.DataLength;
         this._dataLengthBuffer = new Buffer(0);
         this._responseBuffer = new Buffer(0);
+        socket.on('data', (data: Buffer) => this._handleDataChunk(data));
+    }
+
+    private _handleDataChunk(data: Buffer) {
         // Anatomy of packets: [data length] [NULL] [xml] [NULL]
-        const handleDataChunk = (data: Buffer) => {
-            // are we waiting for the data length or for the response?
-            if (this._parsingState === ParsingState.DataLength) {
-                // does data contain a NULL byte?
-                const nullByteIndex = data.indexOf(0);
-                if (nullByteIndex !== -1) {
-                    // YES -> we received the data length and are ready to receive the response
-                    this._dataLength = parseInt(iconv.decode(data.slice(0, nullByteIndex), ENCODING));
-                    // reset buffer
-                    this._dataLengthBuffer = new Buffer(0);
-                    // switch to response parsing state
-                    this._parsingState = ParsingState.Response;
-                    // if data contains more info (except the NULL byte)
-                    if (data.length > nullByteIndex + 1) {
-                        // handle the rest of the packet as part of the response
-                        const rest = data.slice(nullByteIndex + 1);
-                        handleDataChunk(rest);
-                    }
-                } else {
-                    // NO -> this is only part of the data length. We buffer it and wait for the next data event
-                    this._dataLengthBuffer = Buffer.concat([this._dataLengthBuffer, data], this._dataLengthBuffer.length + data.length);
+        // are we waiting for the data length or for the response?
+        if (this._parsingState === ParsingState.DataLength) {
+            // does data contain a NULL byte?
+            const nullByteIndex = data.indexOf(0);
+            if (nullByteIndex !== -1) {
+                // YES -> we received the data length and are ready to receive the response
+                this._dataLength = parseInt(iconv.decode(data.slice(0, nullByteIndex), ENCODING));
+                // reset buffer
+                this._dataLengthBuffer = new Buffer(0);
+                // switch to response parsing state
+                this._parsingState = ParsingState.Response;
+                // if data contains more info (except the NULL byte)
+                if (data.length > nullByteIndex + 1) {
+                    // handle the rest of the packet as part of the response
+                    const rest = data.slice(nullByteIndex + 1);
+                    this._handleDataChunk(rest);
                 }
-            } else if (this._parsingState === ParsingState.Response) {
-                // does the new data together with the buffered data add up to the data length?
-                if (this._responseBuffer.length + data.length >= this._dataLength) {
-                    // YES -> we received the whole response
-                    const lastResponsePiece = data.slice(0, this._dataLength - this._responseBuffer.length);
-                    // append the last piece of the response
-                    const response = Buffer.concat([this._responseBuffer, lastResponsePiece], this._dataLength);
-                    // call response handler
-                    this.handleResponse(parseResponse(response));
-                    // reset buffer
-                    this._responseBuffer = new Buffer(0);
-                    // switch to data length parsing state
-                    this._parsingState = ParsingState.DataLength;
-                    // if data contains more info (except the NULL byte)
-                    if (data.length > lastResponsePiece.length + 1) {
-                        // handle the rest of the packet (after the NULL byte) as data length
-                        const rest = data.slice(lastResponsePiece.length + 1);
-                        handleDataChunk(rest);
-                    }
-                } else {
-                    // NO -> this is not the whole response yet. We buffer it and wait for the next data event.
-                    this._responseBuffer = Buffer.concat([this._responseBuffer, data], this._responseBuffer.length + data.length);
-                }
+            } else {
+                // NO -> this is only part of the data length. We buffer it and wait for the next data event
+                this._dataLengthBuffer = Buffer.concat([this._dataLengthBuffer, data], this._dataLengthBuffer.length + data.length);
             }
-        };
-        socket.on('data', handleDataChunk);
+        } else if (this._parsingState === ParsingState.Response) {
+            // does the new data together with the buffered data add up to the data length?
+            if (this._responseBuffer.length + data.length >= this._dataLength) {
+                // YES -> we received the whole response
+                const lastResponsePiece = data.slice(0, this._dataLength - this._responseBuffer.length);
+                // append the last piece of the response
+                const response = Buffer.concat([this._responseBuffer, lastResponsePiece], this._dataLength);
+                // call response handler
+                this.handleResponse(parseResponse(response));
+                // reset buffer
+                this._responseBuffer = new Buffer(0);
+                // switch to data length parsing state
+                this._parsingState = ParsingState.DataLength;
+                // if data contains more info (except the NULL byte)
+                if (data.length > lastResponsePiece.length + 1) {
+                    // handle the rest of the packet (after the NULL byte) as data length
+                    const rest = data.slice(lastResponsePiece.length + 1);
+                    this._handleDataChunk(rest);
+                }
+            } else {
+                // NO -> this is not the whole response yet. We buffer it and wait for the next data event.
+                this._responseBuffer = Buffer.concat([this._responseBuffer, data], this._responseBuffer.length + data.length);
+            }
+        }
     }
 
     protected abstract handleResponse(response: XMLDocument): void;
