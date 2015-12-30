@@ -35,6 +35,7 @@
   "dependencies": {
     "iconv-lite": "^0.4.13",
     "moment": "^2.10.6",
+    "url-relative": "^1.0.0",
     "vscode-debugadapter": "^1.0.3",
     "vscode-debugprotocol": "^1.0.1",
     "xmldom": "^0.1.19"
@@ -75,6 +76,14 @@
                 "type": "number",
                 "description": "Port on which to listen for XDebug",
                 "default": 9000
+              },
+              "serverSourceRoot": {
+                "type": "string",
+                "description": "The source root when debugging a remote host"
+              },
+              "localSourceRoot": {
+                "type": "string",
+                "description": "The source root on this machine that is the equivalent to the serverSourceRoot on the server. May be relative to the project root."
               }
             }
           }
