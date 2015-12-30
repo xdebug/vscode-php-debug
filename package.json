@@ -1,84 +1,101 @@
 {
-    "name": "php-debug",
-    "displayName": "PHP Debug",
-    "version": "1.0.1",
-    "publisher": "felixfbecker",
-    "description": "Debug support for PHP with XDebug",
-    "keywords": ["php", "debug", "xdebug"],
-    "author": {
-        "name": "Felix Becker",
-        "email": "felix.b@outlook.com"
-    },
-    "engines": {
-        "vscode": "^0.10.6"
-    },
-    "icon": "images/logo.svg",
-    "galleryBanner": {
-        "color": "#6682BA",
-        "theme": "dark"
-    },
-    "categories": ["Debuggers"],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/felixfbecker/vscode-php-debug.git"
-    },
-    "bugs": {
-        "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
-    },
-    "dependencies": {
-        "iconv-lite": "^0.4.13",
-        "moment": "^2.10.6",
-        "vscode-debugadapter": "^1.0.3",
-        "vscode-debugprotocol": "^1.0.1",
-        "xmldom": "^0.1.19"
-    },
-    "devDependencies": {
-        "typescript": "^1.6.2",
-        "mocha": "*"
-    },
-    "scripts": {
-        "compile": "tsc -p ./src",
-        "watch": "tsc -w -p ./src",
-        "publish": "vsce publish",
-        "vscode:prepublish": "npm run compile",
-        "test": "mocha out/tests"
-    },
-    "contributes": {
-        "debuggers": [
-            {
-                "type": "php",
-                "label": "PHP",
-                "enableBreakpointsFor": {
-                    "languageIds": ["php"]
-                },
-                "program": "./out/phpDebug.js",
-                "runtime": "node",
-                "configurationAttributes": {
-                    "launch": {
-                        "required": [],
-                        "properties": {
-                            "stopOnEntry": {
-                                "type": "boolean",
-                                "description": "Automatically stop after launch.",
-                                "default": true
-                            },
-                            "port": {
-                                "type": "number",
-                                "description": "Port on which to listen for XDebug",
-                                "default": 9000
-                            }
-                        }
-                    }
-                },
-                "initialConfigurations": [
-                    {
-                        "name": "Listen for XDebug",
-                        "type": "php",
-                        "request": "launch",
-                        "port": 9000
-                    }
-                ]
+  "name": "php-debug",
+  "displayName": "PHP Debug",
+  "version": "1.0.1",
+  "publisher": "felixfbecker",
+  "description": "Debug support for PHP with XDebug",
+  "keywords": [
+    "php",
+    "debug",
+    "xdebug"
+  ],
+  "author": {
+    "name": "Felix Becker",
+    "email": "felix.b@outlook.com"
+  },
+  "engines": {
+    "vscode": "^0.10.6"
+  },
+  "icon": "images/logo.svg",
+  "galleryBanner": {
+    "color": "#6682BA",
+    "theme": "dark"
+  },
+  "categories": [
+    "Debuggers"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/felixfbecker/vscode-php-debug.git"
+  },
+  "bugs": {
+    "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
+  },
+  "dependencies": {
+    "escape-string-regexp": "^1.0.4",
+    "iconv-lite": "^0.4.13",
+    "moment": "^2.10.6",
+    "vscode-debugadapter": "^1.0.3",
+    "vscode-debugprotocol": "^1.0.1",
+    "xmldom": "^0.1.19"
+  },
+  "devDependencies": {
+    "typescript": "^1.6.2",
+    "mocha": "*"
+  },
+  "scripts": {
+    "compile": "tsc -p ./src",
+    "watch": "tsc -w -p ./src",
+    "publish": "vsce publish",
+    "vscode:prepublish": "npm run compile",
+    "test": "mocha out/tests"
+  },
+  "contributes": {
+    "debuggers": [
+      {
+        "type": "php",
+        "label": "PHP",
+        "enableBreakpointsFor": {
+          "languageIds": [
+            "php"
+          ]
+        },
+        "program": "./out/phpDebug.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": [],
+            "properties": {
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": true
+              },
+              "port": {
+                "type": "number",
+                "description": "Port on which to listen for XDebug",
+                "default": 9000
+              },
+              "serverSourceRoot": {
+                  "type": "string",
+                  "description": "The source root on the server when doing remote debugging on a different host"
+              },
+              "localSourceRoot": {
+                  "type": "string",
+                  "description": "The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. May be relative to the project root."
+              }
             }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "name": "Listen for XDebug",
+            "type": "php",
+            "request": "launch",
+            "port": 9000
+          }
         ]
-    }
+      }
+    ]
+  }
 }
