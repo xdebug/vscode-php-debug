@@ -67,7 +67,7 @@ class PhpDebugSession extends vscode.DebugSession {
     private _connections = new Map<number, xdebug.Connection>();
     /** The first connection we receive */
     private _mainConnection: xdebug.Connection = null;
-    /** Gets set to true after _runOrStopOnEntry is called the first time, which means all exceptions etc. are set */
+    /** Gets set to true after _runOrStopOnEntry is called the first time and means all exceptions etc. are set */
     private _initialized = false;
     /** A map of file URIs to lines: breakpoints received from VS Code */
     private _breakpoints = new Map<string, number[]>();
@@ -75,13 +75,13 @@ class PhpDebugSession extends vscode.DebugSession {
     private _breakOnExceptions: boolean;
     /** A counter for unique stackframe IDs */
     private _stackFrameIdCounter = 1;
-    /** Maps a stackframe ID to its connection and the level inside the stacktrace for scope requests */
+    /** A map from unique stackframe IDs (even across connections) to XDebug stackframes */
     private _stackFrames = new Map<number, xdebug.StackFrame>();
-    /** A counter for unique context and variable IDs (as the content of a scope is requested by a VariableRequest from VS Code) */
+    /** A counter for unique context, property and eval result properties (as these are all requested by a VariableRequest from VS Code) */
     private _variableIdCounter = 1;
-    /** A map that maps a unique VS Code variable ID to an XDebug contextId and an XDebug stackframe */
+    /** A map from unique VS Code variable IDs to an XDebug contexts */
     private _contexts = new Map<number, xdebug.Context>();
-    /** A map that maps a unique VS Code variable ID to an XDebug scope and an XDebug long variable name */
+    /** A map from unique VS Code variable IDs to a XDebug properties */
     private _properties = new Map<number, xdebug.Property>();
     /** A map from unique VS Code variable IDs to XDebug eval result properties, because property children returned from eval commands are always inlined */
     private _evalResultProperties = new Map<number, xdebug.EvalResultProperty>();
@@ -114,9 +114,9 @@ class PhpDebugSession extends vscode.DebugSession {
                     // raise default of 32
                     .then(() => connection.sendFeatureSetCommand('max_children', '9999'))
                     // restore all breakpoints for the new connection
-                    .then(() => Promise.all(Array.from(this._breakpoints).map(([file, lines]) =>
+                    .then(() => Promise.all(Array.from(this._breakpoints).map(([fileUri, lines]) =>
                         Promise.all(lines.map(line =>
-                            connection.sendBreakpointSetCommand({type: 'line', file, line})
+                            connection.sendBreakpointSetCommand({type: 'line', fileUri, line})
                         ))
                     )))
                     // restore exception breakpoint settings for the new connection
@@ -217,7 +217,7 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change. */
     protected setBreakPointsRequest(response: VSCodeDebugProtocol.SetBreakpointsResponse, args: VSCodeDebugProtocol.SetBreakpointsArguments) {
-        const file = path2uri(args.source.path);
+        const fileUri = path2uri(args.source.path);
         const connections = Array.from(this._connections.values());
         let breakpoints: vscode.Breakpoint[];
         let breakpointsSetPromise: Promise<any>;
@@ -232,12 +232,12 @@ class PhpDebugSession extends vscode.DebugSession {
                 connection.sendBreakpointListCommand()
                     .then(response => Promise.all(
                         response.breakpoints
-                            .filter(breakpoint => breakpoint.type === 'line' && breakpoint.fileUri === file)
+                            .filter(breakpoint => breakpoint.type === 'line' && breakpoint.fileUri === fileUri)
                             .map(breakpoint => breakpoint.remove())
                     ))
                     // set them
                     .then(() => Promise.all(args.lines.map(line =>
-                        connection.sendBreakpointSetCommand({type: 'line', file, line})
+                        connection.sendBreakpointSetCommand({type: 'line', fileUri, line})
                             .then(xdebugResponse => {
                                 // only capture each breakpoint once (for the main connection)
                                 if (connection === this._mainConnection) {
@@ -257,7 +257,7 @@ class PhpDebugSession extends vscode.DebugSession {
         breakpointsSetPromise
             .then(() => {
                 response.body = {breakpoints};
-                this._breakpoints.set(file, args.lines);
+                this._breakpoints.set(fileUri, args.lines);
                 this.sendResponse(response);
             })
             .catch(error => {

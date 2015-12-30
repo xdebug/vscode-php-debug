@@ -33,6 +33,7 @@ export class InitPacket {
     }
 }
 
+/** Error class for errors returned from XDebug */
 export class XDebugError extends Error {
     code: number;
     constructor(message: string, code: number) {
@@ -339,6 +340,7 @@ export class PropertyGetResponse extends Response {
     }
 }
 
+/** class for properties returned from eval commands. These don't have a full name or an ID, but have all children already inlined. */
 export class EvalResultProperty extends BaseProperty {
     children: EvalResultProperty[];
     constructor(propertyNode: Element) {
@@ -349,7 +351,9 @@ export class EvalResultProperty extends BaseProperty {
     }
 }
 
+/** The response to an eval command */
 export class EvalResponse extends Response {
+    /** the result of the expression, if there was any */
     result: EvalResultProperty;
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
@@ -359,7 +363,9 @@ export class EvalResponse extends Response {
     }
 }
 
+/** The response to an feature_set command */
 export class FeatureSetResponse extends Response {
+    /** the feature that was set */
     feature: string;
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
@@ -538,12 +544,18 @@ export class Connection extends DbgpConnection {
     // ---------------------------- breakpoints ------------------------------------
 
     /**
-     * Sends a breakpoint_set command that sets a line breakpoint.
+     * Sends a breakpoint_set command that sets a breakpoint.
+     * @param {object} breakpoint
+     * @param {string} breakpoint.type - the type of breakpoint. Can be 'line' or 'exception'
+     * @param {string} [breakpoint.fileUri] - the file URI to break on if type is 'line'
+     * @param {number} [breakpoint.line] - the line to break on if type is 'line'
+     * @param {string} [breakpoint.exception] - the exception class name to break on if type is 'exception'
+     * @returns Promise.<BreakpointSetResponse>
      */
-    public sendBreakpointSetCommand(breakpoint: {type: string, file?: string, line?: number, exception?: string}): Promise<BreakpointSetResponse> {
+    public sendBreakpointSetCommand(breakpoint: {type: string, fileUri?: string, line?: number, exception?: string}): Promise<BreakpointSetResponse> {
         let args = `-t ${breakpoint.type} `;
         if (breakpoint.type === 'line') {
-            args += `-f ${breakpoint.file} -n ${breakpoint.line}`;
+            args += `-f ${breakpoint.fileUri} -n ${breakpoint.line}`;
         } else if (breakpoint.type === 'exception') {
             args += `-x ${breakpoint.exception}`;
         } else {
@@ -552,39 +564,46 @@ export class Connection extends DbgpConnection {
         return this._enqueueCommand('breakpoint_set', args).then(document => new BreakpointSetResponse(document, this));
     }
 
+    /** sends a breakpoint_list command */
     public sendBreakpointListCommand(): Promise<BreakpointListResponse> {
         return this._enqueueCommand('breakpoint_list').then(document => new BreakpointListResponse(document, this));
     }
 
+    /** sends a breakpoint_remove command */
     public sendBreakpointRemoveCommand(breakpoint: Breakpoint): Promise<Response> {
         return this._enqueueCommand('breakpoint_remove', `-d ${breakpoint.id}`).then(document => new Response(document, this));
     }
 
     // ----------------------------- continuation ---------------------------------
 
+    /** sends a run command */
     public sendRunCommand(): Promise<StatusResponse> {
         return this._enqueueCommand('run').then(document => new StatusResponse(document, this));
     }
 
+    /** sends a step_into command */
     public sendStepIntoCommand(): Promise<StatusResponse> {
         return this._enqueueCommand('step_into').then(document => new StatusResponse(document, this));
     }
 
+    /** sends a step_over command */
     public sendStepOverCommand(): Promise<StatusResponse> {
         return this._enqueueCommand('step_over').then(document => new StatusResponse(document, this));
     }
 
+    /** sends a step_out command */
     public sendStepOutCommand(): Promise<StatusResponse> {
         return this._enqueueCommand('step_out').then(document => new StatusResponse(document, this));
     }
 
+    /** sends a stop command */
     public sendStopCommand(): Promise<StatusResponse> {
         return this._enqueueCommand('stop').then(document => new StatusResponse(document, this));
     }
 
     // ------------------------------ stack ----------------------------------------
 
-    /** Sends a stack_get request */
+    /** Sends a stack_get command */
     public sendStackGetCommand(): Promise<StackGetResponse> {
         return this._enqueueCommand('stack_get').then(document => new StackGetResponse(document, this));
     }
@@ -608,6 +627,7 @@ export class Connection extends DbgpConnection {
 
     // ------------------------------- eval -----------------------------------------
 
+    /** sends an eval command */
     public sendEvalCommand(expression: string): Promise<EvalResponse> {
         return this._enqueueCommand('eval', null, expression).then(document => new EvalResponse(document, this));
     }
