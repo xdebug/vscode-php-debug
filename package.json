@@ -39,6 +39,8 @@
     "scripts": {
         "compile": "tsc -p ./src",
         "watch": "tsc -w -p ./src",
+        "publish": "vsce publish",
+        "vscode:prepublish": "npm run compile",
         "test": "mocha out/tests"
     },
     "contributes": {

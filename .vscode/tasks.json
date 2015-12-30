@@ -12,7 +12,12 @@
 		},
 		{
 			"taskName": "compile",
+            "isBuildCommand": true,
     		"problemMatcher": "$tsc"
-		}
+		},
+        {
+            "taskName": "publish",
+            "showOutput": "always"
+        }
 	]
 }
