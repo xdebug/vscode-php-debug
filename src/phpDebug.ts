@@ -2,24 +2,11 @@ import * as vscode from 'vscode-debugadapter';
 import {DebugProtocol as VSCodeDebugProtocol} from 'vscode-debugprotocol';
 import * as net from 'net';
 import * as xdebug from './xdebugConnection';
+import urlRelative = require('url-relative');
 import moment = require('moment');
 import * as url from 'url';
 import * as path from 'path';
 import * as util from 'util';
-
-/** converts a file path to file:// URI  */
-function path2uri(str: string): string {
-    var pathName = str.replace(/\\/g, '/');
-    if (pathName[0] !== '/') {
-        pathName = '/' + pathName;
-    }
-    return encodeURI('file://' + pathName);
-}
-
-/** converts a file:// URI to a local file path */
-function uri2path(uri: string): string {
-    return url.parse(uri).pathname.substr(1);
-}
 
 /** formats a xdebug property value for VS Code */
 function formatPropertyValue(property: xdebug.BaseProperty): string {
@@ -55,6 +42,10 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     port: number;
     /** Automatically stop target after launch. If not specified, target does not stop. */
     stopOnEntry?: boolean;
+    /** The source root on the server when doing remote debugging on a different host */
+    serverSourceRoot?: string;
+    /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. May be relative to the project root. */
+    localSourceRoot?: string;
 }
 
 class PhpDebugSession extends vscode.DebugSession {
@@ -96,6 +87,14 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
+        if (args.serverSourceRoot) {
+            // use cwd by default for localSourceRoot
+            if (!args.localSourceRoot) {
+                args.localSourceRoot = '.';
+            }
+            // resolve localSourceRoot relative to the project root
+            args.localSourceRoot = path.resolve(process.cwd(), args.localSourceRoot);
+        }
         this._args = args;
         const server = this._server = net.createServer();
         server.on('connection', (socket: net.Socket) => {
@@ -196,6 +195,41 @@ class PhpDebugSession extends vscode.DebugSession {
         }
     }
 
+    /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
+    protected convertDebuggerPathToClient(fileUri: string): string {
+        // convert the file URI to a path
+        const serverPath = url.parse(fileUri).pathname.substr(1);
+        let localPath: string;
+        if (this._args.serverSourceRoot && this._args.localSourceRoot) {
+            // get the part of the path that is relative to the source root
+            const pathRelativeToSourceRoot = path.relative(this._args.serverSourceRoot, serverPath);
+            // resolve from the local source root
+            localPath = path.resolve(this._args.localSourceRoot, pathRelativeToSourceRoot);
+        } else {
+            localPath = path.normalize(serverPath);
+        }
+        return localPath;
+    }
+
+    /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
+    protected convertClientPathToDebugger(localPath: string): string {
+        let localFileUri = localPath.replace(/\\/g, '/');
+        if (localFileUri[0] !== '/') {
+            localFileUri = '/' + localFileUri;
+        }
+        localFileUri = encodeURI('file://' + localFileUri);
+        let serverFileUri: string;
+        if (this._args.serverSourceRoot && this._args.localSourceRoot) {
+            // get the part of the path that is relative to the source root
+            const urlRelativeToSourceRoot = urlRelative(this._args.localSourceRoot, localPath);
+            // resolve from the server source root
+            serverFileUri = url.resolve(this._args.serverSourceRoot, urlRelativeToSourceRoot);
+        } else {
+            serverFileUri = localFileUri;
+        }
+        return localFileUri;
+    }
+
     /** Logs all requests before dispatching */
     protected dispatchRequest(request: VSCodeDebugProtocol.Request) {
         console.log(`\n\n-> ${request.command}Request`);
@@ -217,7 +251,7 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change. */
     protected setBreakPointsRequest(response: VSCodeDebugProtocol.SetBreakpointsResponse, args: VSCodeDebugProtocol.SetBreakpointsArguments) {
-        const fileUri = path2uri(args.source.path);
+        const fileUri = this.convertClientPathToDebugger(args.source.path);
         const connections = Array.from(this._connections.values());
         let breakpoints: vscode.Breakpoint[];
         let breakpointsSetPromise: Promise<any>;
@@ -330,7 +364,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 response.body = {
                     stackFrames: xdebugResponse.stack.map(stackFrame => {
                         // XDebug paths are URIs, VS Code file paths
-                        const filePath = uri2path(stackFrame.fileUri);
+                        const filePath = this.convertDebuggerPathToClient(stackFrame.fileUri);
                         // "Name" of the source and the actual file path
                         const source = new vscode.Source(path.basename(filePath), filePath);
                         // a new, unique ID for scopeRequests
