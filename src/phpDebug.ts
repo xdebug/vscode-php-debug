@@ -2,8 +2,8 @@ import * as vscode from 'vscode-debugadapter';
 import {DebugProtocol as VSCodeDebugProtocol} from 'vscode-debugprotocol';
 import * as net from 'net';
 import * as xdebug from './xdebugConnection';
+import urlRelative = require('url-relative');
 import moment = require('moment');
-import escapeStringRegexp = require('escape-string-regexp');
 import * as url from 'url';
 import * as path from 'path';
 import * as util from 'util';
@@ -52,10 +52,6 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** The arguments that were given to launchRequest */
     private _args: LaunchRequestArguments;
-    /** Cached RegExp that matches the serverSourceRoot at the beginning of a path */
-    private _serverSourceRootRegexp: RegExp;
-    /** Cached RegExp that mataches the localSourceRoot at the beginning of a path */
-    private _localSourceRootRegexp: RegExp;
     /** The TCP server that listens for XDebug connections */
     private _server: net.Server;
     /** All XDebug Connections. XDebug makes a new connection for each request to the webserver. */
@@ -91,14 +87,13 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
-        if (args.localSourceRoot && args.serverSourceRoot) {
+        if (args.serverSourceRoot) {
+            // use cwd by default for localSourceRoot
+            if (!args.localSourceRoot) {
+                args.localSourceRoot = '.';
+            }
             // resolve localSourceRoot relative to the project root
             args.localSourceRoot = path.resolve(process.cwd(), args.localSourceRoot);
-            this._serverSourceRootRegexp = new RegExp('^' + escapeStringRegexp(args.serverSourceRoot));
-            this._localSourceRootRegexp = new RegExp('^' + escapeStringRegexp(args.localSourceRoot));
-        } else if (!!args.localSourceRoot !== !!args.serverSourceRoot) {
-            this.sendErrorResponse(response, 0, 'You must specify both localSourceRoot and serverSourceRoot to enable source mapping');
-            return;
         }
         this._args = args;
         const server = this._server = net.createServer();
@@ -202,24 +197,37 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
     protected convertDebuggerPathToClient(fileUri: string): string {
-        let localPath = url.parse(fileUri).pathname.substr(1);
+        // convert the file URI to a path
+        const serverPath = url.parse(fileUri).pathname.substr(1);
+        let localPath: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
-            localPath = localPath.replace(this._serverSourceRootRegexp, this._args.localSourceRoot);
+            // get the part of the path that is relative to the source root
+            const pathRelativeToSourceRoot = path.relative(this._args.serverSourceRoot, serverPath);
+            // resolve from the local source root
+            localPath = path.resolve(this._args.localSourceRoot, pathRelativeToSourceRoot);
+        } else {
+            localPath = path.normalize(serverPath);
         }
         return localPath;
     }
 
     /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
-    protected convertClientPathToDebugger(path: string): string {
-        let serverPath = path.replace(/\\/g, '/');
-        if (serverPath[0] !== '/') {
-            serverPath = '/' + serverPath;
+    protected convertClientPathToDebugger(localPath: string): string {
+        let localFileUri = localPath.replace(/\\/g, '/');
+        if (localFileUri[0] !== '/') {
+            localFileUri = '/' + localFileUri;
         }
-        serverPath = encodeURI('file://' + serverPath);
+        localFileUri = encodeURI('file://' + localFileUri);
+        let serverFileUri: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
-            serverPath = serverPath.replace(this._localSourceRootRegexp, this._args.serverSourceRoot);
+            // get the part of the path that is relative to the source root
+            const urlRelativeToSourceRoot = urlRelative(this._args.localSourceRoot, localPath);
+            // resolve from the server source root
+            serverFileUri = url.resolve(this._args.serverSourceRoot, urlRelativeToSourceRoot);
+        } else {
+            serverFileUri = localFileUri;
         }
-        return serverPath;
+        return localFileUri;
     }
 
     /** Logs all requests before dispatching */
