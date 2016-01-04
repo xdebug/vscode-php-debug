@@ -35,6 +35,7 @@ Now, when you make a request to `localhost` with your webbrowser, XDebug will co
 What is supported?
 ------------------
  - Line breakpoints
+ - Conditional breakpoints
  - Step over, step in, step out
  - Break on entry
  - Breaking on uncaught exceptions and errors / warnings / notices
@@ -46,7 +47,6 @@ What is supported?
 
 What is not supported?
 ----------------------
- - Conditional breakpoints (not yet implemented)
  - Breaking on _caught_ exceptions, this is not supported by XDebug and the setting is ignored
  - Attach requests, there is no such thing because the lifespan of PHP scripts is short
 

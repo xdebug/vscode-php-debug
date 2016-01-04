@@ -39,6 +39,7 @@ export class XDebugError extends Error {
     constructor(message: string, code: number) {
         super(message);
         this.code = code;
+        this.name = 'XDebugError';
     }
 }
 
@@ -108,35 +109,39 @@ export class StatusResponse extends Response {
     }
 }
 
-/** Returned by a breakpoint_list command */
-export class Breakpoint {
-    /** Unique ID which is used for modifying the breakpoint */
+/** Abstract base class for all breakpoints */
+export abstract class Breakpoint {
+    /** Unique ID which is used for modifying the breakpoint (only when received through breakpoint_list) */
     id: number;
     /** The type of the breakpoint: line, call, return, exception, conditional or watch */
     type: string;
     /** State of the breakpoint: enabled, disabled */
     state: string;
-    /** File URI, if type is line */
-    fileUri: string;
-    /** Line, if type is line */
-    line: number;
-    /** Exception, if type is exception */
-    exception: string;
     /** The connection this breakpoint is set on */
     connection: Connection;
-    /**
-     * @param  {Element} breakpointNode
-     * @param  {Connection} connection
-     */
-    constructor(breakpointNode: Element, connection: Connection) {
-        this.id = parseInt(breakpointNode.getAttribute('id'));
-        this.type = breakpointNode.getAttribute('type');
-        if (this.type === 'line') {
-            this.line = parseInt(breakpointNode.getAttribute('line'));
-        } else if (this.type === 'exception') {
-            this.exception = breakpointNode.getAttribute('exception');
+    /** dynamically detects the type of breakpoint and returns the appropiate object */
+    public static fromXml(breakpointNode: Element, connection: Connection): Breakpoint {
+        switch (breakpointNode.getAttribute('type')) {
+            case 'exception': return new ExceptionBreakpoint(breakpointNode, connection);
+            case 'line': return new LineBreakpoint(breakpointNode, connection);
+            case 'conditional': return new ConditionalBreakpoint(breakpointNode, connection);
         }
-        this.connection = connection;
+    }
+    /** Constructs a breakpoint object from an XML node from a XDebug response */
+    constructor(breakpointNode: Element, connection: Connection);
+    /** To create a new breakpoint in derived classes */
+    constructor(type: string);
+    constructor() {
+        if (typeof arguments[0] === 'object') {
+            // from XML
+            const breakpointNode: Element = arguments[0];
+            this.connection = arguments[1];
+            this.type = breakpointNode.getAttribute('type');
+            this.id = parseInt(breakpointNode.getAttribute('id'));
+            this.state = breakpointNode.getAttribute('state');
+        } else {
+            this.type = arguments[0];
+        }
     }
     /** Removes the breakpoint by sending a breakpoint_remove command */
     public remove() {
@@ -144,6 +149,84 @@ export class Breakpoint {
     }
 }
 
+/** class for line breakpoints. Returned from a breakpoint_list or passed to sendBreakpointSetCommand */
+export class LineBreakpoint extends Breakpoint {
+    /** File URI of the file in which to break */
+    fileUri: string;
+    /** Line to break on */
+    line: number;
+    /** constructs a line breakpoint from an XML node */
+    constructor(breakpointNode: Element, connection: Connection);
+    /** contructs a line breakpoint for passing to sendSetBreakpointCommand */
+    constructor(fileUri: string, line: number);
+    constructor() {
+        if (typeof arguments[0] === 'object') {
+            const breakpointNode: Element = arguments[0];
+            const connection: Connection = arguments[1];
+            super(breakpointNode, connection);
+            this.line = parseInt(breakpointNode.getAttribute('line'));
+        } else {
+            // construct from arguments
+            this.fileUri = arguments[0];
+            this.line = arguments[1];
+            super('line');
+        }
+    }
+}
+
+/** class for exception breakpoints. Returned from a breakpoint_list or passed to sendBreakpointSetCommand */
+export class ExceptionBreakpoint extends Breakpoint {
+    /** The Exception name to break on. Can also contain wildcards. */
+    exception: string;
+    /** Constructs a breakpoint object from an XML node from a XDebug response */
+    constructor(breakpointNode: Element, connection: Connection);
+    /** Constructs a breakpoint for passing it to sendSetBreakpointCommand */
+    constructor(exception: string);
+    constructor() {
+        if (typeof arguments[0] === 'object') {
+            // from XML
+            const breakpointNode: Element = arguments[0];
+            const connection: Connection = arguments[1];
+            super(breakpointNode, connection);
+            this.exception = breakpointNode.getAttribute('exception');
+        } else {
+            // from arguments
+            super('exception');
+            this.exception = arguments[0];
+        }
+    }
+}
+
+/** class for conditional breakpoints. Returned from a breakpoint_list or passed to sendBreakpointSetCommand */
+export class ConditionalBreakpoint extends Breakpoint {
+    /** File URI */
+    fileUri: string;
+    /** Line (optional)*/
+    line: number;
+    /** The PHP expression under which to break on */
+    expression: string;
+    /** Constructs a breakpoint object from an XML node from a XDebug response */
+    constructor(breakpointNode: Element, connection: Connection);
+    /** Contructs a breakpoint object for passing to sendSetBreakpointCommand */
+    constructor(expression: string, fileUri: string, line?: number);
+    constructor() {
+        if (typeof arguments[0] === 'object') {
+            // from XML
+            const breakpointNode: Element = arguments[0];
+            const connection: Connection = arguments[1];
+            super(breakpointNode, connection);
+            this.expression = breakpointNode.getAttribute('expression'); // Base64 encoded?
+        } else {
+            // from arguments
+            super('conditional');
+            this.expression = arguments[0];
+            this.fileUri = arguments[1];
+            this.line = arguments[2];
+        }
+    }
+}
+
+/** Response to a breakpoint_set command */
 export class BreakpointSetResponse extends Response {
     breakpointId: number;
     constructor(document: XMLDocument, connection: Connection) {
@@ -162,7 +245,7 @@ export class BreakpointListResponse extends Response {
      */
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
-        this.breakpoints = Array.from(document.documentElement.childNodes).map((breakpointNode: Element) => new Breakpoint(breakpointNode, connection));
+        this.breakpoints = Array.from(document.documentElement.childNodes).map((breakpointNode: Element) => Breakpoint.fromXml(breakpointNode, connection));
     }
 }
 
@@ -563,23 +646,24 @@ export class Connection extends DbgpConnection {
 
     /**
      * Sends a breakpoint_set command that sets a breakpoint.
-     * @param {object} breakpoint
-     * @param {string} breakpoint.type - the type of breakpoint. Can be 'line' or 'exception'
-     * @param {string} [breakpoint.fileUri] - the file URI to break on if type is 'line'
-     * @param {number} [breakpoint.line] - the line to break on if type is 'line'
-     * @param {string} [breakpoint.exception] - the exception class name to break on if type is 'exception'
+     * @param {Breakpoint} breakpoint - an instance of LineBreakpoint, ConditionalBreakpoint or ExceptionBreakpoint
      * @returns Promise.<BreakpointSetResponse>
      */
-    public sendBreakpointSetCommand(breakpoint: {type: string, fileUri?: string, line?: number, exception?: string}): Promise<BreakpointSetResponse> {
-        let args = `-t ${breakpoint.type} `;
-        if (breakpoint.type === 'line') {
-            args += `-f ${breakpoint.fileUri} -n ${breakpoint.line}`;
-        } else if (breakpoint.type === 'exception') {
-            args += `-x ${breakpoint.exception}`;
-        } else {
-            return Promise.reject<BreakpointSetResponse>(new Error('unsupported breakpoint type'));
+    public sendBreakpointSetCommand(breakpoint: Breakpoint): Promise<BreakpointSetResponse> {
+        let args = `-t ${breakpoint.type}`;
+        let data: string;
+        if (breakpoint instanceof LineBreakpoint) {
+            args += ` -f ${breakpoint.fileUri} -n ${breakpoint.line}`;
+        } else if (breakpoint instanceof ExceptionBreakpoint) {
+            args += ` -x ${breakpoint.exception}`;
+        } else if (breakpoint instanceof ConditionalBreakpoint) {
+            args += ` -f ${breakpoint.fileUri}`;
+            if (typeof breakpoint.line === 'number') {
+                args += ` -n ${breakpoint.line}`;
+            }
+            data = breakpoint.expression;
         }
-        return this._enqueueCommand('breakpoint_set', args).then(document => new BreakpointSetResponse(document, this));
+        return this._enqueueCommand('breakpoint_set', args, data).then(document => new BreakpointSetResponse(document, this));
     }
 
     /** sends a breakpoint_list command */

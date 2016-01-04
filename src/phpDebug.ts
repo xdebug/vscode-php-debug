@@ -249,36 +249,50 @@ class PhpDebugSession extends vscode.DebugSession {
     protected setBreakPointsRequest(response: VSCodeDebugProtocol.SetBreakpointsResponse, args: VSCodeDebugProtocol.SetBreakpointsArguments) {
         const fileUri = this.convertClientPathToDebugger(args.source.path);
         const connections = Array.from(this._connections.values());
-        let breakpoints: vscode.Breakpoint[];
+        let xdebugBreakpoints: Array<xdebug.ConditionalBreakpoint|xdebug.LineBreakpoint>;
+        response.body = {breakpoints: []};
+        // this is returned to VS Code
+        let vscodeBreakpoints: vscode.Breakpoint[];
         let breakpointsSetPromise: Promise<any>;
         if (connections.length === 0) {
             // if there are no connections yet, we cannot verify any breakpoint
-            breakpoints = args.lines.map(line => new vscode.Breakpoint(false, line));
+            vscodeBreakpoints = args.breakpoints.map(breakpoint => new vscode.Breakpoint(false, breakpoint.line));
             breakpointsSetPromise = Promise.resolve();
         } else {
-            breakpoints = [];
+            vscodeBreakpoints = [];
+            // create XDebug breakpoints from the arguments
+            xdebugBreakpoints = args.breakpoints.map(breakpoint => {
+                if (breakpoint.condition) {
+                    return new xdebug.ConditionalBreakpoint(breakpoint.condition, fileUri, breakpoint.line);
+                } else {
+                    return new xdebug.LineBreakpoint(fileUri, breakpoint.line);
+                }
+            });
+            // for all connections
             breakpointsSetPromise = Promise.all(connections.map((connection, connectionIndex) =>
                 // clear breakpoints for this file
                 connection.sendBreakpointListCommand()
                     .then(response => Promise.all(
                         response.breakpoints
-                            .filter(breakpoint => breakpoint.type === 'line' && breakpoint.fileUri === fileUri)
+                            // filte to only include line breakpoints for this file
+                            .filter(breakpoint => breakpoint instanceof xdebug.LineBreakpoint && breakpoint.fileUri === fileUri)
+                            // remove them
                             .map(breakpoint => breakpoint.remove())
                     ))
-                    // set them
-                    .then(() => Promise.all(args.lines.map(line =>
-                        connection.sendBreakpointSetCommand({type: 'line', fileUri, line})
+                    // set new breakpoints
+                    .then(() => Promise.all(xdebugBreakpoints.map(breakpoint =>
+                        connection.sendBreakpointSetCommand(breakpoint)
                             .then(xdebugResponse => {
                                 // only capture each breakpoint once
                                 if (connectionIndex === 0) {
-                                    breakpoints.push(new vscode.Breakpoint(true, line));
+                                    vscodeBreakpoints.push(new vscode.Breakpoint(true, breakpoint.line));
                                 }
                             })
                             .catch(error => {
                                 // only capture each breakpoint once
                                 if (connectionIndex === 0) {
-                                    console.error('breakpoint could not be set: ', error);
-                                    breakpoints.push(new vscode.Breakpoint(false, line));
+                                    console.error('breakpoint could not be set: ', error.message);
+                                    vscodeBreakpoints.push(new vscode.Breakpoint(false, breakpoint.line));
                                 }
                             })
                     )))
@@ -286,7 +300,7 @@ class PhpDebugSession extends vscode.DebugSession {
         }
         breakpointsSetPromise
             .then(() => {
-                response.body = {breakpoints};
+                response.body = {breakpoints: vscodeBreakpoints};
                 this.sendResponse(response);
             })
             .catch(error => {
@@ -302,10 +316,10 @@ class PhpDebugSession extends vscode.DebugSession {
             this.sendEvent(new vscode.OutputEvent('breaking on caught exceptions is not supported by XDebug', 'stderr'));
         }
         const connections = Array.from(this._connections.values());
-        // remove all exception breakpoints
         Promise.all(connections.map(connection =>
-            // remove all exception breakpoints
+            // get all breakpoints
             connection.sendBreakpointListCommand()
+                // remove all exception breakpoints
                 .then(response => Promise.all(
                     response.breakpoints
                         .filter(breakpoint => breakpoint.type === 'exception')
@@ -314,7 +328,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 .then(() => {
                     // if enabled, set exception breakpoint for all exceptions
                     if (breakOnExceptions) {
-                        return connection.sendBreakpointSetCommand({type: 'exception', exception: '*'});
+                        return connection.sendBreakpointSetCommand(new xdebug.ExceptionBreakpoint('*'));
                     }
                 })
         )).then(() => {
@@ -433,8 +447,6 @@ class PhpDebugSession extends vscode.DebugSession {
             const property = this._evalResultProperties.get(variablesReference);
             propertiesPromise = Promise.resolve(property.hasChildren ? property.children : []);
         } else {
-            console.error('Unknown variable reference: ' + variablesReference);
-            console.error('Known variables: ' + JSON.stringify(Array.from(this._properties)));
             this.sendErrorResponse(response, 0, 'Unknown variable reference');
             return;
         }
