@@ -10,7 +10,8 @@
         "email": "felix.b@outlook.com"
     },
     "engines": {
-        "vscode": "^0.10.6"
+        "vscode": "^0.10.6",
+        "node": ">=4.0.0"
     },
     "icon": "images/logo.svg",
     "galleryBanner": {
