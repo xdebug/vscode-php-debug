@@ -233,19 +233,19 @@ class PhpDebugSession extends vscode.DebugSession {
     /** Logs all requests before dispatching */
     protected dispatchRequest(request: VSCodeDebugProtocol.Request) {
         console.log(`\n\n-> ${request.command}Request`);
-        console.log(util.inspect(request));
+        console.log(util.inspect(request, {depth: null}));
         super.dispatchRequest(request);
     }
 
     public sendEvent(event: VSCodeDebugProtocol.Event): void {
 		console.log(`\n\n<- ${event.event}Event`)
-        console.log(util.inspect(event));
+        console.log(util.inspect(event, {depth: null}));
         super.sendEvent(event);
 	}
 
     public sendResponse(response: VSCodeDebugProtocol.Response) {
         console[response.success ? 'log' : 'error'](`\n\n<- ${response.command}Response`)
-        console[response.success ? 'log' : 'error'](util.inspect(response));
+        console[response.success ? 'log' : 'error'](util.inspect(response, {depth: null}));
         super.sendResponse(response);
     }
 
