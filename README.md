@@ -46,6 +46,18 @@ What is not supported?
  - Breaking on _caught_ exceptions, this is not supported by XDebug and the setting is ignored
  - Attach requests, there is no such thing because the lifespan of PHP scripts is short
 
+Remote Host Debugging
+---------------------
+If you want to debug a running application on a remote host, you have to set the `localSourceRoot` and `serverSourceRoot` settings in your launch.json.
+Example:
+```json
+"serverSourceRoot": "/var/www/myproject",
+"localSourceRoot": "./src"
+```
+`localSourceRoot` is resolved relative to the project root (the currently opened folder in VS Code).
+Both paths are normalized, so you can use slashes or backslashes no matter of the OS you're running.
+If no `localSourceRoot` is specified, the project root is assumed.
+
 FAQ
 ---
 
