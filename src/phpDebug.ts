@@ -198,7 +198,7 @@ class PhpDebugSession extends vscode.DebugSession {
     /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
     protected convertDebuggerPathToClient(fileUri: string): string {
         // convert the file URI to a path
-        const serverPath = url.parse(fileUri).pathname.substr(1);
+        const serverPath = decodeURI(url.parse(fileUri).pathname.substr(1));
         let localPath: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
             // get the part of the path that is relative to the source root
