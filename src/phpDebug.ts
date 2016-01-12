@@ -214,8 +214,8 @@ class PhpDebugSession extends vscode.DebugSession {
     /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
     protected convertDebuggerPathToClient(fileUri: string): string {
         // convert the file URI to a path. Don't remove starting slash on unix platforms.
-        let n:number = (/^win/.test(process.platform)) ? 1 : 0;
-        const serverPath = url.parse(fileUri).pathname.substr(n);
+        let n:number = (process.platform === 'win32') ? 1 : 0;
+        const serverPath = decodeURI(url.parse(fileUri).pathname.substr(n));
         let localPath: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
             if(this._args.localSourceRootRelative) {
@@ -255,19 +255,19 @@ class PhpDebugSession extends vscode.DebugSession {
     /** Logs all requests before dispatching */
     protected dispatchRequest(request: VSCodeDebugProtocol.Request) {
         console.log(`\n\n-> ${request.command}Request`);
-        console.log(util.inspect(request));
+        console.log(util.inspect(request, {depth: null}));
         super.dispatchRequest(request);
     }
 
     public sendEvent(event: VSCodeDebugProtocol.Event): void {
 		console.log(`\n\n<- ${event.event}Event`)
-        console.log(util.inspect(event));
+        console.log(util.inspect(event, {depth: null}));
         super.sendEvent(event);
 	}
 
     public sendResponse(response: VSCodeDebugProtocol.Response) {
         console[response.success ? 'log' : 'error'](`\n\n<- ${response.command}Response`)
-        console[response.success ? 'log' : 'error'](util.inspect(response));
+        console[response.success ? 'log' : 'error'](util.inspect(response, {depth: null}));
         super.sendResponse(response);
     }
 

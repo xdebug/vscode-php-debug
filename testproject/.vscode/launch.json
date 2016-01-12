@@ -1,5 +1,6 @@
 {
 	"version": "0.2.0",
+	// "debugServer": 4711, // Uncomment for debugging the adapter
 	"configurations": [
 		{
 			"name": "Listen for XDebug",
