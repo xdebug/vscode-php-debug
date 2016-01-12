@@ -227,7 +227,7 @@ class PhpDebugSession extends vscode.DebugSession {
         } else {
             serverFileUri = localFileUri;
         }
-        return localFileUri;
+        return serverFileUri;
     }
 
     /** Logs all requests before dispatching */
