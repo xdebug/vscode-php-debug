@@ -46,6 +46,8 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     serverSourceRoot?: string;
     /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. May be relative to the project root. */
     localSourceRoot?: string;
+    /** Whether or not localSourceRoot is a relative path. Will be overridden on runtime. */
+    localSourceRootRelative?: boolean;
 }
 
 class PhpDebugSession extends vscode.DebugSession {
@@ -91,8 +93,6 @@ class PhpDebugSession extends vscode.DebugSession {
             // use cwd by default for localSourceRoot
             if (!args.localSourceRoot) {
                 args.localSourceRoot = '.';
-                // resolve localSourceRoot relative to the project root
-                args.localSourceRoot = path.resolve(process.cwd(), args.localSourceRoot);
             } else {
                 // If serverSourceRoot has a trailing slash include it in localSourceRoot and vice-versa.
                 // Helps the string replace we'll do when mapping the stack trace.
@@ -102,7 +102,15 @@ class PhpDebugSession extends vscode.DebugSession {
                     args.serverSourceRoot += "/";
                 }
             }
+
+            // resolve localSourceRoot relative to the project root
+            args.localSourceRootRelative = false;
+            if(args.localSourceRoot.startsWith(".")) {
+                args.localSourceRootRelative = true;
+                args.localSourceRoot = path.resolve(process.cwd(), args.localSourceRoot);
+            }
         }
+
         this._args = args;
         const server = this._server = net.createServer();
         server.on('connection', (socket: net.Socket) => {
@@ -210,7 +218,15 @@ class PhpDebugSession extends vscode.DebugSession {
         const serverPath = url.parse(fileUri).pathname.substr(n);
         let localPath: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
-            localPath = serverPath.replace(this._args.serverSourceRoot, this._args.localSourceRoot);
+            if(this._args.localSourceRootRelative) {
+                // get the part of the path that is relative to the source root
+                const pathRelativeToSourceRoot = path.relative(this._args.serverSourceRoot, serverPath);
+                // resolve from the local source root
+                localPath = path.resolve(this._args.localSourceRoot, pathRelativeToSourceRoot);
+            } else {
+                // If using absolute paths do a string replace
+                localPath = serverPath.replace(this._args.serverSourceRoot, this._args.localSourceRoot);
+            }
         } else {
             localPath = path.normalize(serverPath);
         }
