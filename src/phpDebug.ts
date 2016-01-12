@@ -197,14 +197,12 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
     protected convertDebuggerPathToClient(fileUri: string): string {
-        // convert the file URI to a path
-        const serverPath = url.parse(fileUri).pathname.substr(1);
+        // convert the file URI to a path. Don't remove starting slash on unix platforms.
+        let n:number = (/^win/.test(process.platform)) ? 1 : 0;
+        const serverPath = url.parse(fileUri).pathname.substr(n);
         let localPath: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
-            // get the part of the path that is relative to the source root
-            const pathRelativeToSourceRoot = path.relative(this._args.serverSourceRoot, serverPath);
-            // resolve from the local source root
-            localPath = path.resolve(this._args.localSourceRoot, pathRelativeToSourceRoot);
+            localPath = serverPath.replace(this._args.serverSourceRoot, this._args.localSourceRoot);
         } else {
             localPath = path.normalize(serverPath);
         }
@@ -217,7 +215,6 @@ class PhpDebugSession extends vscode.DebugSession {
         if (localFileUri[0] !== '/') {
             localFileUri = '/' + localFileUri;
         }
-        localFileUri = encodeURI('file://' + localFileUri);
         let serverFileUri: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
             // get the part of the path that is relative to the source root
@@ -227,7 +224,8 @@ class PhpDebugSession extends vscode.DebugSession {
         } else {
             serverFileUri = localFileUri;
         }
-        return localFileUri;
+        serverFileUri = encodeURI('file://' + serverFileUri);
+        return serverFileUri;
     }
 
     /** Logs all requests before dispatching */
