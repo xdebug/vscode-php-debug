@@ -108,6 +108,14 @@ class PhpDebugSession extends vscode.DebugSession {
             if(args.localSourceRoot.startsWith(".")) {
                 args.localSourceRootRelative = true;
                 args.localSourceRoot = path.resolve(process.cwd(), args.localSourceRoot);
+            } else {
+                // If serverSourceRoot has a trailing slash include it in localSourceRoot and vice-versa.
+                // Helps the string replace we'll do when mapping the stack trace.
+                if(args.serverSourceRoot.endsWith("/") && !args.localSourceRoot.endsWith("/")) {
+                    args.localSourceRoot += "/";
+                } else if(args.localSourceRoot.endsWith("/") && !args.serverSourceRoot.endsWith("/")) {
+                    args.serverSourceRoot += "/";
+                }
             }
         }
 
