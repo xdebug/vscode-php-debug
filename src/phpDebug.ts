@@ -91,9 +91,9 @@ class PhpDebugSession extends vscode.DebugSession {
             // use cwd by default for localSourceRoot
             if (!args.localSourceRoot) {
                 args.localSourceRoot = '.';
+                // resolve localSourceRoot relative to the project root
+                args.localSourceRoot = path.resolve(process.cwd(), args.localSourceRoot);
             }
-            // resolve localSourceRoot relative to the project root
-            args.localSourceRoot = path.resolve(process.cwd(), args.localSourceRoot);
         }
         this._args = args;
         const server = this._server = net.createServer();
