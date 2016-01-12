@@ -46,8 +46,11 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     serverSourceRoot?: string;
     /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. May be relative to the project root. */
     localSourceRoot?: string;
+<<<<<<< HEAD
     /** Whether or not localSourceRoot is a relative path. Will be overridden on runtime. */
     localSourceRootRelative?: boolean;
+=======
+>>>>>>> be794c586881fc0234a130900047540a839b9a21
 }
 
 class PhpDebugSession extends vscode.DebugSession {
@@ -93,6 +96,7 @@ class PhpDebugSession extends vscode.DebugSession {
             // use cwd by default for localSourceRoot
             if (!args.localSourceRoot) {
                 args.localSourceRoot = '.';
+<<<<<<< HEAD
             } else {
                 // If serverSourceRoot has a trailing slash include it in localSourceRoot and vice-versa.
                 // Helps the string replace we'll do when mapping the stack trace.
@@ -120,6 +124,12 @@ class PhpDebugSession extends vscode.DebugSession {
 =======
 >>>>>>> 826c22af75ba8da948b0d16884e40b08e8f829cc
             }
+=======
+            }
+
+            // resolve localSourceRoot relative to the project root
+            args.localSourceRoot = path.resolve(process.cwd(), args.localSourceRoot);
+>>>>>>> be794c586881fc0234a130900047540a839b9a21
         }
 
         this._args = args;
@@ -226,6 +236,7 @@ class PhpDebugSession extends vscode.DebugSession {
     protected convertDebuggerPathToClient(fileUri: string): string {
         // convert the file URI to a path. Don't remove starting slash on unix platforms.
 <<<<<<< HEAD
+<<<<<<< HEAD
         let n:number = (process.platform === 'win32') ? 1 : 0;
 =======
         let n:number = (/^win/.test(process.platform)) ? 1 : 0;
@@ -242,6 +253,16 @@ class PhpDebugSession extends vscode.DebugSession {
                 // If using absolute paths do a string replace
                 localPath = serverPath.replace(this._args.serverSourceRoot, this._args.localSourceRoot);
             }
+=======
+        let n:number = (process.platform === 'win32') ? 1 : 0;
+        const serverPath = decodeURI(url.parse(fileUri).pathname.substr(n));
+        let localPath: string;
+        if (this._args.serverSourceRoot && this._args.localSourceRoot) {
+            // get the part of the path that is relative to the source root
+            const pathRelativeToSourceRoot = path.relative(this._args.serverSourceRoot, serverPath);
+            // resolve from the local source root
+            localPath = path.resolve(this._args.localSourceRoot, pathRelativeToSourceRoot);
+>>>>>>> be794c586881fc0234a130900047540a839b9a21
         } else {
             localPath = path.normalize(serverPath);
         }
