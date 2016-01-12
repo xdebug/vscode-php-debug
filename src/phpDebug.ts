@@ -108,6 +108,7 @@ class PhpDebugSession extends vscode.DebugSession {
             if(args.localSourceRoot.startsWith(".")) {
                 args.localSourceRootRelative = true;
                 args.localSourceRoot = path.resolve(process.cwd(), args.localSourceRoot);
+<<<<<<< HEAD
             } else {
                 // If serverSourceRoot has a trailing slash include it in localSourceRoot and vice-versa.
                 // Helps the string replace we'll do when mapping the stack trace.
@@ -116,6 +117,8 @@ class PhpDebugSession extends vscode.DebugSession {
                 } else if(args.localSourceRoot.endsWith("/") && !args.serverSourceRoot.endsWith("/")) {
                     args.serverSourceRoot += "/";
                 }
+=======
+>>>>>>> 826c22af75ba8da948b0d16884e40b08e8f829cc
             }
         }
 
@@ -222,7 +225,11 @@ class PhpDebugSession extends vscode.DebugSession {
     /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
     protected convertDebuggerPathToClient(fileUri: string): string {
         // convert the file URI to a path. Don't remove starting slash on unix platforms.
+<<<<<<< HEAD
         let n:number = (process.platform === 'win32') ? 1 : 0;
+=======
+        let n:number = (/^win/.test(process.platform)) ? 1 : 0;
+>>>>>>> 826c22af75ba8da948b0d16884e40b08e8f829cc
         const serverPath = url.parse(fileUri).pathname.substr(n);
         let localPath: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
