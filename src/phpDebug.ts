@@ -91,14 +91,6 @@ class PhpDebugSession extends vscode.DebugSession {
             // use cwd by default for localSourceRoot
             if (!args.localSourceRoot) {
                 args.localSourceRoot = '.';
-            } else {
-                // If serverSourceRoot has a trailing slash include it in localSourceRoot and vice-versa.
-                // Helps the string replace we'll do when mapping the stack trace.
-                if(args.serverSourceRoot.endsWith("/") && !args.localSourceRoot.endsWith("/")) {
-                    args.localSourceRoot += "/";
-                } else if(args.localSourceRoot.endsWith("/") && !args.serverSourceRoot.endsWith("/")) {
-                    args.serverSourceRoot += "/";
-                }
             }
 
             // resolve localSourceRoot relative to the project root
