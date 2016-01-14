@@ -221,7 +221,7 @@ class PhpDebugSession extends vscode.DebugSession {
         let serverFileUri: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
             // get the part of the path that is relative to the source root
-            const urlRelativeToSourceRoot = urlRelative(this._args.localSourceRoot, localPath);
+            const urlRelativeToSourceRoot = urlRelative(this._args.localSourceRoot, localFileUri);
             // resolve from the server source root
             serverFileUri = url.resolve(this._args.serverSourceRoot, urlRelativeToSourceRoot);
         } else {
