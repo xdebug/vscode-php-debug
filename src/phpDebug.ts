@@ -249,7 +249,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     public sendEvent(event: VSCodeDebugProtocol.Event): void {
-        const log = `-> ${event.event}Event\n${util.inspect(event, {depth: null})}\n\n`;
+        const log = `<- ${event.event}Event\n${util.inspect(event, {depth: null})}\n\n`;
         console.log(log);
         if (this._args && this._args.log && !(event instanceof vscode.OutputEvent)) {
             this.sendEvent(new vscode.OutputEvent(log));
@@ -258,7 +258,7 @@ class PhpDebugSession extends vscode.DebugSession {
 	}
 
     public sendResponse(response: VSCodeDebugProtocol.Response) {
-        const log = `-> ${response.command}Response\n${util.inspect(response, {depth: null})}\n\n`;
+        const log = `<- ${response.command}Response\n${util.inspect(response, {depth: null})}\n\n`;
         console[response.success ? 'log' : 'error'](log);
         if (this._args && this._args.log) {
             this.sendEvent(new vscode.OutputEvent(log, response.success ? 'stdout' : 'stderr'));
