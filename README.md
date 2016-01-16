@@ -58,6 +58,12 @@ Example:
 Both paths are normalized, so you can use slashes or backslashes no matter of the OS you're running.
 If no `localSourceRoot` is specified, the project root is assumed.
 
+Troubleshooting
+---------------
+When you are facing problems, please don't send me private emails, instead ask on
+[Gitter](https://gitter.im/felixfbecker/vscode-php-debug) or if you think there is a bug in the adapter, [open an issue](https://github.com/felixfbecker/vscode-php-debug/issues).
+If it fails with your ultra-awesome MVC app, please first try it on a dead-simple test.php (like the one in the [testproject](https://github.com/felixfbecker/vscode-php-debug/tree/master/testproject)). Please provide some info by setting `xdebug.remote_log = /path/to/logfile` in your php.ini (you will need to restart your webserver), `"log": true` in your launch.json and posting the two logs.
+
 FAQ
 ---
 
@@ -81,7 +87,7 @@ PS C:\Users\felix\github\vscode-php-debug> code .\testproject\ --extensionDevelo
 ```
 
 VS Code will open an "Extension Development Host" with the debug adapter running. Open `.vscode/launch.json` and
-uncomment the `debugServer` configuration line. Hit `F5` to start a debugging session. 
+uncomment the `debugServer` configuration line. Hit `F5` to start a debugging session.
 Now, you can debug the testproject like specified above and set breakpoints inside your first VS Code instance to step through the adapter code.
 
 [![Gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)

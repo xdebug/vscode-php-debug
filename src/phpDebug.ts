@@ -48,6 +48,8 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     localSourceRoot?: string;
     /** The current working directory, by default the project root */
     cwd?: string;
+    /** If true, will log all communication between VS Code and the adapter to the console */
+    log: boolean;
 }
 
 class PhpDebugSession extends vscode.DebugSession {
@@ -238,20 +240,29 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** Logs all requests before dispatching */
     protected dispatchRequest(request: VSCodeDebugProtocol.Request) {
-        console.log(`\n\n-> ${request.command}Request`);
-        console.log(util.inspect(request, {depth: null}));
+        const log = `-> ${request.command}Request\n${util.inspect(request, {depth: null})}\n\n`;
+        console.log(log);
+        if (this._args && this._args.log) {
+            this.sendEvent(new vscode.OutputEvent(log));
+        }
         super.dispatchRequest(request);
     }
 
     public sendEvent(event: VSCodeDebugProtocol.Event): void {
-		console.log(`\n\n<- ${event.event}Event`)
-        console.log(util.inspect(event, {depth: null}));
+        const log = `-> ${event.event}Event\n${util.inspect(event, {depth: null})}\n\n`;
+        console.log(log);
+        if (this._args && this._args.log && !(event instanceof vscode.OutputEvent)) {
+            this.sendEvent(new vscode.OutputEvent(log));
+        }
         super.sendEvent(event);
 	}
 
     public sendResponse(response: VSCodeDebugProtocol.Response) {
-        console[response.success ? 'log' : 'error'](`\n\n<- ${response.command}Response`)
-        console[response.success ? 'log' : 'error'](util.inspect(response, {depth: null}));
+        const log = `-> ${response.command}Response\n${util.inspect(response, {depth: null})}\n\n`;
+        console[response.success ? 'log' : 'error'](log);
+        if (this._args && this._args.log) {
+            this.sendEvent(new vscode.OutputEvent(log, response.success ? 'stdout' : 'stderr'));
+        }
         super.sendResponse(response);
     }
 

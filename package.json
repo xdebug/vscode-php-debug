@@ -88,6 +88,10 @@
               "cwd": {
                 "type": "string",
                 "description": "The current working directory, by default the project root"
+              },
+              "log": {
+                "type": "boolean",
+                "description": "If true, will log all communication between VS Code and the adapter"
               }
             }
           }
