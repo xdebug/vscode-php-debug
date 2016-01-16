@@ -44,8 +44,10 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     stopOnEntry?: boolean;
     /** The source root on the server when doing remote debugging on a different host */
     serverSourceRoot?: string;
-    /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. May be relative to the project root. */
+    /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. May be relative to cwd. */
     localSourceRoot?: string;
+    /** The current working directory, by default the project root */
+    cwd?: string;
 }
 
 class PhpDebugSession extends vscode.DebugSession {
@@ -93,7 +95,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 args.localSourceRoot = '.';
             }
             // resolve localSourceRoot relative to the project root
-            args.localSourceRoot = path.resolve(process.cwd(), args.localSourceRoot);
+            args.localSourceRoot = path.resolve(args.cwd, args.localSourceRoot);
         }
         this._args = args;
         const server = this._server = net.createServer();

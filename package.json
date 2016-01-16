@@ -84,6 +84,10 @@
               "localSourceRoot": {
                 "type": "string",
                 "description": "The source root on this machine that is the equivalent to the serverSourceRoot on the server. May be relative to the project root."
+              },
+              "cwd": {
+                "type": "string",
+                "description": "The current working directory, by default the project root"
               }
             }
           }
