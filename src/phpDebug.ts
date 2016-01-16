@@ -8,6 +8,16 @@ import * as url from 'url';
 import * as path from 'path';
 import * as util from 'util';
 
+/** converts a path to a file URI */
+function fileUrl(path: string): string {
+    let pathName = path.replace(/\\/g, '/');
+    // Windows drive letter must be prefixed with a slash
+    if (pathName[0] !== '/') {
+        pathName = '/' + pathName;
+    }
+    return encodeURI('file://' + pathName);
+}
+
 /** formats a xdebug property value for VS Code */
 function formatPropertyValue(property: xdebug.BaseProperty): string {
     let displayValue: string;
@@ -221,17 +231,21 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
     protected convertClientPathToDebugger(localPath: string): string {
-        let localFileUri = localPath.replace(/\\/g, '/');
-        if (localFileUri[0] !== '/') {
-            localFileUri = '/' + localFileUri;
-        }
-        localFileUri = encodeURI('file://' + localFileUri);
+        let localFileUri = fileUrl(localPath);
         let serverFileUri: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
+            let localSourceRootUrl = fileUrl(this._args.localSourceRoot);
+            if (!localSourceRootUrl.endsWith('/')) {
+                localSourceRootUrl += '/';
+            }
+            let serverSourceRootUrl = fileUrl(this._args.serverSourceRoot);
+            if (!serverSourceRootUrl.endsWith('/')) {
+                serverSourceRootUrl += '/';
+            }
             // get the part of the path that is relative to the source root
-            const urlRelativeToSourceRoot = urlRelative(this._args.localSourceRoot, localFileUri);
+            const urlRelativeToSourceRoot = urlRelative(localSourceRootUrl, localFileUri);
             // resolve from the server source root
-            serverFileUri = url.resolve(this._args.serverSourceRoot, urlRelativeToSourceRoot);
+            serverFileUri = url.resolve(serverSourceRootUrl, urlRelativeToSourceRoot);
         } else {
             serverFileUri = localFileUri;
         }
