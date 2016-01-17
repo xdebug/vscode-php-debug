@@ -394,16 +394,28 @@ export class Connection extends DbgpConnection {
 
     /** a counter for unique connection IDs */
     private static _connectionCounter = 1;
+
     /** unique connection ID */
     public id: number;
+
     /** the time this connection was established */
     public timeEstablished: Date;
-    /** a counter for unique transaction IDs */
-    private _transactionCounter = 0;
+
+    /** a counter for unique transaction IDs. */
+    private _transactionCounter = 1;
+
     /** the promise that gets resolved once we receive the init packet */
     private _initPromise: Promise<InitPacket>;
-    /** the currently pending command that has been sent to XDebug and is awaiting a response or null */
-    private _pendingCommand: Command;
+
+    /** resolves the init promise */
+    private _initPromiseResolveFn: (initPackt: InitPacket) => any;
+
+    /**
+     * a map from transaction IDs to pending commands that have been sent to XDebug and are awaiting a response.
+     * This should in theory only contain max one element at any time.
+     */
+    private _pendingCommands = new Map<number, Command>();
+
     /**
      * XDebug does NOT support async communication.
      * This means before sending a new command, we have to wait until we get a response for the previous.
@@ -417,13 +429,7 @@ export class Connection extends DbgpConnection {
         this.id = Connection._connectionCounter++;
         this.timeEstablished = new Date();
         this._initPromise = new Promise<InitPacket>((resolve, reject) => {
-            this._pendingCommand = {
-                name: null,
-                rejectFn: reject,
-                resolveFn: (document: XMLDocument) => {
-                    resolve(new InitPacket(document, this));
-                }
-            };
+            this._initPromiseResolveFn = resolve;
         });
         console.log('New XDebug Connection #' + this.id);
     }
@@ -438,18 +444,19 @@ export class Connection extends DbgpConnection {
      * After that, the next command in the queue is executed (if there is any).
      */
     protected handleResponse(response: XMLDocument): void {
-        // XDebug sent us a packet
-        // Anatomy: [data length] [NULL] [xml] [NULL]
-        const command = this._pendingCommand;
-        if (!command) {
-            console.error('XDebug sent a response, but there was no pending command');
-            return;
-        }
-        this._pendingCommand = null;
-        command.resolveFn(response);
-        if (this._commandQueue.length > 0) {
-            const command = this._commandQueue.shift();
-            this._executeCommand(command);
+        if (response.documentElement.nodeName === 'init') {
+            this._initPromiseResolveFn(new InitPacket(response, this));
+        } else {
+            const transactionId = parseInt(response.documentElement.getAttribute('transaction_id'));
+            if (this._pendingCommands.has(transactionId)) {
+                const command = this._pendingCommands.get(transactionId);
+                this._pendingCommands.delete(transactionId);
+                command.resolveFn(response);
+            }
+            if (this._commandQueue.length > 0) {
+                const command = this._commandQueue.shift();
+                this._executeCommand(command);
+            }
         }
     }
 
@@ -461,7 +468,7 @@ export class Connection extends DbgpConnection {
     private _enqueueCommand(name: string, args?: string, data?: string): Promise<XMLDocument> {
         return new Promise((resolveFn, rejectFn) => {
             const command = {name, args, data, resolveFn, rejectFn};
-            if (this._commandQueue.length === 0 && !this._pendingCommand) {
+            if (this._commandQueue.length === 0 && this._pendingCommands.size === 0) {
                 this._executeCommand(command);
             } else {
                 this._commandQueue.push(command);
@@ -486,7 +493,7 @@ export class Connection extends DbgpConnection {
         commandString += '\0';
         const data = iconv.encode(commandString, ENCODING);
         this.write(data);
-        this._pendingCommand = command;
+        this._pendingCommands.set(transactionId, command);
     }
 
     // ------------------------ status --------------------------------------------
