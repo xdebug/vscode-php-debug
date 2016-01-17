@@ -276,11 +276,14 @@ class PhpDebugSession extends vscode.DebugSession {
                     .then(() => Promise.all(args.lines.map(line =>
                         connection.sendBreakpointSetCommand({type: 'line', fileUri, line})
                             .then(xdebugResponse => {
-                                // remember that the breakpoints for this connection have been set
-                                this._connectionsAwaitingBreakpoints.delete(connection);
-                                // if this connection has also already received exception breakpoints, run it
-                                if (!this._connectionsAwaitingExceptionBreakpoints.has(connection)) {
-                                    this._runOrStopOnEntry(connection);
+                                // has this connection finally received its long-awaited breakpoints?
+                                if (this._connectionsAwaitingBreakpoints.has(connection)) {
+                                    // remember that the breakpoints for this connection have been set
+                                    this._connectionsAwaitingBreakpoints.delete(connection);
+                                    // if this connection has already received exception breakpoints, run it now
+                                    if (!this._connectionsAwaitingExceptionBreakpoints.has(connection)) {
+                                        this._runOrStopOnEntry(connection);
+                                    }
                                 }
                                 // only capture each breakpoint once
                                 if (connectionIndex === 0) {
@@ -331,11 +334,14 @@ class PhpDebugSession extends vscode.DebugSession {
                     }
                 })
                 .then(() => {
-                    // remember that the exception breakpoints for this connection have been set
-                    this._connectionsAwaitingExceptionBreakpoints.delete(connection);
-                    // if this connection has also already received line breakpoints, run it
-                    if (!this._connectionsAwaitingBreakpoints.has(connection)) {
-                        this._runOrStopOnEntry(connection);
+                    // has this connection finally received its long-awaited exception breakpoints?
+                    if (this._connectionsAwaitingExceptionBreakpoints.has(connection)) {
+                        // remember that the exception breakpoints for this connection have been set
+                        this._connectionsAwaitingExceptionBreakpoints.delete(connection);
+                        // if this connection has already received line breakpoints, run it now
+                        if (!this._connectionsAwaitingBreakpoints.has(connection)) {
+                            this._runOrStopOnEntry(connection);
+                        }
                     }
                 })
         )).then(() => {
@@ -460,6 +466,10 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected continueRequest(response: VSCodeDebugProtocol.ContinueResponse, args: VSCodeDebugProtocol.ContinueArguments): void {
+        if (!args.threadId) {
+            this.sendErrorResponse(response, 0, 'No active connection');
+            return;
+        }
         const connection = this._connections.get(args.threadId);
         connection.sendRunCommand()
             .then(response => this._checkStatus(response))
@@ -468,6 +478,10 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected nextRequest(response: VSCodeDebugProtocol.NextResponse, args: VSCodeDebugProtocol.NextArguments): void {
+        if (!args.threadId) {
+            this.sendErrorResponse(response, 0, 'No active connection');
+            return;
+        }
         const connection = this._connections.get(args.threadId);
         connection.sendStepOverCommand()
             .then(response => this._checkStatus(response))
@@ -476,6 +490,10 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
 	protected stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments) : void {
+        if (!args.threadId) {
+            this.sendErrorResponse(response, 0, 'No active connection');
+            return;
+        }
         const connection = this._connections.get(args.threadId);
         connection.sendStepIntoCommand()
             .then(response => this._checkStatus(response))
@@ -484,6 +502,10 @@ class PhpDebugSession extends vscode.DebugSession {
 	}
 
 	protected stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments) : void {
+        if (!args.threadId) {
+            this.sendErrorResponse(response, 0, 'No active connection');
+            return;
+        }
         const connection = this._connections.get(args.threadId);
         connection.sendStepOutCommand()
             .then(response => this._checkStatus(response))
