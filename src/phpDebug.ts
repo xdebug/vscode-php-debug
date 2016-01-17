@@ -66,28 +66,38 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** The arguments that were given to launchRequest */
     private _args: LaunchRequestArguments;
+
     /** The TCP server that listens for XDebug connections */
     private _server: net.Server;
-    /** All XDebug Connections. XDebug makes a new connection for each request to the webserver. */
+
+    /**
+     * A map from VS Code thread IDs to XDebug Connections.
+     * XDebug makes a new connection for each request to the webserver, we present hese as threads to VS Code.
+     * The threadId key is equal to the id attribute of the connection.
+     */
     private _connections = new Map<number, xdebug.Connection>();
-    /** The first connection we receive */
-    private _mainConnection: xdebug.Connection = null;
-    /** Gets set to true after _runOrStopOnEntry is called the first time and means all exceptions etc. are set */
-    private _initialized = false;
-    /** A map of file URIs to lines: breakpoints received from VS Code */
-    private _breakpoints = new Map<string, number[]>();
-    /** Gets set after a setExceptionBreakpointsRequest */
-    private _breakOnExceptions: boolean;
+
+    /** A set of connecitons which still need to be initialized with exception breakpoints before _runOrStopOnEntry can be called. */
+    private _connectionsAwaitingExceptionBreakpoints = new Set<xdebug.Connection>();
+
+    /** A set of connecitons which still need to be initialized with exception breakpoints before _runOrStopOnEntry can be called. */
+    private _connectionsAwaitingBreakpoints = new Set<xdebug.Connection>();
+
     /** A counter for unique stackframe IDs */
     private _stackFrameIdCounter = 1;
+
     /** A map from unique stackframe IDs (even across connections) to XDebug stackframes */
     private _stackFrames = new Map<number, xdebug.StackFrame>();
+
     /** A counter for unique context, property and eval result properties (as these are all requested by a VariableRequest from VS Code) */
     private _variableIdCounter = 1;
+
     /** A map from unique VS Code variable IDs to an XDebug contexts */
     private _contexts = new Map<number, xdebug.Context>();
+
     /** A map from unique VS Code variable IDs to a XDebug properties */
     private _properties = new Map<number, xdebug.Property>();
+
     /** A map from unique VS Code variable IDs to XDebug eval result properties, because property children returned from eval commands are always inlined */
     private _evalResultProperties = new Map<number, xdebug.EvalResultProperty>();
 
@@ -115,55 +125,22 @@ class PhpDebugSession extends vscode.DebugSession {
             // new XDebug connection
             const connection = new xdebug.Connection(socket);
             this._connections.set(connection.id, connection);
-            if (this._initialized) {
-                // this is a new connection, for example triggered by a seperate, parallel request to the webserver.
-                connection.waitForInitPacket()
-                    // tell VS Code that this is a new thread
-                    .then(() => {
-                        this.sendEvent(new vscode.ThreadEvent('started', connection.id));
-                    })
-                    // set max_depth to 1 since VS Code requests nested structures individually anyway
-                    .then(() => connection.sendFeatureSetCommand('max_depth', '1'))
-                    // raise default of 32
-                    .then(() => connection.sendFeatureSetCommand('max_children', '9999'))
-                    // restore all breakpoints for the new connection
-                    .then(() => Promise.all(Array.from(this._breakpoints).map(([fileUri, lines]) =>
-                        Promise.all(lines.map(line =>
-                            connection.sendBreakpointSetCommand({type: 'line', fileUri, line})
-                        ))
-                    )))
-                    // restore exception breakpoint settings for the new connection
-                    .then(() => {
-                        if (this._breakOnExceptions) {
-                            return connection.sendBreakpointSetCommand({type: 'exception', exception: '*'});
-                        }
-                    })
-                    // run the script or stop on entry
-                    .then(() => this._runOrStopOnEntry(connection))
-                    .catch(error => {
-                        console.error('error: ', error);
-                    });
-            } else {
-                // this is the first connection
-                this._mainConnection = connection;
-                connection.waitForInitPacket()
-                    // set max_depth to 1 since VS Code requests nested structures individually anyway
-                    .then(initPacket => {
-                        return connection.sendFeatureSetCommand('max_depth', '1');
-                    })
-                    // raise default of 32
-                    .then(response => {
-                        return connection.sendFeatureSetCommand('max_children', '9999')
-                    })
-                    .then(response => {
-                        // tell VS Code we are ready to accept breakpoints
-                        // once VS Code has set all breakpoints setExceptionBreakpointsRequest will automatically call _runOrStopOnEntry with the mainConnection.
-                        this.sendEvent(new vscode.InitializedEvent());
-                    })
-                    .catch(error => {
-                        console.error('error: ', error);
-                    });
-            }
+            this._connectionsAwaitingBreakpoints.add(connection);
+            this._connectionsAwaitingExceptionBreakpoints.add(connection);
+            connection.waitForInitPacket()
+                .then(() => {
+                    this.sendEvent(new vscode.ThreadEvent('started', connection.id));
+                })
+                // set max_depth to 1 since VS Code requests nested structures individually anyway
+                .then(initPacket => connection.sendFeatureSetCommand('max_depth', '1'))
+                // raise default of 32
+                .then(response => connection.sendFeatureSetCommand('max_children', '9999'))
+                // request breakpoints from VS Code
+                // once VS Code has set all breakpoints (eg breakpointsSet and exceptionBreakpointsSet are true) _runOrStopOnEntry will be called
+                .then(response => this.sendEvent(new vscode.InitializedEvent()))
+                .catch(error => {
+                    console.error('error: ', error);
+                });
         });
         server.listen(args.port);
         this.sendResponse(response);
@@ -172,7 +149,6 @@ class PhpDebugSession extends vscode.DebugSession {
     /** is called after all breakpoints etc. are initialized and either runs the script or notifies VS Code that we stopped on entry, depending on launch settings */
     private _runOrStopOnEntry(connection: xdebug.Connection): void {
         // either tell VS Code we stopped on entry or run the script
-        this._initialized = true;
         if (this._args.stopOnEntry) {
             this.sendEvent(new vscode.StoppedEvent('entry', connection.id));
         } else {
@@ -186,13 +162,9 @@ class PhpDebugSession extends vscode.DebugSession {
         if (response.status === 'stopping') {
             connection.sendStopCommand().then(response => this._checkStatus(response));
         } else if (response.status === 'stopped') {
-            connection.close().then(() => {
-                this._connections.delete(connection.id);
-                if (this._mainConnection === connection) {
-                    this._mainConnection = null;
-                }
-                this.sendEvent(new vscode.ThreadEvent('exited', connection.id));
-            });
+            this._connections.delete(connection.id);
+            this.sendEvent(new vscode.ThreadEvent('exited', connection.id));
+            connection.close();
         } else if (response.status === 'break') {
             // StoppedEvent reason can be 'step', 'breakpoint', 'exception' or 'pause'
             let stoppedEventReason: string;
@@ -292,7 +264,7 @@ class PhpDebugSession extends vscode.DebugSession {
             breakpointsSetPromise = Promise.resolve();
         } else {
             breakpoints = [];
-            breakpointsSetPromise = Promise.all(connections.map(connection =>
+            breakpointsSetPromise = Promise.all(connections.map((connection, connectionIndex) =>
                 // clear breakpoints for this file
                 connection.sendBreakpointListCommand()
                     .then(response => Promise.all(
@@ -304,25 +276,30 @@ class PhpDebugSession extends vscode.DebugSession {
                     .then(() => Promise.all(args.lines.map(line =>
                         connection.sendBreakpointSetCommand({type: 'line', fileUri, line})
                             .then(xdebugResponse => {
-                                // only capture each breakpoint once (for the main connection)
-                                if (connection === this._mainConnection) {
+                                // remember that the breakpoints for this connection have been set
+                                this._connectionsAwaitingBreakpoints.delete(connection);
+                                // if this connection has also already received exception breakpoints, run it
+                                if (!this._connectionsAwaitingExceptionBreakpoints.has(connection)) {
+                                    this._runOrStopOnEntry(connection);
+                                }
+                                // only capture each breakpoint once
+                                if (connectionIndex === 0) {
                                     breakpoints.push(new vscode.Breakpoint(true, line));
                                 }
                             })
                             .catch(error => {
-                                // only capture each breakpoint once (for the main connection)
-                                if (connection === this._mainConnection) {
+                                // only capture each breakpoint once
+                                if (connectionIndex === 0) {
                                     console.error('breakpoint could not be set: ', error);
                                     breakpoints.push(new vscode.Breakpoint(false, line));
                                 }
                             })
                     )))
-            ))
+            ));
         }
         breakpointsSetPromise
             .then(() => {
                 response.body = {breakpoints};
-                this._breakpoints.set(fileUri, args.lines);
                 this.sendResponse(response);
             })
             .catch(error => {
@@ -337,38 +314,35 @@ class PhpDebugSession extends vscode.DebugSession {
         if (args.filters.indexOf('all') !== -1) {
             this.sendEvent(new vscode.OutputEvent('breaking on caught exceptions is not supported by XDebug', 'stderr'));
         }
-        Promise.resolve()
-            .then<any>(() => {
-                // does the new setting differ from the current setting?
-                if (breakOnExceptions !== !!this._breakOnExceptions) {
-                    const connections = Array.from(this._connections.values());
+        const connections = Array.from(this._connections.values());
+        // remove all exception breakpoints
+        Promise.all(connections.map(connection =>
+            // remove all exception breakpoints
+            connection.sendBreakpointListCommand()
+                .then(response => Promise.all(
+                    response.breakpoints
+                        .filter(breakpoint => breakpoint.type === 'exception')
+                        .map(breakpoint => breakpoint.remove())
+                ))
+                .then(() => {
+                    // if enabled, set exception breakpoint for all exceptions
                     if (breakOnExceptions) {
-                        // set an exception breakpoint for all exceptions
-                        return Promise.all(connections.map(connection => connection.sendBreakpointSetCommand({type: 'exception', exception: '*'})));
-                    } else {
-                        // remove all exception breakpoints
-                        return Promise.all(connections.map(connection =>
-                            connection.sendBreakpointListCommand()
-                                .then(response => Promise.all(
-                                    response.breakpoints
-                                        .filter(breakpoint => breakpoint.type === 'exception')
-                                        .map(breakpoint => breakpoint.remove())
-                                ))
-                        ));
+                        return connection.sendBreakpointSetCommand({type: 'exception', exception: '*'});
                     }
-                }
-            })
-            .then(() => {
-                this._breakOnExceptions = breakOnExceptions;
-                this.sendResponse(response);
-                // if this is the first time this is called and the main connection is not yet running, trigger a run because now everything is set up
-                if (!this._initialized) {
-                    this._runOrStopOnEntry(this._mainConnection);
-                }
-            })
-            .catch(error => {
-                this.sendErrorResponse(response, error.code, error.message);
-            })
+                })
+                .then(() => {
+                    // remember that the exception breakpoints for this connection have been set
+                    this._connectionsAwaitingExceptionBreakpoints.delete(connection);
+                    // if this connection has also already received line breakpoints, run it
+                    if (!this._connectionsAwaitingBreakpoints.has(connection)) {
+                        this._runOrStopOnEntry(connection);
+                    }
+                })
+        )).then(() => {
+            this.sendResponse(response);
+        }).catch(error => {
+            this.sendErrorResponse(response, error.code, error.message);
+        });
     }
 
     /** Executed after a successfull launch or attach request and after a ThreadEvent */
@@ -486,7 +460,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected continueRequest(response: VSCodeDebugProtocol.ContinueResponse, args: VSCodeDebugProtocol.ContinueArguments): void {
-        const connection = this._connections.get(args.threadId) || this._mainConnection;
+        const connection = this._connections.get(args.threadId);
         connection.sendRunCommand()
             .then(response => this._checkStatus(response))
             .catch(error => this.sendErrorResponse(response, error.code, error.message));
@@ -494,7 +468,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected nextRequest(response: VSCodeDebugProtocol.NextResponse, args: VSCodeDebugProtocol.NextArguments): void {
-        const connection = this._connections.get(args.threadId) || this._mainConnection;
+        const connection = this._connections.get(args.threadId);
         connection.sendStepOverCommand()
             .then(response => this._checkStatus(response))
             .catch(error => this.sendErrorResponse(response, error.code, error.message));
@@ -502,7 +476,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
 	protected stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments) : void {
-        const connection = this._connections.get(args.threadId) || this._mainConnection;
+        const connection = this._connections.get(args.threadId);
         connection.sendStepIntoCommand()
             .then(response => this._checkStatus(response))
             .catch(error => this.sendErrorResponse(response, error.code, error.message));
@@ -510,7 +484,7 @@ class PhpDebugSession extends vscode.DebugSession {
 	}
 
 	protected stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments) : void {
-        const connection = this._connections.get(args.threadId) || this._mainConnection;
+        const connection = this._connections.get(args.threadId);
         connection.sendStepOutCommand()
             .then(response => this._checkStatus(response))
             .catch(error => this.sendErrorResponse(response, error.code, error.message));
@@ -527,9 +501,6 @@ class PhpDebugSession extends vscode.DebugSession {
                 .then(response => connection.close())
                 .then(() => {
                     this._connections.delete(id);
-                    if (this._mainConnection === connection) {
-                        this._mainConnection = null;
-                    }
                 })
                 .catch(() => {})
         )).then(() => {
@@ -543,7 +514,7 @@ class PhpDebugSession extends vscode.DebugSession {
 	}
 
     protected evaluateRequest(response: VSCodeDebugProtocol.EvaluateResponse, args: VSCodeDebugProtocol.EvaluateArguments): void {
-        const connection = this._stackFrames.has(args.frameId) ? this._stackFrames.get(args.frameId).connection : this._mainConnection;
+        const connection = this._stackFrames.get(args.frameId).connection;
         connection.sendEvalCommand(args.expression)
             .then(xdebugResponse => {
                 if (xdebugResponse.result) {
