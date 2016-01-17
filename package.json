@@ -41,14 +41,13 @@
     "xmldom": "^0.1.19"
   },
   "devDependencies": {
-    "typescript": "^1.6.2",
-    "mocha": "*"
+    "typescript": "^1.6.2"
   },
   "scripts": {
     "compile": "tsc -p ./src",
     "watch": "tsc -w -p ./src",
     "publish": "vsce publish",
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm install && npm run compile && npm prune --production",
     "test": "mocha out/tests"
   },
   "contributes": {
