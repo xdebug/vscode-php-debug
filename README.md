@@ -58,6 +58,23 @@ Example:
 Both paths are normalized, so you can use slashes or backslashes no matter of the OS you're running.
 If no `localSourceRoot` is specified, the project root is assumed.
 
+CLI Debugging
+-------------
+Triggers the debugger on a single file.
+Windows (setup):
+```batch
+SET XDEBUG_CONFIG="idekey=VSCODE"
+```
+Linux (setup):
+```bash
+export XDEBUG_CONFIG="idekey=VSCODE"
+```
+Debug your file:
+```cli
+php -d xdebug.idekey="VSCODE" yourFileToDebug.php
+```
+Tip: Create a VSCode runnable [task](https://code.visualstudio.com/docs/editor/tasks) to execute currently open file.
+
 Troubleshooting
 ---------------
 When you are facing problems, please don't send me private emails, instead ask on
