@@ -1,6 +1,10 @@
 PHP Debug adapter for Visual Studio Code
 ========================================
 
+[![Latest Release](https://img.shields.io/github/release/felixfbecker/vscode-php-debug.svg)](https://github.com/felixfbecker/vscode-php-debug/releases/latest)
+![Dependencies](https://img.shields.io/david/felixfbecker/vscode-php-debug.svg)
+[![Gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
 ![Demo GIF](images/demo.gif)
 
 How to install
@@ -88,4 +92,3 @@ VS Code will open an "Extension Development Host" with the debug adapter running
 uncomment the `debugServer` configuration line. Hit `F5` to start a debugging session.
 Now, you can debug the testproject like specified above and set breakpoints inside your first VS Code instance to step through the adapter code.
 
-[![Gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
