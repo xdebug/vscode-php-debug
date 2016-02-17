@@ -170,6 +170,8 @@ export class BreakpointListResponse extends Response {
 export class StackFrame {
     /** The UI-friendly name of this stack frame, like a function name or "{main}" */
     name: string;
+    /** The type of stack frame. Valid values are "file" and "eval" */
+    type: string;
     /** The file URI where the stackframe was entered */
     fileUri: string;
     /** The line number inside file where the stackframe was entered */
@@ -185,6 +187,7 @@ export class StackFrame {
     constructor(stackFrameNode: Element, connection: Connection) {
         this.name = stackFrameNode.getAttribute('where');
         this.fileUri = stackFrameNode.getAttribute('filename');
+        this.type = stackFrameNode.getAttribute('type');
         this.line = parseInt(stackFrameNode.getAttribute('lineno'));
         this.level = parseInt(stackFrameNode.getAttribute('level'));
         this.connection = connection;
@@ -206,6 +209,14 @@ export class StackGetResponse extends Response {
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
         this.stack = Array.from(document.documentElement.childNodes).map((stackFrameNode: Element) => new StackFrame(stackFrameNode, connection));
+    }
+}
+
+export class SourceResponse extends Response {
+    source: string;
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document, connection);
+        this.source = document.documentElement.textContent;
     }
 }
 
@@ -613,6 +624,10 @@ export class Connection extends DbgpConnection {
     /** Sends a stack_get command */
     public sendStackGetCommand(): Promise<StackGetResponse> {
         return this._enqueueCommand('stack_get').then(document => new StackGetResponse(document, this));
+    }
+
+    public sendSourceCommand(uri: string): Promise<SourceResponse> {
+        return this._enqueueCommand('source', `-f ${uri}`).then(document => new SourceResponse(document, this));
     }
 
     // ------------------------------ context --------------------------------------

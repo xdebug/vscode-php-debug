@@ -14,7 +14,7 @@
     "email": "felix.b@outlook.com"
   },
   "engines": {
-    "vscode": "^0.10.6",
+    "vscode": "^0.10.8",
     "node": "^4.1.1"
   },
   "icon": "images/logo.svg",
@@ -34,14 +34,14 @@
   },
   "dependencies": {
     "iconv-lite": "^0.4.13",
-    "moment": "^2.10.6",
+    "moment": "^2.11.2",
     "url-relative": "^1.0.0",
-    "vscode-debugadapter": "^1.0.3",
-    "vscode-debugprotocol": "^1.0.1",
-    "xmldom": "^0.1.19"
+    "vscode-debugadapter": "^1.5.0",
+    "vscode-debugprotocol": "^1.5.0",
+    "xmldom": "^0.1.22"
   },
   "devDependencies": {
-    "typescript": "^1.6.2"
+    "typescript": "^1.7.5"
   },
   "scripts": {
     "compile": "tsc -p ./src",
@@ -82,7 +82,7 @@
               },
               "localSourceRoot": {
                 "type": "string",
-                "description": "The source root on this machine that is the equivalent to the serverSourceRoot on the server. May be relative to the project root."
+                "description": "The source root on this machine that is the equivalent to the serverSourceRoot on the server."
               },
               "cwd": {
                 "type": "string",

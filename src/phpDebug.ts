@@ -49,17 +49,17 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
  */
 interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArguments {
     /** The port where the adapter should listen for XDebug connections (default: 9000) */
-    port: number;
+    port?: number;
     /** Automatically stop target after launch. If not specified, target does not stop. */
     stopOnEntry?: boolean;
     /** The source root on the server when doing remote debugging on a different host */
     serverSourceRoot?: string;
-    /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. May be relative to cwd. */
+    /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. */
     localSourceRoot?: string;
     /** The current working directory, by default the project root */
     cwd?: string;
     /** If true, will log all communication between VS Code and the adapter to the console */
-    log: boolean;
+    log?: boolean;
 }
 
 class PhpDebugSession extends vscode.DebugSession {
@@ -72,16 +72,19 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /**
      * A map from VS Code thread IDs to XDebug Connections.
-     * XDebug makes a new connection for each request to the webserver, we present hese as threads to VS Code.
+     * XDebug makes a new connection for each request to the webserver, we present these as threads to VS Code.
      * The threadId key is equal to the id attribute of the connection.
      */
     private _connections = new Map<number, xdebug.Connection>();
 
-    /** A set of connecitons which still need to be initialized with exception breakpoints before _runOrStopOnEntry can be called. */
-    private _connectionsAwaitingExceptionBreakpoints = new Set<xdebug.Connection>();
+    /** A set of connections which are not yet running and are waiting for configurationDoneRequest */
+    private _waitingConnections = new Set<xdebug.Connection>();
 
-    /** A set of connecitons which still need to be initialized with exception breakpoints before _runOrStopOnEntry can be called. */
-    private _connectionsAwaitingBreakpoints = new Set<xdebug.Connection>();
+    /** A counter for unique source IDs */
+    private _sourceIdCounter = 1;
+
+    /** A map of VS Code source IDs to XDebug file URLs for virtual files (dpgp://whatever) and the corresponding connection */
+    private _sources = new Map<number, {connection: xdebug.Connection, url: string}>();
 
     /** A counter for unique stackframe IDs */
     private _stackFrameIdCounter = 1;
@@ -105,28 +108,25 @@ class PhpDebugSession extends vscode.DebugSession {
         super(debuggerLinesStartAt1, isServer);
     }
 
+	protected initializeRequest(response: VSCodeDebugProtocol.InitializeResponse, args: VSCodeDebugProtocol.InitializeRequestArguments): void {
+		response.body.supportsConfigurationDoneRequest = true;
+        response.body.supportsEvaluateForHovers = true;
+		this.sendResponse(response);
+	}
+
     protected attachRequest(response: VSCodeDebugProtocol.AttachResponse, args: VSCodeDebugProtocol.AttachRequestArguments) {
         this.sendErrorResponse(response, 0, 'Attach requests are not supported');
         this.shutdown();
     }
 
     protected launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
-        if (args.serverSourceRoot) {
-            // use cwd by default for localSourceRoot
-            if (!args.localSourceRoot) {
-                args.localSourceRoot = '.';
-            }
-            // resolve localSourceRoot relative to the project root
-            args.localSourceRoot = path.resolve(args.cwd, args.localSourceRoot);
-        }
         this._args = args;
         const server = this._server = net.createServer();
         server.on('connection', (socket: net.Socket) => {
             // new XDebug connection
             const connection = new xdebug.Connection(socket);
             this._connections.set(connection.id, connection);
-            this._connectionsAwaitingBreakpoints.add(connection);
-            this._connectionsAwaitingExceptionBreakpoints.add(connection);
+            this._waitingConnections.add(connection);
             connection.waitForInitPacket()
                 .then(() => {
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
@@ -144,16 +144,6 @@ class PhpDebugSession extends vscode.DebugSession {
         });
         server.listen(args.port);
         this.sendResponse(response);
-    }
-
-    /** is called after all breakpoints etc. are initialized and either runs the script or notifies VS Code that we stopped on entry, depending on launch settings */
-    private _runOrStopOnEntry(connection: xdebug.Connection): void {
-        // either tell VS Code we stopped on entry or run the script
-        if (this._args.stopOnEntry) {
-            this.sendEvent(new vscode.StoppedEvent('entry', connection.id));
-        } else {
-            connection.sendRunCommand().then(response => this._checkStatus(response));
-        }
     }
 
     /** Checks the status of a StatusResponse and notifies VS Code accordingly */
@@ -182,9 +172,12 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
-    protected convertDebuggerPathToClient(fileUri: string): string {
+    protected convertDebuggerPathToClient(fileUri: string|url.Url): string {
+        if (typeof fileUri === 'string') {
+            fileUri = url.parse(<string>fileUri);
+        }
         // convert the file URI to a path
-        let serverPath = decodeURI(url.parse(fileUri).pathname);
+        let serverPath = decodeURI((<url.Url>fileUri).pathname);
         // strip the trailing slash from Windows paths (indicated by a drive letter with a colon)
         if (/^\/[a-zA-Z]:\//.test(serverPath)) {
             serverPath = serverPath.substr(1);
@@ -225,7 +218,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     /** Logs all requests before dispatching */
-    protected dispatchRequest(request: VSCodeDebugProtocol.Request) {
+    protected dispatchRequest(request: VSCodeDebugProtocol.Request): void {
         const log = `-> ${request.command}Request\n${util.inspect(request, {depth: null})}\n\n`;
         console.log(log);
         if (this._args && this._args.log) {
@@ -243,7 +236,7 @@ class PhpDebugSession extends vscode.DebugSession {
         super.sendEvent(event);
 	}
 
-    public sendResponse(response: VSCodeDebugProtocol.Response) {
+    public sendResponse(response: VSCodeDebugProtocol.Response): void {
         const log = `<- ${response.command}Response\n${util.inspect(response, {depth: null})}\n\n`;
         console[response.success ? 'log' : 'error'](log);
         if (this._args && this._args.log) {
@@ -276,15 +269,6 @@ class PhpDebugSession extends vscode.DebugSession {
                     .then(() => Promise.all(args.lines.map(line =>
                         connection.sendBreakpointSetCommand({type: 'line', fileUri, line})
                             .then(xdebugResponse => {
-                                // has this connection finally received its long-awaited breakpoints?
-                                if (this._connectionsAwaitingBreakpoints.has(connection)) {
-                                    // remember that the breakpoints for this connection have been set
-                                    this._connectionsAwaitingBreakpoints.delete(connection);
-                                    // if this connection has already received exception breakpoints, run it now
-                                    if (!this._connectionsAwaitingExceptionBreakpoints.has(connection)) {
-                                        this._runOrStopOnEntry(connection);
-                                    }
-                                }
                                 // only capture each breakpoint once
                                 if (connectionIndex === 0) {
                                     breakpoints.push(new vscode.Breakpoint(true, line));
@@ -333,22 +317,24 @@ class PhpDebugSession extends vscode.DebugSession {
                         return connection.sendBreakpointSetCommand({type: 'exception', exception: '*'});
                     }
                 })
-                .then(() => {
-                    // has this connection finally received its long-awaited exception breakpoints?
-                    if (this._connectionsAwaitingExceptionBreakpoints.has(connection)) {
-                        // remember that the exception breakpoints for this connection have been set
-                        this._connectionsAwaitingExceptionBreakpoints.delete(connection);
-                        // if this connection has already received line breakpoints, run it now
-                        if (!this._connectionsAwaitingBreakpoints.has(connection)) {
-                            this._runOrStopOnEntry(connection);
-                        }
-                    }
-                })
         )).then(() => {
             this.sendResponse(response);
         }).catch(error => {
             this.sendErrorResponse(response, error.code, error.message);
         });
+    }
+
+    /** Executed after all breakpoints have been set by VS Code */
+    protected configurationDoneRequest(response: VSCodeDebugProtocol.ConfigurationDoneResponse, args: VSCodeDebugProtocol.ConfigurationDoneArguments): void {
+        for (const connection of Array.from(this._waitingConnections)) {
+            // either tell VS Code we stopped on entry or run the script
+            if (this._args.stopOnEntry) {
+                this.sendEvent(new vscode.StoppedEvent('entry', connection.id));
+            } else {
+                connection.sendRunCommand().then(response => this._checkStatus(response));
+            }
+        }
+        this.sendResponse(response);
     }
 
     /** Executed after a successfull launch or attach request and after a ThreadEvent */
@@ -374,10 +360,18 @@ class PhpDebugSession extends vscode.DebugSession {
                 // this._contexts.clear();
                 response.body = {
                     stackFrames: xdebugResponse.stack.map(stackFrame => {
-                        // XDebug paths are URIs, VS Code file paths
-                        const filePath = this.convertDebuggerPathToClient(stackFrame.fileUri);
-                        // "Name" of the source and the actual file path
-                        const source = new vscode.Source(path.basename(filePath), filePath);
+                        let source: vscode.Source;
+                        const urlObject = url.parse(stackFrame.fileUri);
+                        if (urlObject.protocol === 'dbgp:') {
+                            const sourceReference = this._sourceIdCounter++;
+                            this._sources.set(sourceReference, {connection, url: stackFrame.fileUri});
+                            source = new vscode.Source(stackFrame.name, stackFrame.fileUri.substr('dbgp://'.length), sourceReference, stackFrame.type);
+                        } else {
+                            // XDebug paths are URIs, VS Code file paths
+                            const filePath = this.convertDebuggerPathToClient(urlObject);
+                            // "Name" of the source and the actual file path
+                            source = new vscode.Source(path.basename(filePath), filePath);
+                        }
                         // a new, unique ID for scopeRequests
                         const stackFrameId = this._stackFrameIdCounter++;
                         // save the connection this stackframe belongs to and the level of the stackframe under the stacktrace id
@@ -392,6 +386,14 @@ class PhpDebugSession extends vscode.DebugSession {
                 this.sendErrorResponse(response, error.code, error.message);
             });
     }
+
+    protected sourceRequest(response: VSCodeDebugProtocol.SourceResponse, args: VSCodeDebugProtocol.SourceArguments): void {
+        const {connection, url} = this._sources.get(args.sourceReference);
+        connection.sendSourceCommand(url).then(xdebugResponse => {
+            response.body.content = xdebugResponse.source;
+            this.sendResponse(response);
+        });
+	}
 
     protected scopesRequest(response: VSCodeDebugProtocol.ScopesResponse, args: VSCodeDebugProtocol.ScopesArguments): void {
         const stackFrame = this._stackFrames.get(args.frameId);
@@ -428,7 +430,7 @@ class PhpDebugSession extends vscode.DebugSession {
         } else if (this._evalResultProperties.has(variablesReference)) {
             // the children of properties returned from an eval command are always inlined, so we simply resolve them
             const property = this._evalResultProperties.get(variablesReference);
-            propertiesPromise = Promise.resolve(property.children);
+            propertiesPromise = Promise.resolve(property.hasChildren ? property.children : []);
         } else {
             console.error('Unknown variable reference: ' + variablesReference);
             console.error('Known variables: ' + JSON.stringify(Array.from(this._properties)));

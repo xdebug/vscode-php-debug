@@ -8,7 +8,7 @@
             "runtimeArgs": [
                 "--harmony"
             ],
-            "program": "./src/phpDebug.ts",
+            "program": "${workspaceRoot}/src/phpDebug.ts",
             "stopOnEntry": false,
             "args": [
                 "--server=4711"
@@ -17,7 +17,7 @@
                 "NODE_ENV": "development"
             },
             "sourceMaps": true,
-            "outDir": "./out"
+            "outDir": "${workspaceRoot}/out"
         },
         {
             "name": "Launch Extension",
@@ -28,13 +28,13 @@
                 "--extensionDevelopmentPath=${workspaceRoot}"
             ],
             "sourceMaps": true,
-            "outDir": "./out"
+            "outDir": "${workspaceRoot}/out"
         },
         {
             "name": "Run Tests",
             "type": "node",
             "request": "launch",
-            "program": "node_modules/mocha/bin/_mocha",
+            "program": "${workspaceRoot}node_modules/mocha/bin/_mocha",
             "args": [
                 "./out/tests",
                 "--timeout",
@@ -42,7 +42,7 @@
                 "--colors"
             ],
             "sourceMaps": true,
-            "outDir": "./out"
+            "outDir": "${workspaceRoot}/out"
         }
     ]
 }
