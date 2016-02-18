@@ -333,6 +333,7 @@ class PhpDebugSession extends vscode.DebugSession {
             } else {
                 connection.sendRunCommand().then(response => this._checkStatus(response));
             }
+            this._waitingConnections.delete(connection);
         }
         this.sendResponse(response);
     }
@@ -525,6 +526,9 @@ class PhpDebugSession extends vscode.DebugSession {
                 .then(response => connection.close())
                 .then(() => {
                     this._connections.delete(id);
+                    if (this._waitingConnections.has(connection)) {
+                        this._waitingConnections.delete(connection);
+                    }
                 })
                 .catch(() => {})
         )).then(() => {
