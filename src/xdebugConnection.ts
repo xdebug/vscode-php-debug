@@ -299,7 +299,7 @@ export class SourceResponse extends Response {
     source: string;
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
-        this.source = document.documentElement.textContent;
+        this.source = (new Buffer(document.documentElement.textContent, 'base64')).toString();
     }
 }
 

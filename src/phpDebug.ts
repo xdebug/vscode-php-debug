@@ -376,11 +376,15 @@ class PhpDebugSession extends vscode.DebugSession {
                 response.body = {
                     stackFrames: xdebugResponse.stack.map(stackFrame => {
                         let source: vscode.Source;
+                        let line = stackFrame.line;
                         const urlObject = url.parse(stackFrame.fileUri);
                         if (urlObject.protocol === 'dbgp:') {
                             const sourceReference = this._sourceIdCounter++;
                             this._sources.set(sourceReference, {connection, url: stackFrame.fileUri});
-                            source = new vscode.Source(stackFrame.name, stackFrame.fileUri.substr('dbgp://'.length), sourceReference, stackFrame.type);
+                            // for eval code, we need to include .php extension to get syntax highlighting
+                            source = new vscode.Source(stackFrame.type === 'eval' ? 'eval.php' : stackFrame.name, null, sourceReference, stackFrame.type);
+                            // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
+                            line++;
                         } else {
                             // XDebug paths are URIs, VS Code file paths
                             const filePath = this.convertDebuggerPathToClient(urlObject);
@@ -392,7 +396,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         // save the connection this stackframe belongs to and the level of the stackframe under the stacktrace id
                         this._stackFrames.set(stackFrameId, stackFrame);
                         // prepare response for VS Code (column is always 1 since XDebug doesn't tell us the column)
-                        return new vscode.StackFrame(stackFrameId, stackFrame.name, source, stackFrame.line, 1);
+                        return new vscode.StackFrame(stackFrameId, stackFrame.name, source, line, 1);
                     })
                 }
                 this.sendResponse(response);
@@ -405,10 +409,15 @@ class PhpDebugSession extends vscode.DebugSession {
     protected sourceRequest(response: VSCodeDebugProtocol.SourceResponse, args: VSCodeDebugProtocol.SourceArguments): void {
         const {connection, url} = this._sources.get(args.sourceReference);
         connection.sendSourceCommand(url).then(xdebugResponse => {
-            response.body.content = xdebugResponse.source;
+            let content = xdebugResponse.source;
+            if (!/^\s*<\?(php|=)/.test(content)) {
+                // we do this because otherwise VS Code would not show syntax highlighting for eval() code
+                content = '<?php\n' + content;
+            }
+            response.body = {content};
             this.sendResponse(response);
         });
-	}
+    }
 
     protected scopesRequest(response: VSCodeDebugProtocol.ScopesResponse, args: VSCodeDebugProtocol.ScopesArguments): void {
         const stackFrame = this._stackFrames.get(args.frameId);
