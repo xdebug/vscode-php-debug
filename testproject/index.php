@@ -10,11 +10,11 @@ LOLOLOL
     $nullValue = null;
     $variableThatsNotSet;
     $aLargeArray = array_fill(0, 100, 'test');
-    
+
     class TestParentClass {
         public static $aStaticProperty = 1234;
     }
-    
+
     class TestClass extends TestParentClass {
         public static $aStaticProperty = 5678;
         public $aProperty;
@@ -73,5 +73,3 @@ LOLOLOL
     throwDerivedException();
 
     throwCaughtException();
-
-

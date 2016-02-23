@@ -97,7 +97,7 @@ export class StatusResponse extends Response {
                 this.exception = {
                     name: messageNode.getAttribute('exception'),
                     message: messageNode.textContent
-                }
+                };
             }
             if (messageNode.hasAttribute('filename')) {
                 this.fileUri = messageNode.getAttribute('filename');

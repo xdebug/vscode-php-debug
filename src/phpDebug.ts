@@ -125,11 +125,11 @@ class PhpDebugSession extends vscode.DebugSession {
         super(debuggerLinesStartAt1, isServer);
     }
 
-	protected initializeRequest(response: VSCodeDebugProtocol.InitializeResponse, args: VSCodeDebugProtocol.InitializeRequestArguments): void {
-		response.body.supportsConfigurationDoneRequest = true;
+    protected initializeRequest(response: VSCodeDebugProtocol.InitializeResponse, args: VSCodeDebugProtocol.InitializeRequestArguments): void {
+        response.body.supportsConfigurationDoneRequest = true;
         response.body.supportsEvaluateForHovers = true;
-		this.sendResponse(response);
-	}
+        this.sendResponse(response);
+    }
 
     protected attachRequest(response: VSCodeDebugProtocol.AttachResponse, args: VSCodeDebugProtocol.AttachRequestArguments) {
         this.sendErrorResponse(response, 0, 'Attach requests are not supported');
@@ -288,7 +288,7 @@ class PhpDebugSession extends vscode.DebugSession {
             this.sendEvent(new vscode.OutputEvent(log));
         }
         super.sendEvent(event);
-	}
+    }
 
     public sendResponse(response: VSCodeDebugProtocol.Response): void {
         const log = `<- ${response.command}Response\n${util.inspect(response, {depth: null})}\n\n`;
@@ -567,7 +567,7 @@ class PhpDebugSession extends vscode.DebugSession {
         this.sendResponse(response);
     }
 
-	protected stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments) : void {
+    protected stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments) : void {
         if (!args.threadId) {
             this.sendErrorResponse(response, 0, 'No active connection');
             return;
@@ -576,10 +576,10 @@ class PhpDebugSession extends vscode.DebugSession {
         connection.sendStepIntoCommand()
             .then(response => this._checkStatus(response))
             .catch(error => this.sendErrorResponse(response, error.code, error.message));
-		this.sendResponse(response);
-	}
+        this.sendResponse(response);
+    }
 
-	protected stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments) : void {
+    protected stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments) : void {
         if (!args.threadId) {
             this.sendErrorResponse(response, 0, 'No active connection');
             return;
@@ -588,12 +588,12 @@ class PhpDebugSession extends vscode.DebugSession {
         connection.sendStepOutCommand()
             .then(response => this._checkStatus(response))
             .catch(error => this.sendErrorResponse(response, error.code, error.message));
-		this.sendResponse(response);
-	}
+        this.sendResponse(response);
+    }
 
-	protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments) : void {
-		this.sendErrorResponse(response, 0, 'Pausing the execution is not supported by XDebug');
-	}
+    protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments) : void {
+        this.sendErrorResponse(response, 0, 'Pausing the execution is not supported by XDebug');
+    }
 
     protected disconnectRequest(response: VSCodeDebugProtocol.DisconnectResponse, args: VSCodeDebugProtocol.DisconnectArguments): void {
         Promise.all(Array.from(this._connections).map(([id, connection]) =>
@@ -614,7 +614,7 @@ class PhpDebugSession extends vscode.DebugSession {
         }).catch(error => {
             this.sendErrorResponse(response, error.code, error.message)
         });
-	}
+    }
 
     protected evaluateRequest(response: VSCodeDebugProtocol.EvaluateResponse, args: VSCodeDebugProtocol.EvaluateArguments): void {
         const connection = this._stackFrames.get(args.frameId).connection;

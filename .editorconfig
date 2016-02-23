@@ -1,0 +1,7 @@
+
+[*]
+insert_spaces = true
+indent_size = 4
+
+[*.json]
+indent_size = 2
