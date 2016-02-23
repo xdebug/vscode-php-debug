@@ -69,9 +69,6 @@ If it fails with your ultra-awesome MVC app, please first try it on a dead-simpl
 FAQ
 ---
 
-#### How can I get the error message when breaking on an error/warning?
-Set a watch for `error_get_last()`
-
 #### Where are the variables of the parent scope?
 In opposite to Javascript, PHP does not have closures.
 A scope contains only variables that have been declared, parameters and imported globals with `global` or `use`.

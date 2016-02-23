@@ -109,8 +109,17 @@ class PhpDebugSession extends vscode.DebugSession {
     /** A map from unique stackframe IDs (even across connections) to XDebug stackframes */
     private _stackFrames = new Map<number, xdebug.StackFrame>();
 
+    /** A map from XDebug connections to their current status */
+    private _statuses = new Map<xdebug.Connection, xdebug.StatusResponse>();
+
     /** A counter for unique context, property and eval result properties (as these are all requested by a VariableRequest from VS Code) */
     private _variableIdCounter = 1;
+
+    /** A map from unique VS Code variable IDs to XDebug statuses for virtual error stack frames */
+    private _errorStackFrames = new Map<number, xdebug.StatusResponse>();
+
+    /** A map from unique VS Code variable IDs to XDebug statuses for virtual error scopes */
+    private _errorScopes = new Map<number, xdebug.StatusResponse>();
 
     /** A map from unique VS Code variable IDs to an XDebug contexts */
     private _contexts = new Map<number, xdebug.Context>();
@@ -203,6 +212,7 @@ class PhpDebugSession extends vscode.DebugSession {
     /** Checks the status of a StatusResponse and notifies VS Code accordingly */
     private _checkStatus(response: xdebug.StatusResponse): void {
         const connection = response.connection;
+        this._statuses.set(connection, response);
         if (response.status === 'stopping') {
             connection.sendStopCommand().then(response => this._checkStatus(response));
         } else if (response.status === 'stopped') {
@@ -427,31 +437,59 @@ class PhpDebugSession extends vscode.DebugSession {
                 // this._stackFrames.clear();
                 // this._properties.clear();
                 // this._contexts.clear();
-                response.body = {
-                    stackFrames: xdebugResponse.stack.map(stackFrame => {
-                        let source: vscode.Source;
-                        let line = stackFrame.line;
-                        const urlObject = url.parse(stackFrame.fileUri);
-                        if (urlObject.protocol === 'dbgp:') {
-                            const sourceReference = this._sourceIdCounter++;
-                            this._sources.set(sourceReference, {connection, url: stackFrame.fileUri});
-                            // for eval code, we need to include .php extension to get syntax highlighting
-                            source = new vscode.Source(stackFrame.type === 'eval' ? 'eval.php' : stackFrame.name, null, sourceReference, stackFrame.type);
-                            // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
-                            line++;
-                        } else {
-                            // XDebug paths are URIs, VS Code file paths
-                            const filePath = this.convertDebuggerPathToClient(urlObject);
-                            // "Name" of the source and the actual file path
-                            source = new vscode.Source(path.basename(filePath), filePath);
-                        }
-                        // a new, unique ID for scopeRequests
-                        const stackFrameId = this._stackFrameIdCounter++;
-                        // save the connection this stackframe belongs to and the level of the stackframe under the stacktrace id
-                        this._stackFrames.set(stackFrameId, stackFrame);
-                        // prepare response for VS Code (column is always 1 since XDebug doesn't tell us the column)
-                        return new vscode.StackFrame(stackFrameId, stackFrame.name, source, line, 1);
-                    })
+                const status = this._statuses.get(connection);
+                if (xdebugResponse.stack.length === 0 && status.exception) {
+                    // special case: if a fatal error occurs (for example after an uncaught exception), the stack trace is EMPTY.
+                    // in that case, VS Code would normally not show any information to the user at all
+                    // to avoid this, we create a virtual stack frame with the info from the last status response we got
+                    const status = this._statuses.get(connection);
+                    const id = this._stackFrameIdCounter++;
+                    const name = status.exception.name;
+                    let line = status.line;
+                    let source: vscode.Source;
+                    const urlObject = url.parse(status.fileUri);
+                    if (urlObject.protocol === 'dbgp:') {
+                        const sourceReference = this._sourceIdCounter++;
+                        this._sources.set(sourceReference, {connection, url: status.fileUri});
+                        // for eval code, we need to include .php extension to get syntax highlighting
+                        source = new vscode.Source(status.exception.name + '.php', null, sourceReference, status.exception.name);
+                        // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
+                        line++;
+                    } else {
+                        // XDebug paths are URIs, VS Code file paths
+                        const filePath = this.convertDebuggerPathToClient(urlObject);
+                        // "Name" of the source and the actual file path
+                        source = new vscode.Source(path.basename(filePath), filePath);
+                    }
+                    this._errorStackFrames.set(id, status);
+                    response.body = {stackFrames: [new vscode.StackFrame(id, name, source, status.line, 1)]};
+                } else {
+                    response.body = {
+                        stackFrames: xdebugResponse.stack.map(stackFrame => {
+                            let source: vscode.Source;
+                            let line = stackFrame.line;
+                            const urlObject = url.parse(stackFrame.fileUri);
+                            if (urlObject.protocol === 'dbgp:') {
+                                const sourceReference = this._sourceIdCounter++;
+                                this._sources.set(sourceReference, {connection, url: stackFrame.fileUri});
+                                // for eval code, we need to include .php extension to get syntax highlighting
+                                source = new vscode.Source(stackFrame.type === 'eval' ? 'eval.php' : stackFrame.name, null, sourceReference, stackFrame.type);
+                                // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
+                                line++;
+                            } else {
+                                // XDebug paths are URIs, VS Code file paths
+                                const filePath = this.convertDebuggerPathToClient(urlObject);
+                                // "Name" of the source and the actual file path
+                                source = new vscode.Source(path.basename(filePath), filePath);
+                            }
+                            // a new, unique ID for scopeRequests
+                            const stackFrameId = this._stackFrameIdCounter++;
+                            // save the connection this stackframe belongs to and the level of the stackframe under the stacktrace id
+                            this._stackFrames.set(stackFrameId, stackFrame);
+                            // prepare response for VS Code (column is always 1 since XDebug doesn't tell us the column)
+                            return new vscode.StackFrame(stackFrameId, stackFrame.name, source, line, 1);
+                        })
+                    };
                 }
                 this.sendResponse(response);
             })
@@ -474,73 +512,103 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected scopesRequest(response: VSCodeDebugProtocol.ScopesResponse, args: VSCodeDebugProtocol.ScopesArguments): void {
-        const stackFrame = this._stackFrames.get(args.frameId);
-        stackFrame.getContexts()
-            .then(contexts => {
-                response.body = {
-                    scopes: contexts.map(context => {
+        if (this._errorStackFrames.has(args.frameId)) {
+            // VS Code is requesting the scopes for a virtual error stack frame
+            const status = this._errorStackFrames.get(args.frameId);
+            if (status && status.exception) {
+                const variableId = this._variableIdCounter++;
+                this._errorScopes.set(variableId, status);
+                response.body = {scopes: [new vscode.Scope(status.exception.name, variableId)]};
+            }
+            this.sendResponse(response);
+        } else {
+            const stackFrame = this._stackFrames.get(args.frameId);
+            stackFrame.getContexts()
+                .then(contexts => {
+                    response.body = {
+                        scopes: contexts.map(context => {
+                            const variableId = this._variableIdCounter++;
+                            // remember that this new variable ID is assigned to a SCOPE (in XDebug "context"), not a variable (in XDebug "property"),
+                            // so when VS Code does a variablesRequest with that ID we do a context_get and not a property_get
+                            this._contexts.set(variableId, context);
+                            // send VS Code the variable ID as identifier
+                            return new vscode.Scope(context.name, variableId);
+                        })
+                    };
+                    const status = this._statuses.get(stackFrame.connection);
+                    if (status && status.exception) {
                         const variableId = this._variableIdCounter++;
-                        // remember that this new variable ID is assigned to a SCOPE (in XDebug "context"), not a variable (in XDebug "property"),
-                        // so when VS Code does a variablesRequest with that ID we do a context_get and not a property_get
-                        this._contexts.set(variableId, context);
-                        // send VS Code the variable ID as identifier
-                        return new vscode.Scope(context.name, variableId);
-                    })
-                };
-                this.sendResponse(response);
-            })
-            .catch(error => {
-                this.sendErrorResponse(response, error.code, error.message);
-            });
+                        this._errorScopes.set(variableId, status);
+                        response.body.scopes.unshift(new vscode.Scope(status.exception.name, variableId));
+                    }
+                    this.sendResponse(response);
+                })
+                .catch(error => {
+                    this.sendErrorResponse(response, error.code, error.message);
+                });
+        }
     }
 
     protected variablesRequest(response: VSCodeDebugProtocol.VariablesResponse, args: VSCodeDebugProtocol.VariablesArguments): void {
         const variablesReference = args.variablesReference;
-        let propertiesPromise: Promise<xdebug.BaseProperty[]>;
-        if (this._contexts.has(variablesReference)) {
-            // VS Code is requesting the variables for a SCOPE, so we have to do a context_get
-            const context = this._contexts.get(variablesReference);
-            propertiesPromise = context.getProperties();
-        } else if (this._properties.has(variablesReference)) {
-            // VS Code is requesting the subelements for a variable, so we have to do a property_get
-            const property = this._properties.get(variablesReference);
-            propertiesPromise = property.hasChildren ? property.getChildren() : Promise.resolve([]);
-        } else if (this._evalResultProperties.has(variablesReference)) {
-            // the children of properties returned from an eval command are always inlined, so we simply resolve them
-            const property = this._evalResultProperties.get(variablesReference);
-            propertiesPromise = Promise.resolve(property.hasChildren ? property.children : []);
+        if (this._errorScopes.has(variablesReference)) {
+            // this is a virtual error scope
+            const status = this._errorScopes.get(variablesReference);
+            response.body = {
+                variables: [
+                    new vscode.Variable('name', '"' + status.exception.name + '"'),
+                    new vscode.Variable('message', '"' + status.exception.message + '"')
+                ]
+            };
+            this.sendResponse(response);
         } else {
-            this.sendErrorResponse(response, 0, 'Unknown variable reference');
-            return;
-        }
-        propertiesPromise
-            .then(properties => {
-                response.body = {
-                    variables: properties.map(property => {
-                        const displayValue = formatPropertyValue(property);
-                        let variablesReference: number;
-                        if (property.hasChildren || property.type === 'array' || property.type === 'object') {
-                            // if the property has children, we have to send a variableReference back to VS Code
-                            // so it can receive the child elements in another request.
-                            // for arrays and objects we do it even when it does not have children so the user can still expand/collapse the entry
-                            variablesReference = this._variableIdCounter++;
-                            if (property instanceof xdebug.Property) {
-                                this._properties.set(variablesReference, property);
-                            } else if (property instanceof xdebug.EvalResultProperty) {
-                                this._evalResultProperties.set(variablesReference, property);
+            // it is a real scope
+            let propertiesPromise: Promise<xdebug.BaseProperty[]>;
+            if (this._contexts.has(variablesReference)) {
+                // VS Code is requesting the variables for a SCOPE, so we have to do a context_get
+                const context = this._contexts.get(variablesReference);
+                propertiesPromise = context.getProperties();
+            } else if (this._properties.has(variablesReference)) {
+                // VS Code is requesting the subelements for a variable, so we have to do a property_get
+                const property = this._properties.get(variablesReference);
+                propertiesPromise = property.hasChildren ? property.getChildren() : Promise.resolve([]);
+            } else if (this._evalResultProperties.has(variablesReference)) {
+                // the children of properties returned from an eval command are always inlined, so we simply resolve them
+                const property = this._evalResultProperties.get(variablesReference);
+                propertiesPromise = Promise.resolve(property.hasChildren ? property.children : []);
+            } else {
+                this.sendErrorResponse(response, 0, 'Unknown variable reference');
+                return;
+            }
+            propertiesPromise
+                .then(properties => {
+                    response.body = {
+                        variables: properties.map(property => {
+                            const displayValue = formatPropertyValue(property);
+                            let variablesReference: number;
+                            if (property.hasChildren || property.type === 'array' || property.type === 'object') {
+                                // if the property has children, we have to send a variableReference back to VS Code
+                                // so it can receive the child elements in another request.
+                                // for arrays and objects we do it even when it does not have children so the user can still expand/collapse the entry
+                                variablesReference = this._variableIdCounter++;
+                                if (property instanceof xdebug.Property) {
+                                    this._properties.set(variablesReference, property);
+                                } else if (property instanceof xdebug.EvalResultProperty) {
+                                    this._evalResultProperties.set(variablesReference, property);
+                                }
+                            } else {
+                                variablesReference = 0;
                             }
-                        } else {
-                            variablesReference = 0;
-                        }
-                        return new vscode.Variable(property.name, displayValue, variablesReference);
-                    })
-                }
-                this.sendResponse(response);
-            })
-            .catch(error => {
-                console.error(util.inspect(error));
-                this.sendErrorResponse(response, error.code, error.message);
-            })
+                            return new vscode.Variable(property.name, displayValue, variablesReference);
+                        })
+                    }
+                    this.sendResponse(response);
+                })
+                .catch(error => {
+                    console.error(util.inspect(error));
+                    this.sendErrorResponse(response, error.code, error.message);
+                });
+        }
     }
 
     protected continueRequest(response: VSCodeDebugProtocol.ContinueResponse, args: VSCodeDebugProtocol.ContinueArguments): void {
