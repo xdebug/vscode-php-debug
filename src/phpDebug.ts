@@ -5,8 +5,10 @@ import * as xdebug from './xdebugConnection';
 import urlRelative = require('url-relative');
 import moment = require('moment');
 import * as url from 'url';
+import * as childProcess from 'child_process';
 import * as path from 'path';
 import * as util from 'util';
+import {Terminal} from './terminal';
 
 /** converts a path to a file URI */
 function fileUrl(path: string): string {
@@ -56,10 +58,25 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     serverSourceRoot?: string;
     /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. */
     localSourceRoot?: string;
-    /** The current working directory, by default the project root */
-    cwd?: string;
     /** If true, will log all communication between VS Code and the adapter to the console */
     log?: boolean;
+
+    // CLI options
+
+    /** If set, launches the specified PHP script in CLI mode */
+    program?: string;
+    /** Optional arguments passed to the debuggee. */
+    args?: string[];
+    /** Launch the debuggee in this working directory (specified as an absolute path). If omitted the debuggee is lauched in its own directory. */
+    cwd?: string;
+    /** Absolute path to the runtime executable to be used. Default is the runtime executable on the PATH. */
+    runtimeExecutable?: string;
+    /** Optional arguments passed to the runtime executable. */
+    runtimeArgs?: string[];
+    /** Optional environment variables to pass to the debuggee. The string valued properties of the 'environmentVariables' are used as key/value pairs. */
+    env?: { [key: string]: string; };
+    /** If true launch the target in an external console. */
+    externalConsole?: boolean;
 }
 
 class PhpDebugSession extends vscode.DebugSession {
@@ -142,8 +159,45 @@ class PhpDebugSession extends vscode.DebugSession {
                     console.error('error: ', error);
                 });
         });
-        server.listen(args.port);
-        this.sendResponse(response);
+        server.listen(args.port || 9000, () => {
+            if (args.program) {
+                const runtimeArgs = args.runtimeArgs || [];
+                const runtimeExecutable = args.runtimeExecutable || 'php';
+                const programArgs = args.args || [];
+                const cwd = args.cwd || process.cwd();
+                const env = args.env || process.env;
+                // launch in CLI mode
+                if (args.externalConsole) {
+                    Terminal.launchInTerminal(cwd, [runtimeExecutable, ...runtimeArgs, args.program, ...programArgs], env)
+                        .then(script => {
+                            // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
+                            script.on('exit', () => {
+                                this.sendEvent(new vscode.TerminatedEvent());
+                            });
+                        })
+                        .catch((error: Error) => {
+                            this.sendEvent(new vscode.OutputEvent(error.message, 'stderr'));
+                        });
+                } else {
+                    const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program, ...programArgs], {cwd, env});
+                    // redirect output to debug console
+                    script.stdout.on('data', (data: Buffer) => {
+                        this.sendEvent(new vscode.OutputEvent(data + '', 'stdout'));
+                    });
+                    script.stderr.on('data', (data: Buffer) => {
+                        this.sendEvent(new vscode.OutputEvent(data + '', 'stderr'));
+                    });
+                    // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
+                    script.on('exit', () => {
+                        this.sendEvent(new vscode.TerminatedEvent());
+                    });
+                    script.on('error', (error: Error) => {
+                        this.sendEvent(new vscode.OutputEvent(error.message, 'stderr'));
+                    });
+                }
+            }
+            this.sendResponse(response);
+        });
     }
 
     /** Checks the status of a StatusResponse and notifies VS Code accordingly */

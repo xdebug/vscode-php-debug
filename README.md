@@ -20,15 +20,16 @@ Then, in addition to `zend_extension=path/to/xdebug`, add these lines to your ph
 xdebug.remote_enable = 1
 xdebug.remote_autostart = 1
 ```
-Also, if you haven't already, point your webserver's webroot to your project.
-
-Don't forget to restart your webserver after you made these changes.
+For web projects, if you haven't already, point your webserver's webroot to your project and don't forget to restart your webserver after you made these changes.
 Now, everytime you do a request to a PHP file, XDebug will automatically try to connect to port 9000 for debugging.
 
 ### Start debugging:
 In your project, go to the debugger and hit the little gear icon. Choose PHP. A new launch configuration will be created for you.
-Now, if you select this configuration and hit `F5`, VS Code will listen on port 9000 for incoming XDebug requests.
-Now, when you make a request to `localhost` with your webbrowser, XDebug will connect to VS Code and you can debug your PHP.
+Now, if you select the _Listen for XDebug_ configuration and hit `F5`, VS Code will listen on port 9000 for incoming XDebug requests.
+When you make a request to `localhost` with your webbrowser or run a script from the command line, XDebug will connect to VS Code and you can debug your PHP.
+
+For CLI scripts, you can set the same options the Node debugger supports: `program`, `runtimeExecutable`, `runtimeArgs`, `args`, `cwd`, `env` and `externalConsole` (see IntelliSense for descriptions).
+The dafault configuration includes one that runs the currently opened script as an example.
 
 What is supported?
 ------------------
@@ -42,6 +43,7 @@ What is supported?
  - Arrays & objects (including classname, private and static properties)
  - Debug console
  - Watches
+ - Run as CLI
 
 What is not supported?
 ----------------------

@@ -67,10 +67,53 @@
           "launch": {
             "required": [],
             "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to the program."
+              },
               "stopOnEntry": {
                 "type": "boolean",
-                "description": "Automatically stop after launch.",
-                "default": true
+                "description": "Automatically stop program after launch.",
+                "default": false
+              },
+              "externalConsole": {
+                "type": "boolean",
+                "description": "Launch debug target in external console.",
+                "default": false
+              },
+              "args": {
+                "type": "array",
+                "description": "Command line arguments passed to the program.",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Absolute path to the working directory of the program being debugged. Default is the current workspace.",
+                "default": "${workspaceRoot}"
+              },
+              "runtimeExecutable": {
+                "type": "string",
+                "description": "Absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.",
+                "default": "php"
+              },
+              "runtimeArgs": {
+                "type": "array",
+                "description": "Optional arguments passed to the runtime executable.",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              },
+              "env": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Environment variables passed to the program.",
+                "default": {}
               },
               "port": {
                 "type": "number",
@@ -85,10 +128,6 @@
                 "type": "string",
                 "description": "The source root on this machine that is the equivalent to the serverSourceRoot on the server."
               },
-              "cwd": {
-                "type": "string",
-                "description": "The current working directory, by default the project root"
-              },
               "log": {
                 "type": "boolean",
                 "description": "If true, will log all communication between VS Code and the adapter"
@@ -101,6 +140,14 @@
             "name": "Listen for XDebug",
             "type": "php",
             "request": "launch",
+            "port": 9000
+          },
+          {
+            "name": "Launch currently open script",
+            "type": "php",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${fileDirname}",
             "port": 9000
           }
         ]
