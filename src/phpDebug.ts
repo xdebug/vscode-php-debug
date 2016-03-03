@@ -8,17 +8,8 @@ import * as url from 'url';
 import * as childProcess from 'child_process';
 import * as path from 'path';
 import * as util from 'util';
+import fileUrl = require('file-url');
 import {Terminal} from './terminal';
-
-/** converts a path to a file URI */
-function fileUrl(path: string): string {
-    let pathName = path.replace(/\\/g, '/');
-    // Windows drive letter must be prefixed with a slash
-    if (pathName[0] !== '/') {
-        pathName = '/' + pathName;
-    }
-    return encodeURI('file://' + pathName);
-}
 
 /** formats a xdebug property value for VS Code */
 function formatPropertyValue(property: xdebug.BaseProperty): string {
@@ -260,14 +251,14 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
     protected convertClientPathToDebugger(localPath: string): string {
-        let localFileUri = fileUrl(localPath);
+        let localFileUri = fileUrl(localPath, {resolve: false});
         let serverFileUri: string;
         if (this._args.serverSourceRoot && this._args.localSourceRoot) {
-            let localSourceRootUrl = fileUrl(this._args.localSourceRoot);
+            let localSourceRootUrl = fileUrl(this._args.localSourceRoot, {resolve: false});
             if (!localSourceRootUrl.endsWith('/')) {
                 localSourceRootUrl += '/';
             }
-            let serverSourceRootUrl = fileUrl(this._args.serverSourceRoot);
+            let serverSourceRootUrl = fileUrl(this._args.serverSourceRoot, {resolve: false});
             if (!serverSourceRootUrl.endsWith('/')) {
                 serverSourceRootUrl += '/';
             }
