@@ -129,6 +129,24 @@ class PhpDebugSession extends vscode.DebugSession {
         response.body.supportsConfigurationDoneRequest = true;
         response.body.supportsEvaluateForHovers = false;
         response.body.supportsConditionalBreakpoints = true;
+        response.body.exceptionBreakpointFilters = [
+            {
+                filter: 'Notice',
+                label: 'Notices'
+            },
+            {
+                filter: 'Warning',
+                label: 'Warnings'
+            },
+            {
+                filter: 'Exception',
+                label: 'Exceptions'
+            },
+            {
+                filter: '*',
+                label: 'Everything',
+            }
+        ];
         this.sendResponse(response);
     }
 
@@ -386,11 +404,6 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** This is called once after all line breakpoints have been set and whenever the breakpoints settings change */
     protected setExceptionBreakPointsRequest(response: VSCodeDebugProtocol.SetExceptionBreakpointsResponse, args: VSCodeDebugProtocol.SetExceptionBreakpointsArguments): void {
-        // args.filters can contain 'all' and 'uncaught', but 'uncaught' is the only setting XDebug supports
-        const breakOnExceptions = args.filters.indexOf('uncaught') !== -1;
-        if (args.filters.indexOf('all') !== -1) {
-            this.sendEvent(new vscode.OutputEvent('breaking on caught exceptions is not supported by XDebug', 'stderr'));
-        }
         const connections = Array.from(this._connections.values());
         Promise.all(connections.map(connection =>
             // get all breakpoints
@@ -401,12 +414,11 @@ class PhpDebugSession extends vscode.DebugSession {
                         .filter(breakpoint => breakpoint.type === 'exception')
                         .map(breakpoint => breakpoint.remove())
                 ))
-                .then(() => {
-                    // if enabled, set exception breakpoint for all exceptions
-                    if (breakOnExceptions) {
-                        return connection.sendBreakpointSetCommand(new xdebug.ExceptionBreakpoint('*'));
-                    }
-                })
+                .then(() => Promise.all(
+                    args.filters.map(filter =>
+                        connection.sendBreakpointSetCommand(new xdebug.ExceptionBreakpoint(filter))
+                    )
+                ))
         )).then(() => {
             this.sendResponse(response);
         }).catch(error => {
