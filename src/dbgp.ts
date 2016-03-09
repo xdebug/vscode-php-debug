@@ -68,7 +68,7 @@ export abstract class DbgpConnection extends EventEmitter {
                 const parser = new DOMParser({
                     errorHandler: {
                         warning: warning => {
-                            console.log(warning);
+                            // ignore
                         },
                         error: error => {
                             this.emit('error', error);

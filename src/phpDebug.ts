@@ -162,7 +162,9 @@ class PhpDebugSession extends vscode.DebugSession {
         server.on('connection', (socket: net.Socket) => {
             // new XDebug connection
             const connection = new xdebug.Connection(socket);
-            console.log('new connection ' + connection.id + '\n');
+            if (args.log) {
+                this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'));
+            }
             this._connections.set(connection.id, connection);
             this._waitingConnections.add(connection);
             connection.on('error', (error: Error) => {
@@ -306,7 +308,6 @@ class PhpDebugSession extends vscode.DebugSession {
     /** Logs all requests before dispatching */
     protected dispatchRequest(request: VSCodeDebugProtocol.Request): void {
         const log = `-> ${request.command}Request\n${util.inspect(request, {depth: null})}\n\n`;
-        console.log(log);
         if (this._args && this._args.log) {
             this.sendEvent(new vscode.OutputEvent(log));
         }
@@ -315,7 +316,6 @@ class PhpDebugSession extends vscode.DebugSession {
 
     public sendEvent(event: VSCodeDebugProtocol.Event): void {
         const log = `<- ${event.event}Event\n${util.inspect(event, {depth: null})}\n\n`;
-        console.log(log);
         if (this._args && this._args.log && !(event instanceof vscode.OutputEvent)) {
             this.sendEvent(new vscode.OutputEvent(log));
         }
@@ -324,7 +324,6 @@ class PhpDebugSession extends vscode.DebugSession {
 
     public sendResponse(response: VSCodeDebugProtocol.Response): void {
         const log = `<- ${response.command}Response\n${util.inspect(response, {depth: null})}\n\n`;
-        console[response.success ? 'log' : 'error'](log);
         if (this._args && this._args.log) {
             this.sendEvent(new vscode.OutputEvent(log));
         }
@@ -683,7 +682,6 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendResponse(response);
                 })
                 .catch(error => {
-                    console.error(util.inspect(error));
                     this.sendErrorResponse(response, error);
                 });
         }
