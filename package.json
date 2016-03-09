@@ -50,7 +50,6 @@
     "watch": "tsc -w -p ./src",
     "publish": "vsce publish",
     "postversion": "git push && git push --tags",
-    "vscode:prepublish": "npm install && npm run compile && npm prune --production",
     "test": "mocha out/tests"
   },
   "contributes": {
