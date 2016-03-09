@@ -42,7 +42,8 @@
     "xmldom": "^0.1.22"
   },
   "devDependencies": {
-    "typescript": "^1.7.5"
+    "typescript": "^1.7.5",
+    "tslint": "^3.5.0"
   },
   "scripts": {
     "compile": "tsc -p ./src",

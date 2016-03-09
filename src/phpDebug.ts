@@ -592,7 +592,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             }
                             return new vscode.Variable(property.name, displayValue, variablesReference);
                         })
-                    }
+                    };
                     this.sendResponse(response);
                 })
                 .catch(error => {
@@ -626,7 +626,7 @@ class PhpDebugSession extends vscode.DebugSession {
         this.sendResponse(response);
     }
 
-    protected stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments) : void {
+    protected stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments): void {
         if (!args.threadId) {
             this.sendErrorResponse(response, 0, 'No active connection');
             return;
@@ -638,7 +638,7 @@ class PhpDebugSession extends vscode.DebugSession {
         this.sendResponse(response);
     }
 
-    protected stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments) : void {
+    protected stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments): void {
         if (!args.threadId) {
             this.sendErrorResponse(response, 0, 'No active connection');
             return;
@@ -650,7 +650,7 @@ class PhpDebugSession extends vscode.DebugSession {
         this.sendResponse(response);
     }
 
-    protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments) : void {
+    protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments): void {
         this.sendErrorResponse(response, 0, 'Pausing the execution is not supported by XDebug');
     }
 
@@ -669,9 +669,9 @@ class PhpDebugSession extends vscode.DebugSession {
             this._server.close(() => {
                 this.shutdown();
                 this.sendResponse(response);
-            })
+            });
         }).catch(error => {
-            this.sendErrorResponse(response, error.code, error.message)
+            this.sendErrorResponse(response, error.code, error.message);
         });
     }
 
@@ -696,7 +696,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 this.sendResponse(response);
             })
             .catch(error => {
-                this.sendErrorResponse(response, error.code, error.message)
+                this.sendErrorResponse(response, error.code, error.message);
             });
     }
 }
