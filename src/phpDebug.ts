@@ -132,7 +132,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected attachRequest(response: VSCodeDebugProtocol.AttachResponse, args: VSCodeDebugProtocol.AttachRequestArguments) {
-        this.sendErrorResponse(response, 0, 'Attach requests are not supported');
+        this.sendErrorResponse(response, new Error('Attach requests are not supported'));
         this.shutdown();
     }
 
@@ -142,8 +142,16 @@ class PhpDebugSession extends vscode.DebugSession {
         server.on('connection', (socket: net.Socket) => {
             // new XDebug connection
             const connection = new xdebug.Connection(socket);
+            console.log('new connection ' + connection.id + '\n');
             this._connections.set(connection.id, connection);
             this._waitingConnections.add(connection);
+            connection.on('error', (error: Error) => {
+                 this.sendEvent(new vscode.OutputEvent(error.message));
+                 this.sendEvent(new vscode.ThreadEvent('exited', connection.id));
+                 connection.close();
+                 this._connections.delete(connection.id);
+                 this._waitingConnections.delete(connection);
+            });
             connection.waitForInitPacket()
                 .then(() => {
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
@@ -153,11 +161,14 @@ class PhpDebugSession extends vscode.DebugSession {
                 // raise default of 32
                 .then(response => connection.sendFeatureSetCommand('max_children', '9999'))
                 // request breakpoints from VS Code
-                // once VS Code has set all breakpoints (eg breakpointsSet and exceptionBreakpointsSet are true) _runOrStopOnEntry will be called
                 .then(response => this.sendEvent(new vscode.InitializedEvent()))
                 .catch(error => {
-                    console.error('error: ', error);
+                    this.sendEvent(new vscode.OutputEvent(error.message));
                 });
+        });
+        server.on('error', (error: Error) => {
+            this.sendEvent(new vscode.OutputEvent(error.message));
+            this.shutdown();
         });
         server.listen(args.port || 9000, () => {
             if (args.program) {
@@ -176,7 +187,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             });
                         })
                         .catch((error: Error) => {
-                            this.sendEvent(new vscode.OutputEvent(error.message, 'stderr'));
+                            this.sendEvent(new vscode.OutputEvent(error.message));
                         });
                 } else {
                     const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program, ...programArgs], {cwd, env});
@@ -192,7 +203,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         this.sendEvent(new vscode.TerminatedEvent());
                     });
                     script.on('error', (error: Error) => {
-                        this.sendEvent(new vscode.OutputEvent(error.message, 'stderr'));
+                        this.sendEvent(new vscode.OutputEvent(error.message));
                     });
                 }
             }
@@ -295,9 +306,19 @@ class PhpDebugSession extends vscode.DebugSession {
         const log = `<- ${response.command}Response\n${util.inspect(response, {depth: null})}\n\n`;
         console[response.success ? 'log' : 'error'](log);
         if (this._args && this._args.log) {
-            this.sendEvent(new vscode.OutputEvent(log, response.success ? 'stdout' : 'stderr'));
+            this.sendEvent(new vscode.OutputEvent(log));
         }
         super.sendResponse(response);
+    }
+
+    protected sendErrorResponse(response: VSCodeDebugProtocol.Response, error: Error, dest?: vscode.ErrorDestination): void;
+    protected sendErrorResponse(response: VSCodeDebugProtocol.Response, codeOrMessage: number | VSCodeDebugProtocol.Message, format?: string, variables?: any, dest?: vscode.ErrorDestination): void;
+    protected sendErrorResponse() {
+        if (arguments[1] instanceof Error) {
+            super.sendErrorResponse(arguments[0], arguments[1].code, arguments[1].message, arguments[2]);
+        } else {
+            super.sendErrorResponse(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]);
+        }
     }
 
     /** This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change. */
@@ -307,11 +328,11 @@ class PhpDebugSession extends vscode.DebugSession {
         let xdebugBreakpoints: Array<xdebug.ConditionalBreakpoint|xdebug.LineBreakpoint>;
         response.body = {breakpoints: []};
         // this is returned to VS Code
-        let vscodeBreakpoints: vscode.Breakpoint[];
+        let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[];
         let breakpointsSetPromise: Promise<any>;
         if (connections.length === 0) {
             // if there are no connections yet, we cannot verify any breakpoint
-            vscodeBreakpoints = args.breakpoints.map(breakpoint => new vscode.Breakpoint(false, breakpoint.line));
+            vscodeBreakpoints = args.breakpoints.map(breakpoint => ({verified: false, line: breakpoint.line}));
             breakpointsSetPromise = Promise.resolve();
         } else {
             vscodeBreakpoints = [];
@@ -340,14 +361,13 @@ class PhpDebugSession extends vscode.DebugSession {
                             .then(xdebugResponse => {
                                 // only capture each breakpoint once
                                 if (connectionIndex === 0) {
-                                    vscodeBreakpoints.push(new vscode.Breakpoint(true, breakpoint.line));
+                                    vscodeBreakpoints.push({verified: true, line: breakpoint.line, id: xdebugResponse.breakpointId});
                                 }
                             })
                             .catch(error => {
                                 // only capture each breakpoint once
                                 if (connectionIndex === 0) {
-                                    console.error('breakpoint could not be set: ', error.message);
-                                    vscodeBreakpoints.push(new vscode.Breakpoint(false, breakpoint.line));
+                                    vscodeBreakpoints.push({verified: false, line: breakpoint.line, message: error.message});
                                 }
                             })
                     )))
@@ -359,7 +379,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 this.sendResponse(response);
             })
             .catch(error => {
-                this.sendErrorResponse(response, error.code, error.message);
+                this.sendErrorResponse(response, error);
             });
     }
 
@@ -389,7 +409,7 @@ class PhpDebugSession extends vscode.DebugSession {
         )).then(() => {
             this.sendResponse(response);
         }).catch(error => {
-            this.sendErrorResponse(response, error.code, error.message);
+            this.sendErrorResponse(response, error);
         });
     }
 
@@ -485,7 +505,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 this.sendResponse(response);
             })
             .catch(error => {
-                this.sendErrorResponse(response, error.code, error.message);
+                this.sendErrorResponse(response, error);
             });
     }
 
@@ -535,7 +555,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendResponse(response);
                 })
                 .catch(error => {
-                    this.sendErrorResponse(response, error.code, error.message);
+                    this.sendErrorResponse(response, error);
                 });
         }
     }
@@ -568,7 +588,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 const property = this._evalResultProperties.get(variablesReference);
                 propertiesPromise = Promise.resolve(property.hasChildren ? property.children : []);
             } else {
-                this.sendErrorResponse(response, 0, 'Unknown variable reference');
+                this.sendErrorResponse(response, new Error('Unknown variable reference'));
                 return;
             }
             propertiesPromise
@@ -597,61 +617,61 @@ class PhpDebugSession extends vscode.DebugSession {
                 })
                 .catch(error => {
                     console.error(util.inspect(error));
-                    this.sendErrorResponse(response, error.code, error.message);
+                    this.sendErrorResponse(response, error);
                 });
         }
     }
 
     protected continueRequest(response: VSCodeDebugProtocol.ContinueResponse, args: VSCodeDebugProtocol.ContinueArguments): void {
         if (!args.threadId) {
-            this.sendErrorResponse(response, 0, 'No active connection');
+            this.sendErrorResponse(response, new Error('No active connection'));
             return;
         }
         const connection = this._connections.get(args.threadId);
         connection.sendRunCommand()
             .then(response => this._checkStatus(response))
-            .catch(error => this.sendErrorResponse(response, error.code, error.message));
+            .catch(error => this.sendErrorResponse(response, error));
         this.sendResponse(response);
     }
 
     protected nextRequest(response: VSCodeDebugProtocol.NextResponse, args: VSCodeDebugProtocol.NextArguments): void {
         if (!args.threadId) {
-            this.sendErrorResponse(response, 0, 'No active connection');
+            this.sendErrorResponse(response, new Error('No active connection'));
             return;
         }
         const connection = this._connections.get(args.threadId);
         connection.sendStepOverCommand()
             .then(response => this._checkStatus(response))
-            .catch(error => this.sendErrorResponse(response, error.code, error.message));
+            .catch(error => this.sendErrorResponse(response, error));
         this.sendResponse(response);
     }
 
     protected stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments): void {
         if (!args.threadId) {
-            this.sendErrorResponse(response, 0, 'No active connection');
+            this.sendErrorResponse(response, new Error('No active connection'));
             return;
         }
         const connection = this._connections.get(args.threadId);
         connection.sendStepIntoCommand()
             .then(response => this._checkStatus(response))
-            .catch(error => this.sendErrorResponse(response, error.code, error.message));
+            .catch(error => this.sendErrorResponse(response, error));
         this.sendResponse(response);
     }
 
     protected stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments): void {
         if (!args.threadId) {
-            this.sendErrorResponse(response, 0, 'No active connection');
+            this.sendErrorResponse(response, new Error('No active connection'));
             return;
         }
         const connection = this._connections.get(args.threadId);
         connection.sendStepOutCommand()
             .then(response => this._checkStatus(response))
-            .catch(error => this.sendErrorResponse(response, error.code, error.message));
+            .catch(error => this.sendErrorResponse(response, error));
         this.sendResponse(response);
     }
 
     protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments): void {
-        this.sendErrorResponse(response, 0, 'Pausing the execution is not supported by XDebug');
+        this.sendErrorResponse(response, new Error('Pausing the execution is not supported by XDebug'));
     }
 
     protected disconnectRequest(response: VSCodeDebugProtocol.DisconnectResponse, args: VSCodeDebugProtocol.DisconnectArguments): void {
@@ -671,7 +691,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 this.sendResponse(response);
             });
         }).catch(error => {
-            this.sendErrorResponse(response, error.code, error.message);
+            this.sendErrorResponse(response, error);
         });
     }
 
@@ -696,7 +716,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 this.sendResponse(response);
             })
             .catch(error => {
-                this.sendErrorResponse(response, error.code, error.message);
+                this.sendErrorResponse(response, error);
             });
     }
 }

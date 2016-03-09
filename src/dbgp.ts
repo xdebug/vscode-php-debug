@@ -7,18 +7,11 @@ import {DOMParser} from 'xmldom';
 /** The encoding all XDebug messages are encoded with */
 const ENCODING = 'iso-8859-1';
 
-function parseResponse(response: Buffer): XMLDocument {
-    const xml = iconv.decode(response, ENCODING);
-    const parser = new DOMParser();
-    const document = parser.parseFromString(xml, 'application/xml');
-    return document;
-}
-
 /** The two states the connection switches between */
 enum ParsingState {DataLength, Response};
 
 /** Wraps the NodeJS Socket and calls handleResponse() whenever a full response arrives */
-export abstract class DbgpConnection {
+export abstract class DbgpConnection extends EventEmitter {
 
     private _socket: net.Socket;
     private _parsingState: ParsingState;
@@ -27,11 +20,13 @@ export abstract class DbgpConnection {
     private _dataLength: number;
 
     constructor(socket: net.Socket) {
+        super();
         this._socket = socket;
         this._parsingState = ParsingState.DataLength;
         this._chunksDataLength = 0;
         this._chunks = [];
         socket.on('data', (data: Buffer) => this._handleDataChunk(data));
+        socket.on('error', (error: Error) => this.emit('error'));
     }
 
     private _handleDataChunk(data: Buffer) {
@@ -69,7 +64,22 @@ export abstract class DbgpConnection {
                 this._chunksDataLength += data.length;
                 const response = Buffer.concat(this._chunks, this._chunksDataLength);
                 // call response handler
-                this.handleResponse(parseResponse(response));
+                const xml = iconv.decode(response, ENCODING);
+                const parser = new DOMParser({
+                    errorHandler: {
+                        warning: warning => {
+                            console.log(warning);
+                        },
+                        error: error => {
+                            this.emit('error', error);
+                        },
+                        fatalError: error => {
+                            this.emit('error', error);
+                        }
+                    }
+                });
+                const document = parser.parseFromString(xml, 'application/xml');
+                this.handleResponse(document);
                 // reset buffer
                 this._chunks = [];
                 this._chunksDataLength = 0;

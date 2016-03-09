@@ -525,7 +525,6 @@ export class Connection extends DbgpConnection {
         this._initPromise = new Promise<InitPacket>((resolve, reject) => {
             this._initPromiseResolveFn = resolve;
         });
-        console.log('New XDebug Connection #' + this.id);
     }
 
     /** Returns a promise that gets resolved once the init packet arrives */
