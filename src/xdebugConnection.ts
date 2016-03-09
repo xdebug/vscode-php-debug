@@ -85,6 +85,7 @@ export class StatusResponse extends Response {
     exception: {
         name: string;
         message: string;
+        code?: number;
     };
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
@@ -98,6 +99,9 @@ export class StatusResponse extends Response {
                     name: messageNode.getAttribute('exception'),
                     message: messageNode.textContent
                 };
+                if (messageNode.hasAttribute('code')) {
+                    this.exception.code = parseInt(messageNode.getAttribute('code'));
+                }
             }
             if (messageNode.hasAttribute('filename')) {
                 this.fileUri = messageNode.getAttribute('filename');

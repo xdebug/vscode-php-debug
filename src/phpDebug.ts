@@ -572,6 +572,9 @@ class PhpDebugSession extends vscode.DebugSession {
                     new vscode.Variable('message', '"' + status.exception.message + '"')
                 ]
             };
+            if (status.exception.code !== undefined) {
+                response.body.variables.push(new vscode.Variable('code', status.exception.code + ''));
+            }
             this.sendResponse(response);
         } else {
             // it is a real scope
