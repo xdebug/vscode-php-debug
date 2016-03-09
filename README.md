@@ -29,7 +29,7 @@ Now, if you select the _Listen for XDebug_ configuration and hit `F5`, VS Code w
 When you make a request to `localhost` with your webbrowser or run a script from the command line, XDebug will connect to VS Code and you can debug your PHP.
 
 For CLI scripts, you can set the same options the Node debugger supports: `program`, `runtimeExecutable`, `runtimeArgs`, `args`, `cwd`, `env` and `externalConsole` (see IntelliSense for descriptions).
-The dafault configuration includes one that runs the currently opened script as an example.
+The default configuration includes one that runs the currently opened script as an example.
 
 What is supported?
 ------------------
@@ -39,17 +39,12 @@ What is supported?
  - Step over, step in, step out
  - Break on entry
  - Breaking on uncaught exceptions and errors / warnings / notices
- - Multiple, parallel requests (still a bit buggy but I think these are bugs in VS Code)
+ - Multiple, parallel requests (Still buggy, see [Microsoft/vscode#1703](https://github.com/Microsoft/vscode/issues/1703))
  - Stack traces, scope variables, superglobals, user defined constants
  - Arrays & objects (including classname, private and static properties)
  - Debug console
  - Watches
  - Run as CLI
-
-What is not supported?
-----------------------
- - Breaking on _caught_ exceptions, this is not supported by XDebug and the setting is ignored
- - Attach requests, there is no such thing because the lifespan of PHP scripts is short
 
 Remote Host Debugging
 ---------------------
@@ -79,11 +74,10 @@ Contributing
 ------------
 To hack on this adapter, clone the repository and open it in VS Code.
 You can debug it (run it in "server mode") by selecting the "Debug adapter" launch configuration and hitting `F5`.
-Then, open a terminal inside the project, and open the included testproject with VS Code while specifying the current directory as `extensionDevelopmentPath`.
-As an example, for Powershell on Windows it could look like this:
+Then, open a terminal inside the project, and open the included testproject with VS Code while specifying the current directory as `extensionDevelopmentPath`:
 
-```powershell
-PS C:\Users\felix\github\vscode-php-debug> code .\testproject\ --extensionDevelopmentPath=$pwd
+```sh
+code testproject --extensionDevelopmentPath=.
 ```
 
 VS Code will open an "Extension Development Host" with the debug adapter running. Open `.vscode/launch.json` and
