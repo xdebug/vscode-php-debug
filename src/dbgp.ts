@@ -27,6 +27,7 @@ export abstract class DbgpConnection extends EventEmitter {
         this._chunks = [];
         socket.on('data', (data: Buffer) => this._handleDataChunk(data));
         socket.on('error', (error: Error) => this.emit('error'));
+        socket.on('close', () => this.emit('close'));
     }
 
     private _handleDataChunk(data: Buffer) {

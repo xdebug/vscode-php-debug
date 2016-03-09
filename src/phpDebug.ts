@@ -167,13 +167,22 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             this._connections.set(connection.id, connection);
             this._waitingConnections.add(connection);
-            connection.on('error', (error: Error) => {
-                 this.sendEvent(new vscode.OutputEvent(error.message));
-                 this.sendEvent(new vscode.ThreadEvent('exited', connection.id));
-                 connection.close();
-                 this._connections.delete(connection.id);
-                 this._waitingConnections.delete(connection);
-            });
+            const disposeConnection = (error?: Error) => {
+                if (this._connections.has(connection.id)) {
+                    if (args.log) {
+                        this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ' closed\n'));
+                    }
+                    if (error) {
+                        this.sendEvent(new vscode.OutputEvent(error.message));
+                    }
+                    this.sendEvent(new vscode.ThreadEvent('exited', connection.id));
+                    connection.close();
+                    this._connections.delete(connection.id);
+                    this._waitingConnections.delete(connection);
+                }
+            };
+            connection.once('error', disposeConnection);
+            connection.once('close', disposeConnection);
             connection.waitForInitPacket()
                 .then(() => {
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
