@@ -113,14 +113,17 @@ export class StatusResponse extends Response {
     }
 }
 
+export type BreakpointType = 'line' | 'call' | 'return' | 'exception' | 'conditional' | 'watch';
+export type BreakpointState = 'enabled' | 'disabled';
+
 /** Abstract base class for all breakpoints */
 export abstract class Breakpoint {
     /** Unique ID which is used for modifying the breakpoint (only when received through breakpoint_list) */
     id: number;
     /** The type of the breakpoint: line, call, return, exception, conditional or watch */
-    type: string;
+    type: BreakpointType;
     /** State of the breakpoint: enabled, disabled */
-    state: string;
+    state: BreakpointState;
     /** The connection this breakpoint is set on */
     connection: Connection;
     /** dynamically detects the type of breakpoint and returns the appropiate object */
@@ -134,15 +137,15 @@ export abstract class Breakpoint {
     /** Constructs a breakpoint object from an XML node from a XDebug response */
     constructor(breakpointNode: Element, connection: Connection);
     /** To create a new breakpoint in derived classes */
-    constructor(type: string);
+    constructor(type: BreakpointType);
     constructor() {
         if (typeof arguments[0] === 'object') {
             // from XML
             const breakpointNode: Element = arguments[0];
             this.connection = arguments[1];
-            this.type = breakpointNode.getAttribute('type');
+            this.type = <BreakpointType>breakpointNode.getAttribute('type');
             this.id = parseInt(breakpointNode.getAttribute('id'));
-            this.state = breakpointNode.getAttribute('state');
+            this.state = <BreakpointState>breakpointNode.getAttribute('state');
         } else {
             this.type = arguments[0];
         }
