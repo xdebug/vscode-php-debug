@@ -132,6 +132,7 @@ export abstract class Breakpoint {
             case 'exception': return new ExceptionBreakpoint(breakpointNode, connection);
             case 'line': return new LineBreakpoint(breakpointNode, connection);
             case 'conditional': return new ConditionalBreakpoint(breakpointNode, connection);
+            case 'call': return new CallBreakpoint(breakpointNode, connection);
         }
     }
     /** Constructs a breakpoint object from an XML node from a XDebug response */
@@ -177,6 +178,32 @@ export class LineBreakpoint extends Breakpoint {
             this.fileUri = arguments[0];
             this.line = arguments[1];
             super('line');
+        }
+    }
+}
+
+/** class for call breakpoints. Returned from a breakpoint_list or passed to sendBreakpointSetCommand */
+export class CallBreakpoint extends Breakpoint {
+    /** the function to break on */
+    fn: string;
+    /** optional expression that must evaluate to true */
+    expression: string;
+    /** constructs a call breakpoint from an XML node */
+    constructor(breakpointNode: Element, connection: Connection);
+    /** contructs a call breakpoint for passing to sendSetBreakpointCommand */
+    constructor(fn: string, expression?: string);
+    constructor() {
+        if (typeof arguments[0] === 'object') {
+            const breakpointNode: Element = arguments[0];
+            const connection: Connection = arguments[1];
+            super(breakpointNode, connection);
+            this.fn = breakpointNode.getAttribute('function');
+            this.expression = breakpointNode.getAttribute('expression'); // Base64 encoded?
+        } else {
+            // construct from arguments
+            this.fn = arguments[0];
+            this.expression = arguments[1];
+            super('call');
         }
     }
 }
@@ -667,6 +694,9 @@ export class Connection extends DbgpConnection {
             if (typeof breakpoint.line === 'number') {
                 args += ` -n ${breakpoint.line}`;
             }
+            data = breakpoint.expression;
+        } else if (breakpoint instanceof CallBreakpoint) {
+            args += ` -m ${breakpoint.fn}`;
             data = breakpoint.expression;
         }
         return this._enqueueCommand('breakpoint_set', args, data).then(document => new BreakpointSetResponse(document, this));

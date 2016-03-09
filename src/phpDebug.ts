@@ -129,6 +129,7 @@ class PhpDebugSession extends vscode.DebugSession {
         response.body.supportsConfigurationDoneRequest = true;
         response.body.supportsEvaluateForHovers = false;
         response.body.supportsConditionalBreakpoints = true;
+        response.body.supportsFunctionBreakpoints = true;
         response.body.exceptionBreakpointFilters = [
             {
                 filter: 'Notice',
@@ -424,6 +425,56 @@ class PhpDebugSession extends vscode.DebugSession {
         }).catch(error => {
             this.sendErrorResponse(response, error);
         });
+    }
+
+    protected setFunctionBreakPointsRequest(response: VSCodeDebugProtocol.SetFunctionBreakpointsResponse, args: VSCodeDebugProtocol.SetFunctionBreakpointsArguments): void {
+        const connections = Array.from(this._connections.values());
+        response.body = { breakpoints: [] };
+        // this is returned to VS Code
+        let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[];
+        let breakpointsSetPromise: Promise<any>;
+        if (connections.length === 0) {
+            // if there are no connections yet, we cannot verify any breakpoint
+            vscodeBreakpoints = args.breakpoints.map(breakpoint => ({verified: false, message: 'No connection'}));
+            breakpointsSetPromise = Promise.resolve();
+        } else {
+            vscodeBreakpoints = [];
+            // for all connections
+            breakpointsSetPromise = Promise.all(connections.map((connection, connectionIndex) =>
+                // clear breakpoints for this file
+                connection.sendBreakpointListCommand()
+                    .then(response => Promise.all(
+                        response.breakpoints
+                            .filter(breakpoint => breakpoint instanceof xdebug.CallBreakpoint)
+                            .map(breakpoint => breakpoint.remove())
+                    ))
+                    .then(() => Promise.all(
+                        args.breakpoints.map(functionBreakpoint =>
+                            connection.sendBreakpointSetCommand(new xdebug.CallBreakpoint(functionBreakpoint.name, functionBreakpoint.condition))
+                                .then(xdebugResponse => {
+                                    // only capture each breakpoint once
+                                    if (connectionIndex === 0) {
+                                        vscodeBreakpoints.push({verified: true, id: xdebugResponse.breakpointId});
+                                    }
+                                })
+                                .catch(error => {
+                                    // only capture each breakpoint once
+                                    if (connectionIndex === 0) {
+                                        vscodeBreakpoints.push({verified: false, message: error.message});
+                                    }
+                                })
+                        )
+                    ))
+            ));
+        }
+        breakpointsSetPromise
+            .then(() => {
+                response.body = {breakpoints: vscodeBreakpoints};
+                this.sendResponse(response);
+            })
+            .catch(error => {
+                this.sendErrorResponse(response, error);
+            });
     }
 
     /** Executed after all breakpoints have been set by VS Code */

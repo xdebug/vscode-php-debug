@@ -35,6 +35,7 @@ What is supported?
 ------------------
  - Line breakpoints
  - Conditional breakpoints
+ - Function breakpoints
  - Step over, step in, step out
  - Break on entry
  - Breaking on uncaught exceptions and errors / warnings / notices
