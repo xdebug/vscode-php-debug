@@ -127,7 +127,7 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected initializeRequest(response: VSCodeDebugProtocol.InitializeResponse, args: VSCodeDebugProtocol.InitializeRequestArguments): void {
         response.body.supportsConfigurationDoneRequest = true;
-        response.body.supportsEvaluateForHovers = true;
+        response.body.supportsEvaluateForHovers = false;
         this.sendResponse(response);
     }
 
