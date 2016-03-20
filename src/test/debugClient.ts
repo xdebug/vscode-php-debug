@@ -208,7 +208,7 @@ export class DebugClient extends ProtocolClient {
      * Returns a promise that will resolve if an event with a specific type was received within the given timeout.
      * The promise will be rejected if a timeout occurs.
      */
-    public waitForEvent(eventType: string, timeout: number = 5000): Promise<DebugProtocol.Event> {
+    public waitForEvent(eventType: string, timeout: number = 6000): Promise<DebugProtocol.Event> {
 
         return new Promise((resolve, reject) => {
             this.on(eventType, event => {
@@ -223,7 +223,7 @@ export class DebugClient extends ProtocolClient {
     }
 
     /*
-     * Returns a promise that will resolve if an 'initialized' event was received within 5000ms
+     * Returns a promise that will resolve if an 'initialized' event was received within 6000ms
      * and a subsequent 'configurationDone' request was successfully executed.
      * The promise will be rejected if a timeout occurs or if the 'configurationDone' request fails.
      */
@@ -257,7 +257,7 @@ export class DebugClient extends ProtocolClient {
     }
 
     /*
-     * Returns a promise that will resolve if a 'stopped' event was received within 5000ms
+     * Returns a promise that will resolve if a 'stopped' event was received within 6000ms
      * and the event's reason and line number was asserted.
      * The promise will be rejected if a timeout occurs, the assertions fail, or if the 'stackTrace' request fails.
      */
@@ -292,7 +292,7 @@ export class DebugClient extends ProtocolClient {
      * and the concatenated data match the expected data.
      * The promise will be rejected as soon as the received data cannot match the expected data or if a timeout occurs.
      */
-    public assertOutput(category: string, expected: string, timeout: number = 5000): Promise<DebugProtocol.Event> {
+    public assertOutput(category: string, expected: string, timeout: number = 6000): Promise<DebugProtocol.Event> {
 
         return new Promise((resolve, reject) => {
             let output = '';
@@ -319,7 +319,7 @@ export class DebugClient extends ProtocolClient {
     // ---- scenarios ---------------------------------------------------------------------------------------------------------
 
     /**
-     * Returns a promise that will resolve if a configurable breakpoint has been hit within 5000ms
+     * Returns a promise that will resolve if a configurable breakpoint has been hit within 6000ms
      * and the event's reason and line number was asserted.
      * The promise will be rejected if a timeout occurs, the assertions fail, or if the requests fails.
      */

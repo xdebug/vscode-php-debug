@@ -54,6 +54,23 @@ describe('PHP Debug Adapter', () => {
         );
     });
 
+    describe('continuation commands', () => {
+
+        const program = path.join(TEST_PROJECT, 'function.php');
+
+        it('should handle run');
+        it('should handle step_over');
+        it('should handle step_in');
+        it('should handle step_out');
+        it('should handle disconnect', async () => {
+            await Promise.all([
+                client.launch({program, stopOnEntry: true}),
+                client.waitForEvent('initialized')
+            ]);
+            await client.disconnectRequest();
+        });
+    });
+
     describe('breakpoints', () => {
 
         const program = path.join(TEST_PROJECT, 'hello_world.php');
@@ -154,8 +171,10 @@ describe('PHP Debug Adapter', () => {
             const program = path.join(TEST_PROJECT, 'variables.php');
 
             it('should stop on a conditional breakpoint when condition is true', async () => {
-                await client.launch({program});
-                await client.waitForEvent('initialized');
+                await Promise.all([
+                    client.launch({program}),
+                    client.waitForEvent('initialized')
+                ]);
                 const bp = (await client.setBreakpointsRequest({breakpoints: [{line: 10, condition: '$anInt === 123'}], source: {path: program}})).body.breakpoints[0];
                 assert.equal(bp.verified, true, 'breakpoint verification mismatch: verified');
                 assert.equal(bp.line, 10, 'breakpoint verification mismatch: line');
@@ -168,13 +187,17 @@ describe('PHP Debug Adapter', () => {
             });
 
             it('should not stop on a conditional breakpoint when condition is false', async () => {
-                await client.launch({program});
-                await client.waitForEvent('initialized');
+                await Promise.all([
+                    client.launch({program}),
+                    client.waitForEvent('initialized')
+                ]);
                 const bp = (await client.setBreakpointsRequest({breakpoints: [{line: 10, condition: '$anInt !== 123'}], source: {path: program}})).body.breakpoints[0];
                 assert.equal(bp.verified, true, 'breakpoint verification mismatch: verified');
                 assert.equal(bp.line, 10, 'breakpoint verification mismatch: line');
-                await client.configurationDoneRequest();
-                await client.waitForEvent('terminated');
+                await Promise.all([
+                    client.configurationDoneRequest(),
+                    client.waitForEvent('terminated')
+                ]);
             });
         });
 
@@ -187,8 +210,10 @@ describe('PHP Debug Adapter', () => {
                 await client.waitForEvent('initialized');
                 const breakpoint = (await client.setFunctionBreakpointsRequest({breakpoints: [{name: 'a_function'}]})).body.breakpoints[0];
                 assert.strictEqual(breakpoint.verified, true);
-                await client.configurationDoneRequest();
-                client.assertStoppedLocation('breakpoint', {path: program, line: 5});
+                await Promise.all([
+                    client.configurationDoneRequest(),
+                    client.assertStoppedLocation('breakpoint', {path: program, line: 5})
+                ]);
             });
         });
     });
