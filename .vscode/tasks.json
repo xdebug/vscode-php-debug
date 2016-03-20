@@ -12,6 +12,10 @@
     {
       "taskName": "watch",
       "isWatching": true
+    },
+    {
+      "taskName": "test",
+      "isTestCommand": true
     }
   ]
 }

@@ -43,11 +43,14 @@
   },
   "devDependencies": {
     "babel-preset-es2015-node4": "^2.0.3",
+    "chai": "^3.5.0",
+    "chai-as-promised": "^5.2.0",
     "file-url": "^1.1.0",
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
     "gulp-sourcemaps": "^1.6.0",
     "gulp-typescript": "^2.12.1",
+    "mocha": "^2.4.5",
     "tslint": "^3.6.0",
     "typescript": "^1.8.9"
   },
@@ -56,6 +59,7 @@
     "compile": "gulp compile",
     "watch": "gulp watch",
     "start": "code testproject --extensionDevelopmentPath=.",
+    "test": "mocha out/test --timeout 5000 --slow 1000",
     "lint": "tslint -c tslint.json src/**/*.ts"
   },
   "contributes": {
