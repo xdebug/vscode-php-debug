@@ -42,15 +42,21 @@
     "xmldom": "^0.1.22"
   },
   "devDependencies": {
-    "tslint": "^3.5.0",
-    "typescript": "^1.8.7"
+    "babel-preset-es2015-node4": "^2.0.3",
+    "file-url": "^1.1.0",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-typescript": "^2.12.1",
+    "tslint": "^3.6.0",
+    "typescript": "^1.8.9"
   },
   "scripts": {
-    "compile": "tsc -p ./src",
-    "watch": "tsc -w -p ./src",
-    "publish": "vsce publish",
     "postversion": "git push && git push --tags",
-    "test": "mocha out/tests"
+    "compile": "gulp compile",
+    "watch": "gulp watch",
+    "start": "code testproject --extensionDevelopmentPath=.",
+    "lint": "tslint -c tslint.json src/**/*.ts"
   },
   "contributes": {
     "debuggers": [

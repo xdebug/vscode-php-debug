@@ -1,6 +1,12 @@
-.vscode/**/*
-.gitignore
-src/**/*
-out/tests/**/*
+.vscode/**/*.*
+src/**/*.*
+out/test/**/*.*
 **/*.js.map
-testproject/**/*
+typings/**/*.*
+testproject/**/*.*
+.gitignore
+.editorconfig
+typings.json
+tslint.json
+gulpfile.js
+tsconfig.json

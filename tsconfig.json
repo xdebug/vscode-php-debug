@@ -1,0 +1,17 @@
+{
+  "exclude": [
+    "out",
+    "node_modules",
+    "typings/browser",
+    "typings/browser.d.ts"
+  ],
+	"compilerOptions": {
+		"target": "es6",
+    "rootDir": "src",
+		"moduleResolution": "node",
+		"noImplicitAny": false,
+		"removeComments": false,
+		"preserveConstEnums": true,
+    "allowSyntheticDefaultImports": true
+	}
+}

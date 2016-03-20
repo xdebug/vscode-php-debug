@@ -1,0 +1,22 @@
+{
+  "name": "php-debug",
+  "version": false,
+  "dependencies": {
+    "moment": "registry:npm/moment#2.10.5+20160211003958"
+  },
+  "ambientDependencies": {
+    "node": "registry:dt/node#4.0.0+20160319033040",
+    "xmldom": "registry:dt/xmldom#0.1.22+20160319053438"
+  },
+  "ambientDevDependencies": {
+    "gulp-babel": "registry:dt/gulp-babel#6.1.0+20160316171810",
+    "gulp-sourcemaps": "registry:dt/gulp-sourcemaps#0.0.0+20160316155526",
+    "gulp-typescript": "registry:dt/gulp-typescript#0.0.0+20160317120654",
+    "mocha": "registry:dt/mocha#2.2.5+20160317120654"
+  },
+  "devDependencies": {
+    "chai": "registry:npm/chai#3.4.0+20160308201903",
+    "chai-as-promised": "registry:npm/chai-as-promised#5.1.0+20160310030142",
+    "gulp": "registry:npm/gulp#3.8.0+20160211003958"
+  }
+}

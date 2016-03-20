@@ -176,9 +176,9 @@ export class LineBreakpoint extends Breakpoint {
             this.line = parseInt(breakpointNode.getAttribute('line'));
         } else {
             // construct from arguments
+            super('line');
             this.fileUri = arguments[0];
             this.line = arguments[1];
-            super('line');
         }
     }
 }
@@ -202,9 +202,9 @@ export class CallBreakpoint extends Breakpoint {
             this.expression = breakpointNode.getAttribute('expression'); // Base64 encoded?
         } else {
             // construct from arguments
+            super('call');
             this.fn = arguments[0];
             this.expression = arguments[1];
-            super('call');
         }
     }
 }
@@ -311,8 +311,8 @@ export class StackFrame {
         this.connection = connection;
     }
     /** Returns the available contexts (scopes, such as "Local" and "Superglobals") by doing a context_names command */
-    public getContexts(): Promise<Context[]> {
-        return this.connection.sendContextNamesCommand(this).then(response => response.contexts);
+    public async getContexts(): Promise<Context[]> {
+        return (await this.connection.sendContextNamesCommand(this)).contexts;
     }
 }
 
@@ -359,8 +359,8 @@ export class Context {
      * Returns the properties (variables) inside this context by doing a context_get command
      * @returns Promise.<Property[]>
      */
-    public getProperties(): Promise<Property[]> {
-        return this.stackFrame.connection.sendContextGetCommand(this).then(response => response.properties);
+    public async getProperties(): Promise<Property[]> {
+        return (await this.stackFrame.connection.sendContextGetCommand(this)).properties;
     }
 }
 
@@ -433,11 +433,11 @@ export class Property extends BaseProperty {
      * Returns the child properties of this property by doing another property_get
      * @returns Promise.<Property[]>
      */
-    public getChildren(): Promise<Property[]> {
+    public async getChildren(): Promise<Property[]> {
         if (!this.hasChildren) {
-            return Promise.reject<Property[]>(new Error('This property has no children'));
+            throw new Error('This property has no children');
         }
-        return this.context.stackFrame.connection.sendPropertyGetCommand(this).then(response => response.children);
+        return (await this.context.stackFrame.connection.sendPropertyGetCommand(this)).children;
     }
 }
 
@@ -627,8 +627,8 @@ export class Connection extends DbgpConnection {
     // ------------------------ status --------------------------------------------
 
     /** Sends a status command */
-    public sendStatusCommand(): Promise<StatusResponse> {
-        return this._enqueueCommand('status').then(document => new StatusResponse(document, this));
+    public async sendStatusCommand(): Promise<StatusResponse> {
+        return new StatusResponse(await this._enqueueCommand('status'), this);
     }
 
     // ------------------------ feature negotiation --------------------------------
@@ -656,8 +656,8 @@ export class Connection extends DbgpConnection {
      *  - notify_ok
      * or any command.
      */
-    public sendFeatureGetCommand(feature: string): Promise<XMLDocument> {
-        return this._enqueueCommand('feature_get', `-n feature`);
+    public async sendFeatureGetCommand(feature: string): Promise<XMLDocument> {
+        return await this._enqueueCommand('feature_get', `-n feature`);
     }
 
     /**
@@ -672,8 +672,8 @@ export class Connection extends DbgpConnection {
      *  - show_hidden
      *  - notify_ok
      */
-    public sendFeatureSetCommand(feature: string, value: string): Promise<FeatureSetResponse> {
-        return this._enqueueCommand('feature_set', `-n ${feature} -v ${value}`).then(document => new FeatureSetResponse(document, this));
+    public async sendFeatureSetCommand(feature: string, value: string): Promise<FeatureSetResponse> {
+        return new FeatureSetResponse(await this._enqueueCommand('feature_set', `-n ${feature} -v ${value}`), this);
     }
 
     // ---------------------------- breakpoints ------------------------------------
@@ -683,7 +683,7 @@ export class Connection extends DbgpConnection {
      * @param {Breakpoint} breakpoint - an instance of LineBreakpoint, ConditionalBreakpoint or ExceptionBreakpoint
      * @returns Promise.<BreakpointSetResponse>
      */
-    public sendBreakpointSetCommand(breakpoint: Breakpoint): Promise<BreakpointSetResponse> {
+    public async sendBreakpointSetCommand(breakpoint: Breakpoint): Promise<BreakpointSetResponse> {
         let args = `-t ${breakpoint.type}`;
         let data: string;
         if (breakpoint instanceof LineBreakpoint) {
@@ -700,78 +700,78 @@ export class Connection extends DbgpConnection {
             args += ` -m ${breakpoint.fn}`;
             data = breakpoint.expression;
         }
-        return this._enqueueCommand('breakpoint_set', args, data).then(document => new BreakpointSetResponse(document, this));
+        return new BreakpointSetResponse(await this._enqueueCommand('breakpoint_set', args, data), this);
     }
 
     /** sends a breakpoint_list command */
-    public sendBreakpointListCommand(): Promise<BreakpointListResponse> {
-        return this._enqueueCommand('breakpoint_list').then(document => new BreakpointListResponse(document, this));
+    public async sendBreakpointListCommand(): Promise<BreakpointListResponse> {
+        return new BreakpointListResponse(await this._enqueueCommand('breakpoint_list'), this);
     }
 
     /** sends a breakpoint_remove command */
-    public sendBreakpointRemoveCommand(breakpoint: Breakpoint): Promise<Response> {
-        return this._enqueueCommand('breakpoint_remove', `-d ${breakpoint.id}`).then(document => new Response(document, this));
+    public async sendBreakpointRemoveCommand(breakpoint: Breakpoint): Promise<Response> {
+        return new Response(await this._enqueueCommand('breakpoint_remove', `-d ${breakpoint.id}`), this);
     }
 
     // ----------------------------- continuation ---------------------------------
 
     /** sends a run command */
-    public sendRunCommand(): Promise<StatusResponse> {
-        return this._enqueueCommand('run').then(document => new StatusResponse(document, this));
+    public async sendRunCommand(): Promise<StatusResponse> {
+        return new StatusResponse(await this._enqueueCommand('run'), this);
     }
 
     /** sends a step_into command */
-    public sendStepIntoCommand(): Promise<StatusResponse> {
-        return this._enqueueCommand('step_into').then(document => new StatusResponse(document, this));
+    public async sendStepIntoCommand(): Promise<StatusResponse> {
+        return new StatusResponse(await this._enqueueCommand('step_into'), this);
     }
 
     /** sends a step_over command */
-    public sendStepOverCommand(): Promise<StatusResponse> {
-        return this._enqueueCommand('step_over').then(document => new StatusResponse(document, this));
+    public async sendStepOverCommand(): Promise<StatusResponse> {
+        return new StatusResponse(await this._enqueueCommand('step_over'), this);
     }
 
     /** sends a step_out command */
-    public sendStepOutCommand(): Promise<StatusResponse> {
-        return this._enqueueCommand('step_out').then(document => new StatusResponse(document, this));
+    public async sendStepOutCommand(): Promise<StatusResponse> {
+        return new StatusResponse(await this._enqueueCommand('step_out'), this);
     }
 
     /** sends a stop command */
-    public sendStopCommand(): Promise<StatusResponse> {
-        return this._enqueueCommand('stop').then(document => new StatusResponse(document, this));
+    public async sendStopCommand(): Promise<StatusResponse> {
+        return new StatusResponse(await this._enqueueCommand('stop'), this);
     }
 
     // ------------------------------ stack ----------------------------------------
 
     /** Sends a stack_get command */
-    public sendStackGetCommand(): Promise<StackGetResponse> {
-        return this._enqueueCommand('stack_get').then(document => new StackGetResponse(document, this));
+    public async sendStackGetCommand(): Promise<StackGetResponse> {
+        return new StackGetResponse(await this._enqueueCommand('stack_get'), this);
     }
 
-    public sendSourceCommand(uri: string): Promise<SourceResponse> {
-        return this._enqueueCommand('source', `-f ${uri}`).then(document => new SourceResponse(document, this));
+    public async sendSourceCommand(uri: string): Promise<SourceResponse> {
+        return new SourceResponse(await this._enqueueCommand('source', `-f ${uri}`), this);
     }
 
     // ------------------------------ context --------------------------------------
 
     /** Sends a context_names command. */
-    public sendContextNamesCommand(stackFrame: StackFrame): Promise<ContextNamesResponse> {
-        return this._enqueueCommand('context_names', `-d ${stackFrame.level}`).then(document => new ContextNamesResponse(document, stackFrame));
+    public async sendContextNamesCommand(stackFrame: StackFrame): Promise<ContextNamesResponse> {
+        return new ContextNamesResponse(await this._enqueueCommand('context_names', `-d ${stackFrame.level}`), stackFrame);
     }
 
     /** Sends a context_get comand */
-    public sendContextGetCommand(context: Context): Promise<ContextGetResponse> {
-        return this._enqueueCommand('context_get', `-d ${context.stackFrame.level} -c ${context.id}`).then(document => new ContextGetResponse(document, context));
+    public async sendContextGetCommand(context: Context): Promise<ContextGetResponse> {
+        return new ContextGetResponse(await this._enqueueCommand('context_get', `-d ${context.stackFrame.level} -c ${context.id}`), context);
     }
 
     /** Sends a property_get command */
-    public sendPropertyGetCommand(property: Property): Promise<PropertyGetResponse> {
-        return this._enqueueCommand('property_get', `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${property.fullName}`).then(document => new PropertyGetResponse(document, property));
+    public async sendPropertyGetCommand(property: Property): Promise<PropertyGetResponse> {
+        return new PropertyGetResponse(await this._enqueueCommand('property_get', `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${property.fullName}`), property);
     }
 
     // ------------------------------- eval -----------------------------------------
 
     /** sends an eval command */
-    public sendEvalCommand(expression: string): Promise<EvalResponse> {
-        return this._enqueueCommand('eval', null, expression).then(document => new EvalResponse(document, this));
+    public async sendEvalCommand(expression: string): Promise<EvalResponse> {
+        return new EvalResponse(await this._enqueueCommand('eval', null, expression), this);
     }
 }

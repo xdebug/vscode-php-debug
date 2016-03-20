@@ -2,13 +2,14 @@ import * as vscode from 'vscode-debugadapter';
 import {DebugProtocol as VSCodeDebugProtocol} from 'vscode-debugprotocol';
 import * as net from 'net';
 import * as xdebug from './xdebugConnection';
-import urlRelative = require('url-relative');
-import moment = require('moment');
+import urlRelative from 'url-relative';
+import moment from 'moment';
 import * as url from 'url';
 import * as childProcess from 'child_process';
 import * as path from 'path';
 import * as util from 'util';
-import fileUrl = require('file-url');
+import * as fs from 'fs';
+import fileUrl from 'file-url';
 import {Terminal} from './terminal';
 
 /** formats a xdebug property value for VS Code */
@@ -121,8 +122,11 @@ class PhpDebugSession extends vscode.DebugSession {
     /** A map from unique VS Code variable IDs to XDebug eval result properties, because property children returned from eval commands are always inlined */
     private _evalResultProperties = new Map<number, xdebug.EvalResultProperty>();
 
-    public constructor(debuggerLinesStartAt1: boolean = true, isServer: boolean = false) {
-        super(debuggerLinesStartAt1, isServer);
+    public constructor() {
+        super();
+        this.setDebuggerColumnsStartAt1(true);
+        this.setDebuggerLinesStartAt1(true);
+        this.setDebuggerPathFormat('uri');
     }
 
     protected initializeRequest(response: VSCodeDebugProtocol.InitializeResponse, args: VSCodeDebugProtocol.InitializeRequestArguments): void {
@@ -159,106 +163,114 @@ class PhpDebugSession extends vscode.DebugSession {
     protected launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
         this._args = args;
         const server = this._server = net.createServer();
-        server.on('connection', (socket: net.Socket) => {
-            // new XDebug connection
-            const connection = new xdebug.Connection(socket);
-            if (args.log) {
-                this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'));
-            }
-            this._connections.set(connection.id, connection);
-            this._waitingConnections.add(connection);
-            const disposeConnection = (error?: Error) => {
-                if (this._connections.has(connection.id)) {
-                    if (args.log) {
-                        this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ' closed\n'));
-                    }
-                    if (error) {
-                        this.sendEvent(new vscode.OutputEvent(error.message));
-                    }
-                    this.sendEvent(new vscode.ThreadEvent('exited', connection.id));
-                    connection.close();
-                    this._connections.delete(connection.id);
-                    this._waitingConnections.delete(connection);
+        server.on('connection', async (socket: net.Socket) => {
+            try {
+                // new XDebug connection
+                const connection = new xdebug.Connection(socket);
+                if (args.log) {
+                    this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'), true);
                 }
-            };
-            connection.once('error', disposeConnection);
-            connection.once('close', disposeConnection);
-            connection.waitForInitPacket()
-                .then(() => {
-                    this.sendEvent(new vscode.ThreadEvent('started', connection.id));
-                })
+                this._connections.set(connection.id, connection);
+                this._waitingConnections.add(connection);
+                const disposeConnection = (error?: Error) => {
+                    if (this._connections.has(connection.id)) {
+                        if (args.log) {
+                            this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ' closed\n'));
+                        }
+                        if (error) {
+                            this.sendEvent(new vscode.OutputEvent(error.message));
+                        }
+                        this.sendEvent(new vscode.ThreadEvent('exited', connection.id));
+                        connection.close();
+                        this._connections.delete(connection.id);
+                        this._waitingConnections.delete(connection);
+                    }
+                };
+                connection.once('error', disposeConnection);
+                connection.once('close', disposeConnection);
+                await connection.waitForInitPacket();
+                this.sendEvent(new vscode.ThreadEvent('started', connection.id));
                 // set max_depth to 1 since VS Code requests nested structures individually anyway
-                .then(initPacket => connection.sendFeatureSetCommand('max_depth', '1'))
+                await connection.sendFeatureSetCommand('max_depth', '1');
                 // raise default of 32
-                .then(response => connection.sendFeatureSetCommand('max_children', '9999'))
+                await connection.sendFeatureSetCommand('max_children', '9999');
                 // request breakpoints from VS Code
-                .then(response => this.sendEvent(new vscode.InitializedEvent()))
-                .catch(error => {
-                    this.sendEvent(new vscode.OutputEvent(error.message));
-                });
+                await this.sendEvent(new vscode.InitializedEvent());
+            } catch (error) {
+                this.sendEvent(new vscode.OutputEvent(error instanceof Error ? error.message : error));
+            }
         });
         server.on('error', (error: Error) => {
             this.sendEvent(new vscode.OutputEvent(error.message));
             this.shutdown();
         });
-        server.listen(args.port || 9000, () => {
-            if (args.program) {
-                const runtimeArgs = args.runtimeArgs || [];
-                const runtimeExecutable = args.runtimeExecutable || 'php';
-                const programArgs = args.args || [];
-                const cwd = args.cwd || process.cwd();
-                const env = args.env || process.env;
-                // launch in CLI mode
-                if (args.externalConsole) {
-                    Terminal.launchInTerminal(cwd, [runtimeExecutable, ...runtimeArgs, args.program, ...programArgs], env)
-                        .then(script => {
-                            // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                            script.on('exit', () => {
-                                this.sendEvent(new vscode.TerminatedEvent());
-                            });
-                        })
-                        .catch((error: Error) => {
+        server.listen(args.port || 9000, async () => {
+            try {
+                if (args.program) {
+                    // check if program exists
+                    await new Promise((resolve, reject) => fs.access(args.program, fs.F_OK, err => err ? reject(err) : resolve()));
+                    const runtimeArgs = args.runtimeArgs || [];
+                    const runtimeExecutable = args.runtimeExecutable || 'php';
+                    const programArgs = args.args || [];
+                    const cwd = args.cwd || process.cwd();
+                    const env = args.env || process.env;
+                    // launch in CLI mode
+                    if (args.externalConsole) {
+                        const script = await Terminal.launchInTerminal(cwd, [runtimeExecutable, ...runtimeArgs, args.program, ...programArgs], env);
+                        // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
+                        script.on('exit', () => {
+                            this.sendEvent(new vscode.TerminatedEvent());
+                        });
+                    } else {
+                        const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program, ...programArgs], {cwd, env});
+                        // redirect output to debug console
+                        script.stdout.on('data', (data: Buffer) => {
+                            this.sendEvent(new vscode.OutputEvent(data + '', 'stdout'));
+                        });
+                        script.stderr.on('data', (data: Buffer) => {
+                            this.sendEvent(new vscode.OutputEvent(data + '', 'stderr'));
+                        });
+                        // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
+                        script.on('exit', () => {
+                            this.sendEvent(new vscode.TerminatedEvent());
+                        });
+                        script.on('error', (error: Error) => {
                             this.sendEvent(new vscode.OutputEvent(error.message));
                         });
-                } else {
-                    const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program, ...programArgs], {cwd, env});
-                    // redirect output to debug console
-                    script.stdout.on('data', (data: Buffer) => {
-                        this.sendEvent(new vscode.OutputEvent(data + '', 'stdout'));
-                    });
-                    script.stderr.on('data', (data: Buffer) => {
-                        this.sendEvent(new vscode.OutputEvent(data + '', 'stderr'));
-                    });
-                    // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                    script.on('exit', () => {
-                        this.sendEvent(new vscode.TerminatedEvent());
-                    });
-                    script.on('error', (error: Error) => {
-                        this.sendEvent(new vscode.OutputEvent(error.message));
-                    });
+                    }
                 }
+            } catch (error) {
+                this.sendErrorResponse(response, error);
+                return;
             }
             this.sendResponse(response);
         });
     }
 
-    /** Checks the status of a StatusResponse and notifies VS Code accordingly */
-    private _checkStatus(response: xdebug.StatusResponse): void {
+    /**
+     * Checks the status of a StatusResponse and notifies VS Code accordingly
+     * @param {xdebug.StatusResponse} response
+     * @param {boolean} [entry=false] if true and XDebug stopped because of a step command, the stoppedEvent reason will be 'entry', not 'step'
+     */
+    private async _checkStatus(response: xdebug.StatusResponse, entry: boolean = false) {
         const connection = response.connection;
         this._statuses.set(connection, response);
         if (response.status === 'stopping') {
-            connection.sendStopCommand().then(response => this._checkStatus(response));
+            const response = await connection.sendStopCommand();
+            this._checkStatus(response);
         } else if (response.status === 'stopped') {
             this._connections.delete(connection.id);
             this.sendEvent(new vscode.ThreadEvent('exited', connection.id));
             connection.close();
         } else if (response.status === 'break') {
             // StoppedEvent reason can be 'step', 'breakpoint', 'exception' or 'pause'
-            let stoppedEventReason: string;
+            let stoppedEventReason: 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry';
             let exceptionText: string;
             if (response.exception) {
                 stoppedEventReason = 'exception';
                 exceptionText = response.exception.name + ': ' + response.exception.message; // this seems to be ignored currently by VS Code
+            } else if (entry) {
+                stoppedEventReason = 'entry';
             } else if (response.command.indexOf('step') === 0) {
                 stoppedEventReason = 'step';
             } else {
@@ -316,25 +328,25 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** Logs all requests before dispatching */
     protected dispatchRequest(request: VSCodeDebugProtocol.Request): void {
-        const log = `-> ${request.command}Request\n${util.inspect(request, {depth: null})}\n\n`;
         if (this._args && this._args.log) {
-            this.sendEvent(new vscode.OutputEvent(log));
+            const log = `-> ${request.command}Request\n${util.inspect(request, {depth: null})}\n\n`;
+            super.sendEvent(new vscode.OutputEvent(log));
         }
         super.dispatchRequest(request);
     }
 
-    public sendEvent(event: VSCodeDebugProtocol.Event): void {
-        const log = `<- ${event.event}Event\n${util.inspect(event, {depth: null})}\n\n`;
-        if (this._args && this._args.log && !(event instanceof vscode.OutputEvent)) {
-            this.sendEvent(new vscode.OutputEvent(log));
+    public sendEvent(event: VSCodeDebugProtocol.Event, bypassLog: boolean = false): void {
+        if (this._args && this._args.log && !bypassLog) {
+            const log = `<- ${event.event}Event\n${util.inspect(event, {depth: null})}\n\n`;
+            super.sendEvent(new vscode.OutputEvent(log));
         }
         super.sendEvent(event);
     }
 
     public sendResponse(response: VSCodeDebugProtocol.Response): void {
-        const log = `<- ${response.command}Response\n${util.inspect(response, {depth: null})}\n\n`;
         if (this._args && this._args.log) {
-            this.sendEvent(new vscode.OutputEvent(log));
+            const log = `<- ${response.command}Response\n${util.inspect(response, {depth: null})}\n\n`;
+            super.sendEvent(new vscode.OutputEvent(log));
         }
         super.sendResponse(response);
     }
@@ -350,151 +362,140 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     /** This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change. */
-    protected setBreakPointsRequest(response: VSCodeDebugProtocol.SetBreakpointsResponse, args: VSCodeDebugProtocol.SetBreakpointsArguments) {
-        const fileUri = this.convertClientPathToDebugger(args.source.path);
-        const connections = Array.from(this._connections.values());
-        let xdebugBreakpoints: Array<xdebug.ConditionalBreakpoint|xdebug.LineBreakpoint>;
-        response.body = {breakpoints: []};
-        // this is returned to VS Code
-        let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[];
-        let breakpointsSetPromise: Promise<any>;
-        if (connections.length === 0) {
-            // if there are no connections yet, we cannot verify any breakpoint
-            vscodeBreakpoints = args.breakpoints.map(breakpoint => ({verified: false, line: breakpoint.line}));
-            breakpointsSetPromise = Promise.resolve();
-        } else {
-            vscodeBreakpoints = [];
-            // create XDebug breakpoints from the arguments
-            xdebugBreakpoints = args.breakpoints.map(breakpoint => {
-                if (breakpoint.condition) {
-                    return new xdebug.ConditionalBreakpoint(breakpoint.condition, fileUri, breakpoint.line);
-                } else {
-                    return new xdebug.LineBreakpoint(fileUri, breakpoint.line);
-                }
-            });
-            // for all connections
-            breakpointsSetPromise = Promise.all(connections.map((connection, connectionIndex) =>
-                // clear breakpoints for this file
-                connection.sendBreakpointListCommand()
-                    .then(response => Promise.all(
-                        response.breakpoints
-                            // filte to only include line breakpoints for this file
+    protected async setBreakPointsRequest(response: VSCodeDebugProtocol.SetBreakpointsResponse, args: VSCodeDebugProtocol.SetBreakpointsArguments) {
+        try {
+            const fileUri = this.convertClientPathToDebugger(args.source.path);
+            const connections = Array.from(this._connections.values());
+            let xdebugBreakpoints: Array<xdebug.ConditionalBreakpoint|xdebug.LineBreakpoint>;
+            response.body = {breakpoints: []};
+            // this is returned to VS Code
+            let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[];
+            if (connections.length === 0) {
+                // if there are no connections yet, we cannot verify any breakpoint
+                vscodeBreakpoints = args.breakpoints.map(breakpoint => ({verified: false, line: breakpoint.line}));
+            } else {
+                vscodeBreakpoints = [];
+                // create XDebug breakpoints from the arguments
+                xdebugBreakpoints = args.breakpoints.map(breakpoint => {
+                    if (breakpoint.condition) {
+                        return new xdebug.ConditionalBreakpoint(breakpoint.condition, fileUri, breakpoint.line);
+                    } else {
+                        return new xdebug.LineBreakpoint(fileUri, breakpoint.line);
+                    }
+                });
+                // for all connections
+                await Promise.all(connections.map(async (connection, connectionIndex) => {
+                    // clear breakpoints for this file
+                    // in the future when VS Code returns the breakpoint IDs it would be better to calculate the diff
+                    const {breakpoints} = await connection.sendBreakpointListCommand();
+                    await Promise.all(
+                        breakpoints
+                            // filter to only include line breakpoints for this file
                             .filter(breakpoint => breakpoint instanceof xdebug.LineBreakpoint && breakpoint.fileUri === fileUri)
                             // remove them
                             .map(breakpoint => breakpoint.remove())
-                    ))
+                    );
                     // set new breakpoints
-                    .then(() => Promise.all(xdebugBreakpoints.map(breakpoint =>
-                        connection.sendBreakpointSetCommand(breakpoint)
-                            .then(xdebugResponse => {
-                                // only capture each breakpoint once
-                                if (connectionIndex === 0) {
-                                    vscodeBreakpoints.push({verified: true, line: breakpoint.line, id: xdebugResponse.breakpointId});
-                                }
-                            })
-                            .catch(error => {
-                                // only capture each breakpoint once
-                                if (connectionIndex === 0) {
-                                    vscodeBreakpoints.push({verified: false, line: breakpoint.line, message: error.message});
-                                }
-                            })
-                    )))
-            ));
+                    await Promise.all(xdebugBreakpoints.map(async (breakpoint) => {
+                        try {
+                            const response = await connection.sendBreakpointSetCommand(breakpoint);
+                            // only capture each breakpoint once
+                            if (connectionIndex === 0) {
+                                vscodeBreakpoints.push({verified: true, line: breakpoint.line, id: response.breakpointId});
+                            }
+                        } catch (error) {
+                            // only capture each breakpoint once
+                            if (connectionIndex === 0) {
+                                vscodeBreakpoints.push({verified: false, line: breakpoint.line, message: (<Error>error).message});
+                            }
+                        }
+                    }));
+                }));
+            }
+            response.body = {breakpoints: vscodeBreakpoints};
+        } catch (error) {
+            this.sendErrorResponse(response, error);
+            return;
         }
-        breakpointsSetPromise
-            .then(() => {
-                response.body = {breakpoints: vscodeBreakpoints};
-                this.sendResponse(response);
-            })
-            .catch(error => {
-                this.sendErrorResponse(response, error);
-            });
+        this.sendResponse(response);
     }
 
     /** This is called once after all line breakpoints have been set and whenever the breakpoints settings change */
-    protected setExceptionBreakPointsRequest(response: VSCodeDebugProtocol.SetExceptionBreakpointsResponse, args: VSCodeDebugProtocol.SetExceptionBreakpointsArguments): void {
-        const connections = Array.from(this._connections.values());
-        Promise.all(connections.map(connection =>
-            // get all breakpoints
-            connection.sendBreakpointListCommand()
+    protected async setExceptionBreakPointsRequest(response: VSCodeDebugProtocol.SetExceptionBreakpointsResponse, args: VSCodeDebugProtocol.SetExceptionBreakpointsArguments) {
+        try {
+            const connections = Array.from(this._connections.values());
+            await Promise.all(connections.map(async (connection) => {
+                // get all breakpoints
+                const {breakpoints} = await connection.sendBreakpointListCommand();
                 // remove all exception breakpoints
-                .then(response => Promise.all(
-                    response.breakpoints
-                        .filter(breakpoint => breakpoint.type === 'exception')
-                        .map(breakpoint => breakpoint.remove())
-                ))
-                .then(() => Promise.all(
-                    args.filters.map(filter =>
-                        connection.sendBreakpointSetCommand(new xdebug.ExceptionBreakpoint(filter))
-                    )
-                ))
-        )).then(() => {
-            this.sendResponse(response);
-        }).catch(error => {
+                await Promise.all(breakpoints.filter(breakpoint => breakpoint.type === 'exception').map(breakpoint => breakpoint.remove()));
+                // set new exception breakpoints
+                await Promise.all(args.filters.map(filter => connection.sendBreakpointSetCommand(new xdebug.ExceptionBreakpoint(filter))));
+            }));
+        } catch (error) {
             this.sendErrorResponse(response, error);
-        });
+            return;
+        }
+        this.sendResponse(response);
     }
 
-    protected setFunctionBreakPointsRequest(response: VSCodeDebugProtocol.SetFunctionBreakpointsResponse, args: VSCodeDebugProtocol.SetFunctionBreakpointsArguments): void {
-        const connections = Array.from(this._connections.values());
-        response.body = { breakpoints: [] };
-        // this is returned to VS Code
-        let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[];
-        let breakpointsSetPromise: Promise<any>;
-        if (connections.length === 0) {
-            // if there are no connections yet, we cannot verify any breakpoint
-            vscodeBreakpoints = args.breakpoints.map(breakpoint => ({verified: false, message: 'No connection'}));
-            breakpointsSetPromise = Promise.resolve();
-        } else {
-            vscodeBreakpoints = [];
-            // for all connections
-            breakpointsSetPromise = Promise.all(connections.map((connection, connectionIndex) =>
-                // clear breakpoints for this file
-                connection.sendBreakpointListCommand()
-                    .then(response => Promise.all(
-                        response.breakpoints
-                            .filter(breakpoint => breakpoint instanceof xdebug.CallBreakpoint)
-                            .map(breakpoint => breakpoint.remove())
-                    ))
-                    .then(() => Promise.all(
-                        args.breakpoints.map(functionBreakpoint =>
-                            connection.sendBreakpointSetCommand(new xdebug.CallBreakpoint(functionBreakpoint.name, functionBreakpoint.condition))
-                                .then(xdebugResponse => {
-                                    // only capture each breakpoint once
-                                    if (connectionIndex === 0) {
-                                        vscodeBreakpoints.push({verified: true, id: xdebugResponse.breakpointId});
-                                    }
-                                })
-                                .catch(error => {
-                                    // only capture each breakpoint once
-                                    if (connectionIndex === 0) {
-                                        vscodeBreakpoints.push({verified: false, message: error.message});
-                                    }
-                                })
-                        )
-                    ))
-            ));
+    protected async setFunctionBreakPointsRequest(response: VSCodeDebugProtocol.SetFunctionBreakpointsResponse, args: VSCodeDebugProtocol.SetFunctionBreakpointsArguments) {
+        try {
+            const connections = Array.from(this._connections.values());
+            // this is returned to VS Code
+            let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[];
+            if (connections.length === 0) {
+                // if there are no connections yet, we cannot verify any breakpoint
+                vscodeBreakpoints = args.breakpoints.map(breakpoint => ({verified: false, message: 'No connection'}));
+            } else {
+                vscodeBreakpoints = [];
+                // for all connections
+                await Promise.all(connections.map(async (connection, connectionIndex) => {
+                    // clear breakpoints for this file
+                    const {breakpoints} = await connection.sendBreakpointListCommand();
+                    await Promise.all(breakpoints.filter(breakpoint => breakpoint.type === 'call').map(breakpoint => breakpoint.remove()));
+                    // set new breakpoints
+                    await Promise.all(args.breakpoints.map(async (functionBreakpoint) => {
+                        try {
+                            const {breakpointId} = await connection.sendBreakpointSetCommand(new xdebug.CallBreakpoint(functionBreakpoint.name, functionBreakpoint.condition));
+                            // only capture each breakpoint once
+                            if (connectionIndex === 0) {
+                                vscodeBreakpoints.push({verified: true, id: breakpointId});
+                            }
+                        } catch (error) {
+                            // only capture each breakpoint once
+                            if (connectionIndex === 0) {
+                                vscodeBreakpoints.push({verified: false, message: error instanceof Error ? error.message : error});
+                            }
+                        }
+                    }));
+                }));
+            }
+            response.body = {breakpoints: vscodeBreakpoints};
+        } catch (error) {
+            this.sendErrorResponse(response, error);
+            return;
         }
-        breakpointsSetPromise
-            .then(() => {
-                response.body = {breakpoints: vscodeBreakpoints};
-                this.sendResponse(response);
-            })
-            .catch(error => {
-                this.sendErrorResponse(response, error);
-            });
+        this.sendResponse(response);
     }
 
     /** Executed after all breakpoints have been set by VS Code */
-    protected configurationDoneRequest(response: VSCodeDebugProtocol.ConfigurationDoneResponse, args: VSCodeDebugProtocol.ConfigurationDoneArguments): void {
-        for (const connection of Array.from(this._waitingConnections)) {
-            // either tell VS Code we stopped on entry or run the script
-            if (this._args.stopOnEntry) {
-                this.sendEvent(new vscode.StoppedEvent('entry', connection.id));
-            } else {
-                connection.sendRunCommand().then(response => this._checkStatus(response));
+    protected async configurationDoneRequest(response: VSCodeDebugProtocol.ConfigurationDoneResponse, args: VSCodeDebugProtocol.ConfigurationDoneArguments) {
+        try {
+            for (const connection of this._waitingConnections) {
+                // either tell VS Code we stopped on entry or run the script
+                if (this._args.stopOnEntry) {
+                    // do one step to the first statement
+                    const response = await connection.sendStepIntoCommand();
+                    this._checkStatus(response, true);
+                } else {
+                    const response = await connection.sendRunCommand();
+                    this._checkStatus(response);
+                }
+                this._waitingConnections.delete(connection);
             }
-            this._waitingConnections.delete(connection);
+        } catch (error) {
+            this.sendErrorResponse(response, <Error>error);
         }
         this.sendResponse(response);
     }
@@ -512,286 +513,294 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     /** Called by VS Code after a StoppedEvent */
-    protected stackTraceRequest(response: VSCodeDebugProtocol.StackTraceResponse, args: VSCodeDebugProtocol.StackTraceArguments): void {
-        const connection = this._connections.get(args.threadId);
-        connection.sendStackGetCommand()
-            .then(xdebugResponse => {
-                // First delete the old stack trace info ???
-                // this._stackFrames.clear();
-                // this._properties.clear();
-                // this._contexts.clear();
+    protected async stackTraceRequest(response: VSCodeDebugProtocol.StackTraceResponse, args: VSCodeDebugProtocol.StackTraceArguments) {
+        try {
+            const connection = this._connections.get(args.threadId);
+            const {stack} = await connection.sendStackGetCommand();
+            // First delete the old stack trace info ???
+            // this._stackFrames.clear();
+            // this._properties.clear();
+            // this._contexts.clear();
+            const status = this._statuses.get(connection);
+            if (stack.length === 0 && status && status.exception) {
+                // special case: if a fatal error occurs (for example after an uncaught exception), the stack trace is EMPTY.
+                // in that case, VS Code would normally not show any information to the user at all
+                // to avoid this, we create a virtual stack frame with the info from the last status response we got
                 const status = this._statuses.get(connection);
-                if (xdebugResponse.stack.length === 0 && status.exception) {
-                    // special case: if a fatal error occurs (for example after an uncaught exception), the stack trace is EMPTY.
-                    // in that case, VS Code would normally not show any information to the user at all
-                    // to avoid this, we create a virtual stack frame with the info from the last status response we got
-                    const status = this._statuses.get(connection);
-                    const id = this._stackFrameIdCounter++;
-                    const name = status.exception.name;
-                    let line = status.line;
-                    let source: vscode.Source;
-                    const urlObject = url.parse(status.fileUri);
-                    if (urlObject.protocol === 'dbgp:') {
-                        const sourceReference = this._sourceIdCounter++;
-                        this._sources.set(sourceReference, {connection, url: status.fileUri});
-                        // for eval code, we need to include .php extension to get syntax highlighting
-                        source = new vscode.Source(status.exception.name + '.php', null, sourceReference, status.exception.name);
-                        // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
-                        line++;
-                    } else {
-                        // XDebug paths are URIs, VS Code file paths
-                        const filePath = this.convertDebuggerPathToClient(urlObject);
-                        // "Name" of the source and the actual file path
-                        source = new vscode.Source(path.basename(filePath), filePath);
-                    }
-                    this._errorStackFrames.set(id, status);
-                    response.body = {stackFrames: [new vscode.StackFrame(id, name, source, status.line, 1)]};
+                const id = this._stackFrameIdCounter++;
+                const name = status.exception.name;
+                let line = status.line;
+                let source: vscode.Source;
+                const urlObject = url.parse(status.fileUri);
+                if (urlObject.protocol === 'dbgp:') {
+                    const sourceReference = this._sourceIdCounter++;
+                    this._sources.set(sourceReference, {connection, url: status.fileUri});
+                    // for eval code, we need to include .php extension to get syntax highlighting
+                    source = new vscode.Source(status.exception.name + '.php', null, sourceReference, status.exception.name);
+                    // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
+                    line++;
                 } else {
-                    response.body = {
-                        stackFrames: xdebugResponse.stack.map(stackFrame => {
-                            let source: vscode.Source;
-                            let line = stackFrame.line;
-                            const urlObject = url.parse(stackFrame.fileUri);
-                            if (urlObject.protocol === 'dbgp:') {
-                                const sourceReference = this._sourceIdCounter++;
-                                this._sources.set(sourceReference, {connection, url: stackFrame.fileUri});
-                                // for eval code, we need to include .php extension to get syntax highlighting
-                                source = new vscode.Source(stackFrame.type === 'eval' ? 'eval.php' : stackFrame.name, null, sourceReference, stackFrame.type);
-                                // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
-                                line++;
-                            } else {
-                                // XDebug paths are URIs, VS Code file paths
-                                const filePath = this.convertDebuggerPathToClient(urlObject);
-                                // "Name" of the source and the actual file path
-                                source = new vscode.Source(path.basename(filePath), filePath);
-                            }
-                            // a new, unique ID for scopeRequests
-                            const stackFrameId = this._stackFrameIdCounter++;
-                            // save the connection this stackframe belongs to and the level of the stackframe under the stacktrace id
-                            this._stackFrames.set(stackFrameId, stackFrame);
-                            // prepare response for VS Code (column is always 1 since XDebug doesn't tell us the column)
-                            return new vscode.StackFrame(stackFrameId, stackFrame.name, source, line, 1);
-                        })
-                    };
+                    // XDebug paths are URIs, VS Code file paths
+                    const filePath = this.convertDebuggerPathToClient(urlObject);
+                    // "Name" of the source and the actual file path
+                    source = new vscode.Source(path.basename(filePath), filePath);
                 }
-                this.sendResponse(response);
-            })
-            .catch(error => {
-                this.sendErrorResponse(response, error);
-            });
-    }
-
-    protected sourceRequest(response: VSCodeDebugProtocol.SourceResponse, args: VSCodeDebugProtocol.SourceArguments): void {
-        const {connection, url} = this._sources.get(args.sourceReference);
-        connection.sendSourceCommand(url).then(xdebugResponse => {
-            let content = xdebugResponse.source;
-            if (!/^\s*<\?(php|=)/.test(content)) {
-                // we do this because otherwise VS Code would not show syntax highlighting for eval() code
-                content = '<?php\n' + content;
+                this._errorStackFrames.set(id, status);
+                response.body = {stackFrames: [new vscode.StackFrame(id, name, source, status.line, 1)]};
+            } else {
+                response.body = {
+                    stackFrames: stack.map(stackFrame => {
+                        let source: vscode.Source;
+                        let line = stackFrame.line;
+                        const urlObject = url.parse(stackFrame.fileUri);
+                        if (urlObject.protocol === 'dbgp:') {
+                            const sourceReference = this._sourceIdCounter++;
+                            this._sources.set(sourceReference, {connection, url: stackFrame.fileUri});
+                            // for eval code, we need to include .php extension to get syntax highlighting
+                            source = new vscode.Source(stackFrame.type === 'eval' ? 'eval.php' : stackFrame.name, null, sourceReference, stackFrame.type);
+                            // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
+                            line++;
+                        } else {
+                            // XDebug paths are URIs, VS Code file paths
+                            const filePath = this.convertDebuggerPathToClient(urlObject);
+                            // "Name" of the source and the actual file path
+                            source = new vscode.Source(path.basename(filePath), filePath);
+                        }
+                        // a new, unique ID for scopeRequests
+                        const stackFrameId = this._stackFrameIdCounter++;
+                        // save the connection this stackframe belongs to and the level of the stackframe under the stacktrace id
+                        this._stackFrames.set(stackFrameId, stackFrame);
+                        // prepare response for VS Code (column is always 1 since XDebug doesn't tell us the column)
+                        return new vscode.StackFrame(stackFrameId, stackFrame.name, source, line, 1);
+                    })
+                };
             }
-            response.body = {content};
-            this.sendResponse(response);
-        });
-    }
-
-    protected scopesRequest(response: VSCodeDebugProtocol.ScopesResponse, args: VSCodeDebugProtocol.ScopesArguments): void {
-        if (this._errorStackFrames.has(args.frameId)) {
-            // VS Code is requesting the scopes for a virtual error stack frame
-            const status = this._errorStackFrames.get(args.frameId);
-            if (status && status.exception) {
-                const variableId = this._variableIdCounter++;
-                this._errorScopes.set(variableId, status);
-                response.body = {scopes: [new vscode.Scope(status.exception.name, variableId)]};
-            }
-            this.sendResponse(response);
-        } else {
-            const stackFrame = this._stackFrames.get(args.frameId);
-            stackFrame.getContexts()
-                .then(contexts => {
-                    response.body = {
-                        scopes: contexts.map(context => {
-                            const variableId = this._variableIdCounter++;
-                            // remember that this new variable ID is assigned to a SCOPE (in XDebug "context"), not a variable (in XDebug "property"),
-                            // so when VS Code does a variablesRequest with that ID we do a context_get and not a property_get
-                            this._contexts.set(variableId, context);
-                            // send VS Code the variable ID as identifier
-                            return new vscode.Scope(context.name, variableId);
-                        })
-                    };
-                    const status = this._statuses.get(stackFrame.connection);
-                    if (status && status.exception) {
-                        const variableId = this._variableIdCounter++;
-                        this._errorScopes.set(variableId, status);
-                        response.body.scopes.unshift(new vscode.Scope(status.exception.name, variableId));
-                    }
-                    this.sendResponse(response);
-                })
-                .catch(error => {
-                    this.sendErrorResponse(response, error);
-                });
+        } catch (error) {
+            this.sendErrorResponse(response, error);
+            return;
         }
+        this.sendResponse(response);
     }
 
-    protected variablesRequest(response: VSCodeDebugProtocol.VariablesResponse, args: VSCodeDebugProtocol.VariablesArguments): void {
-        const variablesReference = args.variablesReference;
-        if (this._errorScopes.has(variablesReference)) {
-            // this is a virtual error scope
-            const status = this._errorScopes.get(variablesReference);
-            response.body = {
-                variables: [
+    protected async sourceRequest(response: VSCodeDebugProtocol.SourceResponse, args: VSCodeDebugProtocol.SourceArguments) {
+        try {
+            const {connection, url} = this._sources.get(args.sourceReference);
+            let {source} = await connection.sendSourceCommand(url);
+            if (!/^\s*<\?(php|=)/.test(source)) {
+                // we do this because otherwise VS Code would not show syntax highlighting for eval() code
+                source = '<?php\n' + source;
+            }
+            response.body = {content: source};
+        } catch (error) {
+            this.sendErrorResponse(response, error);
+            return;
+        }
+        this.sendResponse(response);
+    }
+
+    protected async scopesRequest(response: VSCodeDebugProtocol.ScopesResponse, args: VSCodeDebugProtocol.ScopesArguments) {
+        try {
+            let scopes: vscode.Scope[] = [];
+            if (this._errorStackFrames.has(args.frameId)) {
+                // VS Code is requesting the scopes for a virtual error stack frame
+                const status = this._errorStackFrames.get(args.frameId);
+                if (status.exception) {
+                    const variableId = this._variableIdCounter++;
+                    this._errorScopes.set(variableId, status);
+                    scopes = [new vscode.Scope(status.exception.name, variableId)];
+                }
+            } else {
+                const stackFrame = this._stackFrames.get(args.frameId);
+                const contexts = await stackFrame.getContexts();
+                scopes = contexts.map(context => {
+                    const variableId = this._variableIdCounter++;
+                    // remember that this new variable ID is assigned to a SCOPE (in XDebug "context"), not a variable (in XDebug "property"),
+                    // so when VS Code does a variablesRequest with that ID we do a context_get and not a property_get
+                    this._contexts.set(variableId, context);
+                    // send VS Code the variable ID as identifier
+                    return new vscode.Scope(context.name, variableId);
+                });
+                const status = this._statuses.get(stackFrame.connection);
+                if (status && status.exception) {
+                    const variableId = this._variableIdCounter++;
+                    this._errorScopes.set(variableId, status);
+                    scopes.unshift(new vscode.Scope(status.exception.name, variableId));
+                }
+            }
+            response.body = {scopes};
+        } catch (error) {
+            this.sendErrorResponse(response, error);
+            return;
+        }
+        this.sendResponse(response);
+    }
+
+    protected async variablesRequest(response: VSCodeDebugProtocol.VariablesResponse, args: VSCodeDebugProtocol.VariablesArguments) {
+        try {
+            const variablesReference = args.variablesReference;
+            let variables: vscode.Variable[];
+            if (this._errorScopes.has(variablesReference)) {
+                // this is a virtual error scope
+                const status = this._errorScopes.get(variablesReference);
+                variables = [
                     new vscode.Variable('name', '"' + status.exception.name + '"'),
                     new vscode.Variable('message', '"' + status.exception.message + '"')
-                ]
-            };
-            if (status.exception.code !== undefined) {
-                response.body.variables.push(new vscode.Variable('code', status.exception.code + ''));
-            }
-            this.sendResponse(response);
-        } else {
-            // it is a real scope
-            let propertiesPromise: Promise<xdebug.BaseProperty[]>;
-            if (this._contexts.has(variablesReference)) {
-                // VS Code is requesting the variables for a SCOPE, so we have to do a context_get
-                const context = this._contexts.get(variablesReference);
-                propertiesPromise = context.getProperties();
-            } else if (this._properties.has(variablesReference)) {
-                // VS Code is requesting the subelements for a variable, so we have to do a property_get
-                const property = this._properties.get(variablesReference);
-                propertiesPromise = property.hasChildren ? property.getChildren() : Promise.resolve([]);
-            } else if (this._evalResultProperties.has(variablesReference)) {
-                // the children of properties returned from an eval command are always inlined, so we simply resolve them
-                const property = this._evalResultProperties.get(variablesReference);
-                propertiesPromise = Promise.resolve(property.hasChildren ? property.children : []);
+                ];
+                if (status.exception.code !== undefined) {
+                    variables.push(new vscode.Variable('code', status.exception.code + ''));
+                }
             } else {
-                this.sendErrorResponse(response, new Error('Unknown variable reference'));
-                return;
-            }
-            propertiesPromise
-                .then(properties => {
-                    response.body = {
-                        variables: properties.map(property => {
-                            const displayValue = formatPropertyValue(property);
-                            let variablesReference: number;
-                            if (property.hasChildren || property.type === 'array' || property.type === 'object') {
-                                // if the property has children, we have to send a variableReference back to VS Code
-                                // so it can receive the child elements in another request.
-                                // for arrays and objects we do it even when it does not have children so the user can still expand/collapse the entry
-                                variablesReference = this._variableIdCounter++;
-                                if (property instanceof xdebug.Property) {
-                                    this._properties.set(variablesReference, property);
-                                } else if (property instanceof xdebug.EvalResultProperty) {
-                                    this._evalResultProperties.set(variablesReference, property);
-                                }
-                            } else {
-                                variablesReference = 0;
-                            }
-                            return new vscode.Variable(property.name, displayValue, variablesReference);
-                        })
-                    };
-                    this.sendResponse(response);
-                })
-                .catch(error => {
-                    this.sendErrorResponse(response, error);
+                // it is a real scope
+                let properties: xdebug.BaseProperty[];
+                if (this._contexts.has(variablesReference)) {
+                    // VS Code is requesting the variables for a SCOPE, so we have to do a context_get
+                    const context = this._contexts.get(variablesReference);
+                    properties = await context.getProperties();
+                } else if (this._properties.has(variablesReference)) {
+                    // VS Code is requesting the subelements for a variable, so we have to do a property_get
+                    const property = this._properties.get(variablesReference);
+                    properties = property.hasChildren ? await property.getChildren() : [];
+                } else if (this._evalResultProperties.has(variablesReference)) {
+                    // the children of properties returned from an eval command are always inlined, so we simply resolve them
+                    const property = this._evalResultProperties.get(variablesReference);
+                    properties = property.hasChildren ? property.children : [];
+                } else {
+                    throw new Error('Unknown variable reference');
+                }
+                variables = properties.map(property => {
+                    const displayValue = formatPropertyValue(property);
+                    let variablesReference: number;
+                    if (property.hasChildren || property.type === 'array' || property.type === 'object') {
+                        // if the property has children, we have to send a variableReference back to VS Code
+                        // so it can receive the child elements in another request.
+                        // for arrays and objects we do it even when it does not have children so the user can still expand/collapse the entry
+                        variablesReference = this._variableIdCounter++;
+                        if (property instanceof xdebug.Property) {
+                            this._properties.set(variablesReference, property);
+                        } else if (property instanceof xdebug.EvalResultProperty) {
+                            this._evalResultProperties.set(variablesReference, property);
+                        }
+                    } else {
+                        variablesReference = 0;
+                    }
+                    return new vscode.Variable(property.name, displayValue, variablesReference);
                 });
-        }
-    }
-
-    protected continueRequest(response: VSCodeDebugProtocol.ContinueResponse, args: VSCodeDebugProtocol.ContinueArguments): void {
-        if (!args.threadId) {
-            this.sendErrorResponse(response, new Error('No active connection'));
+            }
+            response.body = {variables};
+        } catch (error) {
+            this.sendErrorResponse(response, error);
             return;
         }
-        const connection = this._connections.get(args.threadId);
-        connection.sendRunCommand()
-            .then(response => this._checkStatus(response))
-            .catch(error => this.sendErrorResponse(response, error));
         this.sendResponse(response);
     }
 
-    protected nextRequest(response: VSCodeDebugProtocol.NextResponse, args: VSCodeDebugProtocol.NextArguments): void {
-        if (!args.threadId) {
-            this.sendErrorResponse(response, new Error('No active connection'));
+    protected async continueRequest(response: VSCodeDebugProtocol.ContinueResponse, args: VSCodeDebugProtocol.ContinueArguments) {
+        try {
+            if (!args.threadId) {
+                throw new Error('No active connection');
+            }
+            const connection = this._connections.get(args.threadId);
+            const response = await connection.sendRunCommand();
+            this._checkStatus(response);
+        } catch (error) {
+            this.sendErrorResponse(response, error);
             return;
         }
-        const connection = this._connections.get(args.threadId);
-        connection.sendStepOverCommand()
-            .then(response => this._checkStatus(response))
-            .catch(error => this.sendErrorResponse(response, error));
         this.sendResponse(response);
     }
 
-    protected stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments): void {
-        if (!args.threadId) {
-            this.sendErrorResponse(response, new Error('No active connection'));
+    protected async nextRequest(response: VSCodeDebugProtocol.NextResponse, args: VSCodeDebugProtocol.NextArguments) {
+        try {
+            if (!args.threadId) {
+                throw new Error('No active connection');
+            }
+            const connection = this._connections.get(args.threadId);
+            const response = await connection.sendStepOverCommand();
+            this._checkStatus(response);
+        } catch (error) {
+            this.sendErrorResponse(response, error);
             return;
         }
-        const connection = this._connections.get(args.threadId);
-        connection.sendStepIntoCommand()
-            .then(response => this._checkStatus(response))
-            .catch(error => this.sendErrorResponse(response, error));
         this.sendResponse(response);
     }
 
-    protected stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments): void {
-        if (!args.threadId) {
-            this.sendErrorResponse(response, new Error('No active connection'));
+    protected async stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments) {
+        try {
+            if (!args.threadId) {
+                throw new Error('No active connection');
+            }
+            const connection = this._connections.get(args.threadId);
+            const response = await connection.sendStepIntoCommand();
+            this._checkStatus(response);
+        } catch (error) {
+            this.sendErrorResponse(response, error);
             return;
         }
-        const connection = this._connections.get(args.threadId);
-        connection.sendStepOutCommand()
-            .then(response => this._checkStatus(response))
-            .catch(error => this.sendErrorResponse(response, error));
         this.sendResponse(response);
     }
 
-    protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments): void {
+    protected async stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments) {
+        try {
+            if (!args.threadId) {
+                throw new Error('No active connection');
+            }
+            const connection = this._connections.get(args.threadId);
+            const response = await connection.sendStepOutCommand();
+            this._checkStatus(response);
+        } catch (error) {
+            this.sendErrorResponse(response, error);
+            return;
+        }
+        this.sendResponse(response);
+    }
+
+    protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments) {
         this.sendErrorResponse(response, new Error('Pausing the execution is not supported by XDebug'));
     }
 
-    protected disconnectRequest(response: VSCodeDebugProtocol.DisconnectResponse, args: VSCodeDebugProtocol.DisconnectArguments): void {
-        Promise.all(Array.from(this._connections).map(([id, connection]) =>
-            connection.sendStopCommand()
-                .then(response => connection.close())
-                .then(() => {
+    protected async disconnectRequest(response: VSCodeDebugProtocol.DisconnectResponse, args: VSCodeDebugProtocol.DisconnectArguments) {
+        try {
+            await Promise.all(Array.from(this._connections).map(async ([id, connection]) => {
+                try {
+                    await connection.sendStopCommand();
+                } finally {
+                    connection.close();
                     this._connections.delete(id);
                     if (this._waitingConnections.has(connection)) {
                         this._waitingConnections.delete(connection);
                     }
-                })
-                .catch(() => {})
-        )).then(() => {
-            this._server.close(() => {
-                this.shutdown();
-                this.sendResponse(response);
-            });
-        }).catch(error => {
+                }
+            }));
+            this._server.close();
+            this.shutdown();
+            this.sendResponse(response);
+        } catch (error) {
             this.sendErrorResponse(response, error);
-        });
+        }
     }
 
-    protected evaluateRequest(response: VSCodeDebugProtocol.EvaluateResponse, args: VSCodeDebugProtocol.EvaluateArguments): void {
-        const connection = this._stackFrames.get(args.frameId).connection;
-        connection.sendEvalCommand(args.expression)
-            .then(xdebugResponse => {
-                if (xdebugResponse.result) {
-                    const displayValue = formatPropertyValue(xdebugResponse.result);
-                    let variablesReference: number;
-                    // if the property has children, generate a variable ID and save the property (including children) so VS Code can request them
-                    if (xdebugResponse.result.hasChildren || xdebugResponse.result.type === 'array' || xdebugResponse.result.type === 'object') {
-                        variablesReference = this._variableIdCounter++;
-                        this._evalResultProperties.set(variablesReference, xdebugResponse.result);
-                    } else {
-                        variablesReference = 0;
-                    }
-                    response.body = {result: displayValue, variablesReference};
+    protected async evaluateRequest(response: VSCodeDebugProtocol.EvaluateResponse, args: VSCodeDebugProtocol.EvaluateArguments) {
+        try {
+            const connection = this._stackFrames.get(args.frameId).connection;
+            const {result} = await connection.sendEvalCommand(args.expression);
+            if (result) {
+                const displayValue = formatPropertyValue(result);
+                let variablesReference: number;
+                // if the property has children, generate a variable ID and save the property (including children) so VS Code can request them
+                if (result.hasChildren || result.type === 'array' || result.type === 'object') {
+                    variablesReference = this._variableIdCounter++;
+                    this._evalResultProperties.set(variablesReference, result);
                 } else {
-                    response.body = {result: 'no result', variablesReference: 0};
+                    variablesReference = 0;
                 }
-                this.sendResponse(response);
-            })
-            .catch(error => {
-                this.sendErrorResponse(response, error);
-            });
+                response.body = {result: displayValue, variablesReference};
+            } else {
+                response.body = {result: 'no result', variablesReference: 0};
+            }
+            this.sendResponse(response);
+        } catch (error) {
+            this.sendErrorResponse(response, error);
+        }
     }
 }
 
