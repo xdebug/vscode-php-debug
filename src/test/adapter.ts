@@ -37,21 +37,21 @@ describe('PHP Debug Adapter', () => {
             assert.isRejected(client.launch({program: 'thisfiledoesnotexist.php'}))
         );
 
-        it('should run program to the end', async () => {
-            await client.launch({program});
-            await Promise.all([
+        it('should run program to the end', () =>
+            Promise.all([
+                client.launch({program}),
                 client.configurationSequence(),
                 client.waitForEvent('terminated')
-            ]);
-        });
+            ])
+        );
 
-        it('should stop on entry', async () => {
-            await client.launch({program, stopOnEntry: true});
-            await Promise.all([
+        it('should stop on entry', () =>
+            Promise.all([
+                client.launch({program, stopOnEntry: true}),
                 client.configurationSequence(),
                 client.assertStoppedLocation('entry', {path: program, line: 3})
-            ]);
-        });
+            ])
+        );
     });
 
     describe('breakpoints', () => {
@@ -210,6 +210,8 @@ describe('PHP Debug Adapter', () => {
             const stackFrame = (await client.stackTraceRequest({threadId: 1})).body.stackFrames[0];
             const [localScope, superglobalsScope, constantsScope] = (await client.scopesRequest({frameId: stackFrame.id})).body.scopes;
 
+            assert.isDefined(localScope);
+            assert.propertyVal(localScope, 'name', 'Locals');
             const variables = (await client.variablesRequest({variablesReference: localScope.variablesReference})).body.variables;
             assert.lengthOf(variables, 9);
 
@@ -232,6 +234,7 @@ describe('PHP Debug Adapter', () => {
 
             assert.propertyVal(anArray, 'name', '$anArray');
             assert.propertyVal(anArray, 'value', 'array(2)');
+            assert.property(anArray, 'variablesReference');
             const items = (await client.variablesRequest({variablesReference: anArray.variablesReference})).body.variables;
             assert.lengthOf(items, 2);
             assert.propertyVal(items[0], 'name', '0');
@@ -241,6 +244,7 @@ describe('PHP Debug Adapter', () => {
 
             assert.propertyVal(aLargeArray, 'name', '$aLargeArray');
             assert.propertyVal(aLargeArray, 'value', 'array(100)');
+            assert.property(aLargeArray, 'variablesReference');
             const largeArrayItems = (await client.variablesRequest({variablesReference: aLargeArray.variablesReference})).body.variables;
             assert.lengthOf(largeArrayItems, 100);
             assert.propertyVal(largeArrayItems[0], 'name', '0');
@@ -248,6 +252,11 @@ describe('PHP Debug Adapter', () => {
             assert.propertyVal(largeArrayItems[99], 'name', '99');
             assert.propertyVal(largeArrayItems[99], 'value', '"test"');
 
+            assert.isDefined(superglobalsScope);
+            assert.propertyVal(superglobalsScope, 'name', 'Superglobals');
+
+            assert.isDefined(constantsScope);
+            assert.propertyVal(constantsScope, 'name', 'User defined constants');
             const constants = (await client.variablesRequest({variablesReference: constantsScope.variablesReference})).body.variables;
             assert.lengthOf(constants, 1);
             assert.propertyVal(constants[0], 'name', 'TEST_CONSTANT');
