@@ -1,7 +1,8 @@
 PHP Debug adapter for Visual Studio Code
 ========================================
 
-[![Latest Release](https://img.shields.io/github/release/felixfbecker/vscode-php-debug.svg)](https://github.com/felixfbecker/vscode-php-debug/releases/latest) [![Build Status](https://travis-ci.org/felixfbecker/vscode-php-debug.svg?branch=master)](https://travis-ci.org/felixfbecker/vscode-php-debug) ![Dependencies](https://img.shields.io/david/felixfbecker/vscode-php-debug.svg) [![Gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Latest Release](https://img.shields.io/github/release/felixfbecker/vscode-php-debug.svg)](https://github.com/felixfbecker/vscode-php-debug/releases/latest) [![Build Status](https://travis-ci.org/felixfbecker/vscode-php-debug.svg?branch=master)](https://travis-ci.org/felixfbecker/vscode-php-debug) [![Build status Windows](https://ci.appveyor.com/api/projects/status/hda6n2umfdt6eyms/branch/master?svg=true)](https://ci.appveyor.com/project/felixfbecker/vscode-php-debug/branch/master)
+ ![Dependencies](https://img.shields.io/david/felixfbecker/vscode-php-debug.svg) [![Gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ![Demo GIF](images/demo.gif)
 
