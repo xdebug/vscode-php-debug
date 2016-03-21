@@ -761,19 +761,14 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async disconnectRequest(response: VSCodeDebugProtocol.DisconnectResponse, args: VSCodeDebugProtocol.DisconnectArguments) {
         try {
             await Promise.all(Array.from(this._connections).map(async ([id, connection]) => {
-                try {
-                    await connection.sendStopCommand();
-                } finally {
-                    connection.close();
-                    this._connections.delete(id);
-                    if (this._waitingConnections.has(connection)) {
-                        this._waitingConnections.delete(connection);
-                    }
-                }
+                await connection.sendStopCommand();
+                await connection.close();
+                this._connections.delete(id);
+                this._waitingConnections.delete(connection);
             }));
-            this._server.close();
-            this.shutdown();
+            await new Promise(resolve => this._server.close(resolve));
             this.sendResponse(response);
+            this.shutdown();
         } catch (error) {
             this.sendErrorResponse(response, error);
         }
