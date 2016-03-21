@@ -28,6 +28,7 @@ install:
 
 script:
  - npm run compile --silent
+ - npm run lint --silent
  - npm test --silent
 
 sudo: false

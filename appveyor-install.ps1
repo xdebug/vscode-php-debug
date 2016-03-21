@@ -11,7 +11,7 @@ $env:PATH += ';' + (Join-Path $PWD 'php')
 # Install XDebug
 $xdebugUrl = "https://xdebug.org/files/$env:XDEBUG.dll"
 Write-Output "Downloading $xdebugUrl"
-$client.DownloadFile($xdebugUrl, (Join-Path $PWD '.\php\ext\xdebug.dll'))
+$client.DownloadFile($xdebugUrl, (Join-Path $PWD 'php\ext\xdebug.dll'))
 Add-Content .\php\php.ini @"
 extension_dir=ext
 zend_extension=xdebug.dll

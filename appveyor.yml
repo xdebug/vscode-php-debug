@@ -13,7 +13,8 @@ install:
   - ps: . .\appveyor-install.ps1
 
 build_script:
-  - npm run compile
+  - npm run compile --silent
 
 test_script:
-  - npm test
+  - npm run lint --silent
+  - npm test --silent
