@@ -1,5 +1,3 @@
-$OutputEncoding = [Text.Encoding]::UTF8
-
 $client = New-Object System.Net.WebClient
 
 # Install PHP
@@ -25,9 +23,11 @@ xdebug.remote_autostart=1
 # Install Node
 Write-Output 'Installing Node'
 Install-Product node 4.1.1 x64
-npm install -g typings --no-progress
+npm config -g set progress=false
+npm config -g set unicode=false
+npm install -g typings
 
 # Install dependencies
 Write-Output 'Installing dependencies'
-npm install --no-progress
+npm install
 typings install
