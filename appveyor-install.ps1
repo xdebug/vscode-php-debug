@@ -24,9 +24,9 @@ xdebug.remote_autostart=1
 # Install Node
 Write-Output 'Installing Node'
 Install-Product node 4.1.1 x64
-npm install -g typings
+npm install -g typings --no-progress
 
 # Install dependencies
 Write-Output 'Installing dependencies'
-npm install
+npm install --no-progress
 typings install

@@ -20,10 +20,10 @@ before_install:
  - phpenv config-add travis-php.ini
  - nvm install 4.1.1
  - nvm use 4.1.1
- - npm install -g typings
+ - npm install -g typings --no-progress
 
 install:
- - npm install
+ - npm install --no-progress
  - typings install
 
 script:
