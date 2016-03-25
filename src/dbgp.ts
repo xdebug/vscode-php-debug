@@ -60,7 +60,7 @@ export abstract class DbgpConnection extends EventEmitter {
             if (this._chunksDataLength + data.length >= this._dataLength) {
                 // YES -> we received the whole response
                 // append the last piece of the response
-                const lastResponsePiece = data.slice(0, this._dataLength - this._chunksDataLength - 1);
+                const lastResponsePiece = data.slice(0, this._dataLength - this._chunksDataLength);
                 this._chunks.push(lastResponsePiece);
                 this._chunksDataLength += data.length;
                 const response = Buffer.concat(this._chunks, this._chunksDataLength);
