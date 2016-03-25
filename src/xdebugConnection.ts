@@ -539,6 +539,9 @@ export class Connection extends DbgpConnection {
     /** resolves the init promise */
     private _initPromiseResolveFn: (initPackt: InitPacket) => any;
 
+    /** rejects the init promise */
+    private _initPromiseRejectFn: (err?: Error) => any;
+
     /**
      * a map from transaction IDs to pending commands that have been sent to XDebug and are awaiting a response.
      * This should in theory only contain max one element at any time.
@@ -559,6 +562,7 @@ export class Connection extends DbgpConnection {
         this.timeEstablished = new Date();
         this._initPromise = new Promise<InitPacket>((resolve, reject) => {
             this._initPromiseResolveFn = resolve;
+            this._initPromiseRejectFn = reject;
         });
         this.on('message', (response: XMLDocument) => {
             if (response.documentElement.nodeName === 'init') {
@@ -572,7 +576,7 @@ export class Connection extends DbgpConnection {
                 }
                 if (this._commandQueue.length > 0) {
                     const command = this._commandQueue.shift();
-                    this._executeCommand(command);
+                    this._executeCommand(command).catch(command.rejectFn);
                 }
             }
         });
@@ -604,7 +608,7 @@ export class Connection extends DbgpConnection {
      * only be called when XDebug can actually accept commands, which is after we received a response for the
      * previous command.
      */
-    private _executeCommand(command: Command): void {
+    private async _executeCommand(command: Command): Promise<void> {
         const transactionId = this._transactionCounter++;
         let commandString = command.name + ' -i ' + transactionId;
         if (command.args) {
@@ -615,8 +619,14 @@ export class Connection extends DbgpConnection {
         }
         commandString += '\0';
         const data = iconv.encode(commandString, ENCODING);
-        this.write(data);
+        await this.write(data);
         this._pendingCommands.set(transactionId, command);
+    }
+
+    public close() {
+        this._commandQueue = [];
+        this._initPromiseRejectFn(new Error('connection closed'));
+        return super.close();
     }
 
     // ------------------------ status --------------------------------------------

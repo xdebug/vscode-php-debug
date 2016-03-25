@@ -26,7 +26,7 @@ export class DbgpConnection extends EventEmitter {
         this._chunksDataLength = 0;
         this._chunks = [];
         socket.on('data', (data: Buffer) => this._handleDataChunk(data));
-        socket.on('error', (error: Error) => this.emit('error'));
+        socket.on('error', (error: Error) => this.emit('error', error));
         socket.on('close', () => this.emit('close'));
     }
 
@@ -100,8 +100,16 @@ export class DbgpConnection extends EventEmitter {
         }
     }
 
-    public write(command: Buffer): void {
-        this._socket.write(command);
+    public write(command: Buffer): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            if (this._socket.writable) {
+                this._socket.write(command, () => {
+                    resolve();
+                });
+            } else {
+                reject(new Error('socket not writable'));
+            }
+        });
     }
 
     /** closes the underlying socket */
