@@ -30,7 +30,7 @@ describe('DbgpConnection', () => {
         conn.on('warning', done);
         conn.on('error', done);
         setTimeout(() => {
-            socket.emit('data', packet)
+            socket.emit('data', packet);
         }, 100);
     });
 
