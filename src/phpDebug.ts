@@ -186,6 +186,9 @@ class PhpDebugSession extends vscode.DebugSession {
                         this._waitingConnections.delete(connection);
                     }
                 };
+                connection.on('warning', warning => {
+                    this.sendEvent(new vscode.OutputEvent(warning));
+                });
                 connection.once('error', disposeConnection);
                 connection.once('close', disposeConnection);
                 await connection.waitForInitPacket();
