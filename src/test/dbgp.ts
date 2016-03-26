@@ -56,6 +56,27 @@ describe('DbgpConnection', () => {
         }, 100);
     });
 
+    it('should parse multiple responses in one data event', done => {
+        conn.once('message', (document: XMLDocument) => {
+            assert.equal(document.documentElement.nodeName, 'init');
+            assert.equal(document.documentElement.textContent, 'This is just a test');
+            conn.once('message', (document: XMLDocument) => {
+                assert.equal(document.documentElement.nodeName, 'response');
+                assert.equal(document.documentElement.textContent, 'This is just another test');
+                done();
+            });
+        });
+        conn.on('warning', done);
+        conn.on('error', done);
+        const packet2 = makePacket('<?xml version="1.0" encoding="iso-8859-1"?>\n<response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="http://xdebug.org/dbgp/xdebug">This is just another test</response>');
+        setTimeout(() => {
+            socket.emit('data', packet);
+            setTimeout(() => {
+                socket.emit('data', packet2)
+            });
+        }, 100);
+    });
+
     it('should error on invalid XML', () => new Promise((resolve, reject) => {
         conn.on('error', (error: Error) => {
             assert.isDefined(error);
