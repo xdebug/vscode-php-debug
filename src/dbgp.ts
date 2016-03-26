@@ -5,13 +5,13 @@ import * as iconv from 'iconv-lite';
 import {DOMParser} from 'xmldom';
 
 /** The encoding all XDebug messages are encoded with */
-const ENCODING = 'iso-8859-1';
+export const ENCODING = 'iso-8859-1';
 
 /** The two states the connection switches between */
 enum ParsingState {DataLength, Response};
 
 /** Wraps the NodeJS Socket and calls handleResponse() whenever a full response arrives */
-export abstract class DbgpConnection extends EventEmitter {
+export class DbgpConnection extends EventEmitter {
 
     private _socket: net.Socket;
     private _parsingState: ParsingState;
@@ -72,15 +72,15 @@ export abstract class DbgpConnection extends EventEmitter {
                             this.emit('warning', warning);
                         },
                         error: error => {
-                            this.emit('error', error);
+                            this.emit('error', error instanceof Error ? error : new Error(error));
                         },
                         fatalError: error => {
-                            this.emit('error', error);
+                            this.emit('error', error instanceof Error ? error : new Error(error));
                         }
                     }
                 });
                 const document = parser.parseFromString(xml, 'application/xml');
-                this.handleResponse(document);
+                this.emit('message', document);
                 // reset buffer
                 this._chunks = [];
                 this._chunksDataLength = 0;
@@ -99,8 +99,6 @@ export abstract class DbgpConnection extends EventEmitter {
             }
         }
     }
-
-    protected abstract handleResponse(response: XMLDocument): void;
 
     public write(command: Buffer): void {
         this._socket.write(command);

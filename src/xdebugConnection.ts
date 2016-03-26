@@ -560,32 +560,27 @@ export class Connection extends DbgpConnection {
         this._initPromise = new Promise<InitPacket>((resolve, reject) => {
             this._initPromiseResolveFn = resolve;
         });
+        this.on('message', (response: XMLDocument) => {
+            if (response.documentElement.nodeName === 'init') {
+                this._initPromiseResolveFn(new InitPacket(response, this));
+            } else {
+                const transactionId = parseInt(response.documentElement.getAttribute('transaction_id'));
+                if (this._pendingCommands.has(transactionId)) {
+                    const command = this._pendingCommands.get(transactionId);
+                    this._pendingCommands.delete(transactionId);
+                    command.resolveFn(response);
+                }
+                if (this._commandQueue.length > 0) {
+                    const command = this._commandQueue.shift();
+                    this._executeCommand(command);
+                }
+            }
+        });
     }
 
     /** Returns a promise that gets resolved once the init packet arrives */
     public waitForInitPacket(): Promise<InitPacket> {
         return this._initPromise;
-    }
-
-    /**
-     * Handles a response by firing and then removing a pending transaction callback.
-     * After that, the next command in the queue is executed (if there is any).
-     */
-    protected handleResponse(response: XMLDocument): void {
-        if (response.documentElement.nodeName === 'init') {
-            this._initPromiseResolveFn(new InitPacket(response, this));
-        } else {
-            const transactionId = parseInt(response.documentElement.getAttribute('transaction_id'));
-            if (this._pendingCommands.has(transactionId)) {
-                const command = this._pendingCommands.get(transactionId);
-                this._pendingCommands.delete(transactionId);
-                command.resolveFn(response);
-            }
-            if (this._commandQueue.length > 0) {
-                const command = this._commandQueue.shift();
-                this._executeCommand(command);
-            }
-        }
     }
 
     /**
