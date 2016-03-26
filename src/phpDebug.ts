@@ -769,7 +769,9 @@ class PhpDebugSession extends vscode.DebugSession {
                 this._connections.delete(id);
                 this._waitingConnections.delete(connection);
             }));
-            await new Promise(resolve => this._server.close(resolve));
+            if (this._server) {
+                await new Promise(resolve => this._server.close(resolve));
+            }
             this.sendResponse(response);
             this.shutdown();
         } catch (error) {
