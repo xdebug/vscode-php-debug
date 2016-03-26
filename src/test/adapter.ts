@@ -11,12 +11,14 @@ describe('PHP Debug Adapter', () => {
 
     let client: DebugClient;
 
-    beforeEach(async () => {
+    beforeEach('start debug adapter', async () => {
         client = new DebugClient('node', path.normalize(__dirname + '/../phpDebug'), 'php');
         await client.start();
     });
 
-    afterEach(() => client.stop());
+    afterEach('stop debug adapter', () =>
+        client.stop()
+    );
 
     describe('initialization', () => {
 
