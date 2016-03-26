@@ -5,13 +5,13 @@
     "typings/browser",
     "typings/browser.d.ts"
   ],
-	"compilerOptions": {
-		"target": "es6",
+  "compilerOptions": {
+    "target": "es6",
     "rootDir": "src",
-		"moduleResolution": "node",
-		"noImplicitAny": false,
-		"removeComments": false,
-		"preserveConstEnums": true,
+    "moduleResolution": "node",
+    "noImplicitAny": false,
+    "removeComments": false,
+    "preserveConstEnums": true,
     "allowSyntheticDefaultImports": true
-	}
+  }
 }
