@@ -72,7 +72,7 @@ describe('DbgpConnection', () => {
         setTimeout(() => {
             socket.emit('data', packet);
             setTimeout(() => {
-                socket.emit('data', packet2)
+                socket.emit('data', packet2);
             });
         }, 100);
     });
