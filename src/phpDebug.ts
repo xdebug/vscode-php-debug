@@ -12,6 +12,14 @@ import * as fs from 'fs';
 import fileUrl from 'file-url';
 import {Terminal} from './terminal';
 
+if (process.env.VSCODE_NLS_CONFIG) {
+    try {
+        moment.locale(JSON.parse(process.env.VSCODE_NLS_CONFIG).locale);
+    } catch (e) {
+        // ignore
+    }
+}
+
 /** formats a xdebug property value for VS Code */
 function formatPropertyValue(property: xdebug.BaseProperty): string {
     let displayValue: string;
