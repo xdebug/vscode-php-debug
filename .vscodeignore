@@ -10,3 +10,7 @@ typings.json
 tslint.json
 gulpfile.js
 tsconfig.json
+appveyor.yml
+appveyor-install.ps1
+.travis.yml
+travis-php.ini
