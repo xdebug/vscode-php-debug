@@ -409,17 +409,17 @@ class PhpDebugSession extends vscode.DebugSession {
                             .map(breakpoint => breakpoint.remove())
                     );
                     // set new breakpoints
-                    await Promise.all(xdebugBreakpoints.map(async (breakpoint) => {
+                    await Promise.all(xdebugBreakpoints.map(async (breakpoint, index) => {
                         try {
                             const response = await connection.sendBreakpointSetCommand(breakpoint);
                             // only capture each breakpoint once
                             if (connectionIndex === 0) {
-                                vscodeBreakpoints.push({verified: true, line: breakpoint.line, id: response.breakpointId});
+                                vscodeBreakpoints[index] = {verified: true, line: breakpoint.line};
                             }
                         } catch (error) {
                             // only capture each breakpoint once
                             if (connectionIndex === 0) {
-                                vscodeBreakpoints.push({verified: false, line: breakpoint.line, message: (<Error>error).message});
+                                vscodeBreakpoints[index] = {verified: false, line: breakpoint.line, message: (<Error>error).message};
                             }
                         }
                     }));
@@ -468,17 +468,17 @@ class PhpDebugSession extends vscode.DebugSession {
                     const {breakpoints} = await connection.sendBreakpointListCommand();
                     await Promise.all(breakpoints.filter(breakpoint => breakpoint.type === 'call').map(breakpoint => breakpoint.remove()));
                     // set new breakpoints
-                    await Promise.all(args.breakpoints.map(async (functionBreakpoint) => {
+                    await Promise.all(args.breakpoints.map(async (functionBreakpoint, index) => {
                         try {
-                            const {breakpointId} = await connection.sendBreakpointSetCommand(new xdebug.CallBreakpoint(functionBreakpoint.name, functionBreakpoint.condition));
+                            await connection.sendBreakpointSetCommand(new xdebug.CallBreakpoint(functionBreakpoint.name, functionBreakpoint.condition));
                             // only capture each breakpoint once
                             if (connectionIndex === 0) {
-                                vscodeBreakpoints.push({verified: true, id: breakpointId});
+                                vscodeBreakpoints[index] = {verified: true};
                             }
                         } catch (error) {
                             // only capture each breakpoint once
                             if (connectionIndex === 0) {
-                                vscodeBreakpoints.push({verified: false, message: error instanceof Error ? error.message : error});
+                                vscodeBreakpoints[index] = {verified: false, message: error instanceof Error ? error.message : error};
                             }
                         }
                     }));
