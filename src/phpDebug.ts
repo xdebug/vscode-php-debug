@@ -158,6 +158,7 @@ class PhpDebugSession extends vscode.DebugSession {
             {
                 filter: '*',
                 label: 'Everything',
+                default: true
             }
         ];
         this.sendResponse(response);
