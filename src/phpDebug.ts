@@ -169,94 +169,103 @@ class PhpDebugSession extends vscode.DebugSession {
         this.shutdown();
     }
 
-    protected launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
+    protected async launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this._args = args;
-        const server = this._server = net.createServer();
-        server.on('connection', async (socket: net.Socket) => {
-            try {
-                // new XDebug connection
-                const connection = new xdebug.Connection(socket);
-                if (args.log) {
-                    this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'), true);
-                }
-                this._connections.set(connection.id, connection);
-                this._waitingConnections.add(connection);
-                const disposeConnection = (error?: Error) => {
-                    if (this._connections.has(connection.id)) {
-                        if (args.log) {
-                            this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ' closed\n'));
-                        }
-                        if (error) {
-                            this.sendEvent(new vscode.OutputEvent(error.message));
-                        }
-                        this.sendEvent(new vscode.ThreadEvent('exited', connection.id));
-                        connection.close();
-                        this._connections.delete(connection.id);
-                        this._waitingConnections.delete(connection);
-                    }
-                };
-                connection.on('warning', warning => {
-                    this.sendEvent(new vscode.OutputEvent(warning));
+        /** launches the script as CLI */
+        const launchScript = async () => {
+            // check if program exists
+            await new Promise((resolve, reject) => fs.access(args.program, fs.F_OK, err => err ? reject(err) : resolve()));
+            const runtimeArgs = args.runtimeArgs || [];
+            const runtimeExecutable = args.runtimeExecutable || 'php';
+            const programArgs = args.args || [];
+            const cwd = args.cwd || process.cwd();
+            const env = args.env || process.env;
+            // launch in CLI mode
+            if (args.externalConsole) {
+                const script = await Terminal.launchInTerminal(cwd, [runtimeExecutable, ...runtimeArgs, args.program, ...programArgs], env);
+                // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
+                script.on('exit', () => {
+                    this.sendEvent(new vscode.TerminatedEvent());
                 });
-                connection.once('error', disposeConnection);
-                connection.once('close', disposeConnection);
-                await connection.waitForInitPacket();
-                this.sendEvent(new vscode.ThreadEvent('started', connection.id));
-                // set max_depth to 1 since VS Code requests nested structures individually anyway
-                await connection.sendFeatureSetCommand('max_depth', '1');
-                // raise default of 32
-                await connection.sendFeatureSetCommand('max_children', '9999');
-                // request breakpoints from VS Code
-                await this.sendEvent(new vscode.InitializedEvent());
-            } catch (error) {
-                this.sendEvent(new vscode.OutputEvent(error instanceof Error ? error.message : error));
+            } else {
+                const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program, ...programArgs], {cwd, env});
+                // redirect output to debug console
+                script.stdout.on('data', (data: Buffer) => {
+                    this.sendEvent(new vscode.OutputEvent(data + '', 'stdout'));
+                });
+                script.stderr.on('data', (data: Buffer) => {
+                    this.sendEvent(new vscode.OutputEvent(data + '', 'stderr'));
+                });
+                // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
+                script.on('exit', () => {
+                    this.sendEvent(new vscode.TerminatedEvent());
+                });
+                script.on('error', (error: Error) => {
+                    this.sendEvent(new vscode.OutputEvent(error.message));
+                });
             }
-        });
-        server.on('error', (error: Error) => {
-            this.sendEvent(new vscode.OutputEvent(error.message));
-            this.shutdown();
-        });
-        server.listen(args.port || 9000, async () => {
-            try {
-                if (args.program) {
-                    // check if program exists
-                    await new Promise((resolve, reject) => fs.access(args.program, fs.F_OK, err => err ? reject(err) : resolve()));
-                    const runtimeArgs = args.runtimeArgs || [];
-                    const runtimeExecutable = args.runtimeExecutable || 'php';
-                    const programArgs = args.args || [];
-                    const cwd = args.cwd || process.cwd();
-                    const env = args.env || process.env;
-                    // launch in CLI mode
-                    if (args.externalConsole) {
-                        const script = await Terminal.launchInTerminal(cwd, [runtimeExecutable, ...runtimeArgs, args.program, ...programArgs], env);
-                        // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                        script.on('exit', () => {
-                            this.sendEvent(new vscode.TerminatedEvent());
-                        });
-                    } else {
-                        const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program, ...programArgs], {cwd, env});
-                        // redirect output to debug console
-                        script.stdout.on('data', (data: Buffer) => {
-                            this.sendEvent(new vscode.OutputEvent(data + '', 'stdout'));
-                        });
-                        script.stderr.on('data', (data: Buffer) => {
-                            this.sendEvent(new vscode.OutputEvent(data + '', 'stderr'));
-                        });
-                        // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                        script.on('exit', () => {
-                            this.sendEvent(new vscode.TerminatedEvent());
-                        });
-                        script.on('error', (error: Error) => {
-                            this.sendEvent(new vscode.OutputEvent(error.message));
-                        });
+        };
+        /** sets up a TCP server to listen for XDebug connections */
+        const createServer = () => new Promise((resolve, reject) => {
+            const server = this._server = net.createServer();
+            server.on('connection', async (socket: net.Socket) => {
+                try {
+                    // new XDebug connection
+                    const connection = new xdebug.Connection(socket);
+                    if (args.log) {
+                        this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'), true);
                     }
+                    this._connections.set(connection.id, connection);
+                    this._waitingConnections.add(connection);
+                    const disposeConnection = (error?: Error) => {
+                        if (this._connections.has(connection.id)) {
+                            if (args.log) {
+                                this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ' closed\n'));
+                            }
+                            if (error) {
+                                this.sendEvent(new vscode.OutputEvent(error.message));
+                            }
+                            this.sendEvent(new vscode.ThreadEvent('exited', connection.id));
+                            connection.close();
+                            this._connections.delete(connection.id);
+                            this._waitingConnections.delete(connection);
+                        }
+                    };
+                    connection.on('warning', warning => {
+                        this.sendEvent(new vscode.OutputEvent(warning));
+                    });
+                    connection.once('error', disposeConnection);
+                    connection.once('close', disposeConnection);
+                    await connection.waitForInitPacket();
+                    this.sendEvent(new vscode.ThreadEvent('started', connection.id));
+                    // set max_depth to 1 since VS Code requests nested structures individually anyway
+                    await connection.sendFeatureSetCommand('max_depth', '1');
+                    // raise default of 32
+                    await connection.sendFeatureSetCommand('max_children', '9999');
+                    // request breakpoints from VS Code
+                    await this.sendEvent(new vscode.InitializedEvent());
+                } catch (error) {
+                    this.sendEvent(new vscode.OutputEvent(error instanceof Error ? error.message : error));
                 }
-            } catch (error) {
-                this.sendErrorResponse(response, error);
-                return;
-            }
-            this.sendResponse(response);
+            });
+            server.on('error', (error: Error) => {
+                this.sendEvent(new vscode.OutputEvent(error.message));
+                this.shutdown();
+            });
+            server.listen(args.port || 9000, error => error ? reject(error) : resolve());
         });
+        try {
+            if (!args.noDebug) {
+                await createServer();
+            }
+            if (args.program) {
+                await launchScript();
+            }
+        } catch (error) {
+            this.sendErrorResponse(response, <Error>error);
+            return;
+        }
+        this.sendResponse(response);
     }
 
     /**
