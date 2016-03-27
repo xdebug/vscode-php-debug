@@ -770,6 +770,7 @@ export class Connection extends DbgpConnection {
 
     /** Sends a property_get command */
     public async sendPropertyGetCommand(property: Property): Promise<PropertyGetResponse> {
+        const escapedFullName = '"' + property.fullName.replace(/"/g, '\\"') + '"';
         return new PropertyGetResponse(await this._enqueueCommand('property_get', `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${property.fullName}`), property);
     }
 
