@@ -266,66 +266,94 @@ describe('PHP Debug Adapter', () => {
 
         const program = path.join(TEST_PROJECT, 'variables.php');
 
-        it('should report all variables correctly', async () => {
+        let localScope: DebugProtocol.Scope;
+        let superglobalsScope: DebugProtocol.Scope;
+        let constantsScope: DebugProtocol.Scope;
+
+        beforeEach(async () => {
             await Promise.all([
                 client.launch({program}),
                 client.waitForEvent('initialized')
             ]);
-            await client.setBreakpointsRequest({source: {path: program}, breakpoints: [{line: 15}]});
+            await client.setBreakpointsRequest({source: {path: program}, breakpoints: [{line: 16}]});
             const [, event] = await Promise.all([
                 client.configurationDoneRequest(),
                 client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>
             ]);
             const stackFrame = (await client.stackTraceRequest({threadId: event.body.threadId})).body.stackFrames[0];
-            const [localScope, superglobalsScope, constantsScope] = (await client.scopesRequest({frameId: stackFrame.id})).body.scopes;
+            const scopes = (await client.scopesRequest({frameId: stackFrame.id})).body.scopes;
+            localScope = scopes.find(scope => scope.name === 'Locals');
+            superglobalsScope = scopes.find(scope => scope.name === 'Superglobals');
+            constantsScope = scopes.find(scope => scope.name === 'User defined constants');
+        });
 
-            assert.isDefined(localScope);
-            assert.propertyVal(localScope, 'name', 'Locals');
-            const variables = (await client.variablesRequest({variablesReference: localScope.variablesReference})).body.variables;
-            assert.lengthOf(variables, 9);
+        it('should report scopes correctly', () => {
+            assert.isDefined(localScope, 'Locals');
+            assert.isDefined(superglobalsScope, 'Superglobals');
+            assert.isDefined(constantsScope, 'User defined constants');
+        });
 
-            const [aBoolean, aFloat, aLargeArray, aString, anArray, anEmptyString, anInt, nullValue, variableThatsNotSet] = variables;
+        describe('local variables', () => {
 
-            assert.propertyVal(aBoolean, 'name', '$aBoolean');
-            assert.propertyVal(aBoolean, 'value', 'true');
-            assert.propertyVal(aFloat, 'name', '$aFloat');
-            assert.propertyVal(aFloat, 'value', '1.23');
-            assert.propertyVal(aString, 'name', '$aString');
-            assert.propertyVal(aString, 'value', '"123"');
-            assert.propertyVal(anEmptyString, 'name', '$anEmptyString');
-            assert.propertyVal(anEmptyString, 'value', '""');
-            assert.propertyVal(anInt, 'name', '$anInt');
-            assert.propertyVal(anInt, 'value', '123');
-            assert.propertyVal(nullValue, 'name', '$nullValue');
-            assert.propertyVal(nullValue, 'value', 'null');
-            assert.propertyVal(variableThatsNotSet, 'name', '$variableThatsNotSet');
-            assert.propertyVal(variableThatsNotSet, 'value', 'uninitialized');
+            let localVariables: DebugProtocol.Variable[];
 
-            assert.propertyVal(anArray, 'name', '$anArray');
-            assert.propertyVal(anArray, 'value', 'array(2)');
-            assert.property(anArray, 'variablesReference');
-            const items = (await client.variablesRequest({variablesReference: anArray.variablesReference})).body.variables;
-            assert.lengthOf(items, 2);
-            assert.propertyVal(items[0], 'name', '0');
-            assert.propertyVal(items[0], 'value', '1');
-            assert.propertyVal(items[1], 'name', 'test');
-            assert.propertyVal(items[1], 'value', '2');
+            beforeEach(async () => {
+                localVariables = (await client.variablesRequest({variablesReference: localScope.variablesReference})).body.variables;
+            });
 
-            assert.propertyVal(aLargeArray, 'name', '$aLargeArray');
-            assert.propertyVal(aLargeArray, 'value', 'array(100)');
-            assert.property(aLargeArray, 'variablesReference');
-            const largeArrayItems = (await client.variablesRequest({variablesReference: aLargeArray.variablesReference})).body.variables;
-            assert.lengthOf(largeArrayItems, 100);
-            assert.propertyVal(largeArrayItems[0], 'name', '0');
-            assert.propertyVal(largeArrayItems[0], 'value', '"test"');
-            assert.propertyVal(largeArrayItems[99], 'name', '99');
-            assert.propertyVal(largeArrayItems[99], 'value', '"test"');
+            it('should report local scalar variables correctly', async () => {
+                const variables: {[name: string]: string} = Object.create(null);
+                for (const variable of localVariables) {
+                    variables[variable.name] = variable.value;
+                }
+                assert.propertyVal(variables, '$aBoolean', 'true');
+                assert.propertyVal(variables, '$aFloat', '1.23');
+                assert.propertyVal(variables, '$aString', '"123"');
+                assert.propertyVal(variables, '$anEmptyString', '""');
+                assert.propertyVal(variables, '$anInt', '123');
+                assert.propertyVal(variables, '$nullValue', 'null');
+                assert.propertyVal(variables, '$variableThatsNotSet', 'uninitialized');
+            });
 
-            assert.isDefined(superglobalsScope);
-            assert.propertyVal(superglobalsScope, 'name', 'Superglobals');
+            it('should report arrays correctly', async () => {
+                const anArray = localVariables.find(variable => variable.name === '$anArray');
+                assert.isDefined(anArray);
+                assert.propertyVal(anArray, 'value', 'array(2)');
+                assert.property(anArray, 'variablesReference');
+                const items = (await client.variablesRequest({variablesReference: anArray.variablesReference})).body.variables;
+                assert.lengthOf(items, 2);
+                assert.propertyVal(items[0], 'name', '0');
+                assert.propertyVal(items[0], 'value', '1');
+                assert.propertyVal(items[1], 'name', 'test');
+                assert.propertyVal(items[1], 'value', '2');
+            });
 
-            assert.isDefined(constantsScope);
-            assert.propertyVal(constantsScope, 'name', 'User defined constants');
+            it('should report large arrays correctly', async () => {
+                const aLargeArray = localVariables.find(variable => variable.name === '$aLargeArray');
+                assert.isDefined(aLargeArray);
+                assert.propertyVal(aLargeArray, 'value', 'array(100)');
+                assert.property(aLargeArray, 'variablesReference');
+                const largeArrayItems = (await client.variablesRequest({variablesReference: aLargeArray.variablesReference})).body.variables;
+                assert.lengthOf(largeArrayItems, 100);
+                assert.propertyVal(largeArrayItems[0], 'name', '0');
+                assert.propertyVal(largeArrayItems[0], 'value', '"test"');
+                assert.propertyVal(largeArrayItems[99], 'name', '99');
+                assert.propertyVal(largeArrayItems[99], 'value', '"test"');
+            });
+
+            it('should report keys with spaces correctly', async () => {
+                const arrayWithSpaceKey = localVariables.find(variable => variable.name === '$arrayWithSpaceKey');
+                assert.isDefined(arrayWithSpaceKey);
+                assert.propertyVal(arrayWithSpaceKey, 'value', 'array(1)');
+                assert.property(arrayWithSpaceKey, 'variablesReference');
+                const arrayWithSpaceKeyItems = (await client.variablesRequest({variablesReference: arrayWithSpaceKey.variablesReference})).body.variables;
+                assert.lengthOf(arrayWithSpaceKeyItems, 1);
+                assert.propertyVal(arrayWithSpaceKeyItems[0], 'name', 'space key');
+                assert.propertyVal(arrayWithSpaceKeyItems[0], 'value', '1');
+            });
+        });
+
+        it('should report user defined constants correctly', async () => {
             const constants = (await client.variablesRequest({variablesReference: constantsScope.variablesReference})).body.variables;
             assert.lengthOf(constants, 1);
             assert.propertyVal(constants[0], 'name', 'TEST_CONSTANT');
