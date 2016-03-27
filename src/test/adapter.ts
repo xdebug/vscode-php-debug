@@ -1,7 +1,8 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import * as path from 'path';
-import {DebugClient} from './debugClient';
+import {DebugClient} from 'vscode-debugadapter-testsupport';
+import {DebugProtocol} from 'vscode-debugprotocol';
 chai.use(chaiAsPromised);
 const assert = chai.assert;
 
@@ -47,11 +48,19 @@ describe('PHP Debug Adapter', () => {
             ])
         );
 
-        it('should stop on entry', () =>
-            Promise.all([
+        it('should stop on entry', async () => {
+            const [event] = await Promise.all([
+                client.waitForEvent('stopped'),
                 client.launch({program, stopOnEntry: true}),
-                client.configurationSequence(),
-                client.assertStoppedLocation('entry', {path: program, line: 3})
+                client.configurationSequence()
+            ]);
+            assert.propertyVal(event.body, 'reason', 'entry');
+        });
+
+        it('should not stop if launched without debugging', () =>
+            Promise.all([
+                client.launch({program, stopOnEntry: true, noDebug: true}),
+                client.waitForEvent('terminated')
             ])
         );
     });
@@ -64,6 +73,11 @@ describe('PHP Debug Adapter', () => {
         it('should handle step_over');
         it('should handle step_in');
         it('should handle step_out');
+
+        it('should error on pause request', () =>
+            assert.isRejected(client.pauseRequest({threadId: 1}))
+        );
+
         it('should handle disconnect', async () => {
             await Promise.all([
                 client.launch({program, stopOnEntry: true}),
@@ -73,22 +87,50 @@ describe('PHP Debug Adapter', () => {
         });
     });
 
+    async function assertStoppedLocation(reason: 'entry' | 'breakpoint' | 'exception', path: string, line: number): Promise<{threadId: number, frame: DebugProtocol.StackFrame}> {
+        const event = await client.waitForEvent('stopped') as DebugProtocol.StoppedEvent;
+        assert.propertyVal(event.body, 'reason', reason);
+        const threadId = event.body.threadId;
+        const response = await client.stackTraceRequest({threadId});
+        const frame = response.body.stackFrames[0];
+        let expectedPath = path;
+        let actualPath = frame.source.path;
+        if (process.platform === 'win32') {
+            expectedPath = expectedPath.toLowerCase();
+            actualPath = actualPath.toLowerCase();
+        }
+        assert.equal(actualPath, expectedPath, 'stopped location: path mismatch');
+        assert.equal(frame.line, line, 'stopped location: line mismatch');
+        return {threadId, frame};
+    }
+
     describe('breakpoints', () => {
 
         const program = path.join(TEST_PROJECT, 'hello_world.php');
 
         describe('line breakpoints', () => {
 
+            async function testBreakpointHit(program: string, line: number): Promise<void> {
+                await Promise.all([client.launch({program}), client.waitForEvent('initialized')]);
+                const breakpoint = (await client.setBreakpointsRequest({breakpoints: [{line}], source: {path: program}})).body.breakpoints[0];
+                assert.isTrue(breakpoint.verified, 'breakpoint verification mismatch: verified');
+                assert.equal(breakpoint.line, line, 'breakpoint verification mismatch: line');
+                await Promise.all([
+                    client.configurationDoneRequest(),
+                    assertStoppedLocation('breakpoint', program, line)
+                ]);
+            }
+
             it('should stop on a breakpoint', () =>
-                client.hitBreakpoint({program}, {path: program, line: 4})
+                testBreakpointHit(program, 4)
             );
 
             it('should stop on a breakpoint in file with spaces in its name', () =>
-                client.hitBreakpoint({program}, {path: program, line: 4})
+                testBreakpointHit(path.join(TEST_PROJECT, 'folder with spaces', 'file with spaces.php'), 4)
             );
 
             it('should stop on a breakpoint identical to the entrypoint', () =>
-                client.hitBreakpoint({program}, {path: program, line: 3})
+                testBreakpointHit(program, 3)
             );
         });
 
@@ -103,36 +145,36 @@ describe('PHP Debug Adapter', () => {
 
             it('should support stopping only on a notice', async () => {
                 await client.setExceptionBreakpointsRequest({filters: ['Notice']});
-                await Promise.all([
+                const [, {threadId}] = await Promise.all([
                     client.configurationDoneRequest(),
-                    client.assertStoppedLocation('exception', {path: program, line: 6})
+                    assertStoppedLocation('exception', program, 6)
                 ]);
                 await Promise.all([
-                    client.continueRequest({threadId: 1}),
+                    client.continueRequest({threadId}),
                     client.waitForEvent('terminated')
                 ]);
             });
 
             it('should support stopping only on a warning', async () => {
                 await client.setExceptionBreakpointsRequest({filters: ['Warning']});
-                await Promise.all([
-                    client.assertStoppedLocation('exception', {path: program, line: 9}),
+                const [{threadId}] = await Promise.all([
+                    assertStoppedLocation('exception', program, 9),
                     client.configurationDoneRequest()
                 ]);
                 await Promise.all([
-                    client.continueRequest({threadId: 1}),
+                    client.continueRequest({threadId}),
                     client.waitForEvent('terminated')
                 ]);
             });
 
             it('should support stopping only on an exception', async () => {
                 await client.setExceptionBreakpointsRequest({filters: ['Exception']});
-                await Promise.all([
+                const [, {threadId}] = await Promise.all([
                     client.configurationDoneRequest(),
-                    client.assertStoppedLocation('exception', {path: program, line: 12})
+                    assertStoppedLocation('exception', program, 12)
                 ]);
                 await Promise.all([
-                    client.continueRequest({threadId: 1}),
+                    client.continueRequest({threadId}),
                     client.waitForEvent('terminated')
                 ]);
             });
@@ -140,27 +182,27 @@ describe('PHP Debug Adapter', () => {
             it('should support stopping on everything', async () => {
                 await client.setExceptionBreakpointsRequest({filters: ['*']});
                 // Notice
-                await Promise.all([
+                const [, {threadId}] = await Promise.all([
                     client.configurationDoneRequest(),
-                    client.assertStoppedLocation('exception', {path: program, line: 6})
+                    assertStoppedLocation('exception', program, 6)
                 ]);
                 // Warning
                 await Promise.all([
-                    client.continueRequest({threadId: 1}),
-                    client.assertStoppedLocation('exception', {path: program, line: 9})
+                    client.continueRequest({threadId}),
+                    assertStoppedLocation('exception', program, 9)
                 ]);
                 // Exception
                 await Promise.all([
-                    client.continueRequest({threadId: 1}),
-                    client.assertStoppedLocation('exception', {path: program, line: 12})
+                    client.continueRequest({threadId}),
+                    assertStoppedLocation('exception', program, 12)
                 ]);
                 // Fatal error: uncaught exception
                 await Promise.all([
-                    client.continueRequest({threadId: 1}),
-                    client.assertStoppedLocation('exception', {path: program, line: 12})
+                    client.continueRequest({threadId}),
+                    assertStoppedLocation('exception', program, 12)
                 ]);
                 await Promise.all([
-                    client.continueRequest({threadId: 1}),
+                    client.continueRequest({threadId}),
                     client.waitForEvent('terminated')
                 ]);
             });
@@ -180,10 +222,10 @@ describe('PHP Debug Adapter', () => {
                 const bp = (await client.setBreakpointsRequest({breakpoints: [{line: 10, condition: '$anInt === 123'}], source: {path: program}})).body.breakpoints[0];
                 assert.equal(bp.verified, true, 'breakpoint verification mismatch: verified');
                 assert.equal(bp.line, 10, 'breakpoint verification mismatch: line');
-                const frame = (await Promise.all([
+                const [, {frame}] = await Promise.all([
                     client.configurationDoneRequest(),
-                    client.assertStoppedLocation('breakpoint', {path: program, line: 10})
-                ]))[1].body.stackFrames[0];
+                    assertStoppedLocation('breakpoint', program, 10)
+                ]);
                 const result = (await client.evaluateRequest({context: 'watch', frameId: frame.id, expression: '$anInt'})).body.result;
                 assert.equal(result, 123);
             });
@@ -214,7 +256,7 @@ describe('PHP Debug Adapter', () => {
                 assert.strictEqual(breakpoint.verified, true);
                 await Promise.all([
                     client.configurationDoneRequest(),
-                    client.assertStoppedLocation('breakpoint', {path: program, line: 5})
+                    assertStoppedLocation('breakpoint', program, 5)
                 ]);
             });
         });
@@ -230,11 +272,11 @@ describe('PHP Debug Adapter', () => {
                 client.waitForEvent('initialized')
             ]);
             await client.setBreakpointsRequest({source: {path: program}, breakpoints: [{line: 15}]});
-            await Promise.all([
+            const [, event] = await Promise.all([
                 client.configurationDoneRequest(),
-                client.waitForEvent('stopped')
+                client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>
             ]);
-            const stackFrame = (await client.stackTraceRequest({threadId: 1})).body.stackFrames[0];
+            const stackFrame = (await client.stackTraceRequest({threadId: event.body.threadId})).body.stackFrames[0];
             const [localScope, superglobalsScope, constantsScope] = (await client.scopesRequest({frameId: stackFrame.id})).body.scopes;
 
             assert.isDefined(localScope);

@@ -52,7 +52,8 @@
     "gulp-typescript": "^2.12.1",
     "mocha": "^2.4.5",
     "tslint": "^3.6.0",
-    "typescript": "^1.8.9"
+    "typescript": "^1.8.9",
+    "vscode-debugadapter-testsupport": "^1.7.0"
   },
   "scripts": {
     "postversion": "git push && git push --tags",
