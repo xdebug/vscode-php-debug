@@ -14,7 +14,7 @@
     "email": "felix.b@outlook.com"
   },
   "engines": {
-    "vscode": "^0.10.10",
+    "vscode": "^0.10.12",
     "node": "^4.1.1"
   },
   "icon": "images/logo.svg",
@@ -37,8 +37,8 @@
     "iconv-lite": "^0.4.13",
     "moment": "^2.12.0",
     "url-relative": "^1.0.0",
-    "vscode-debugadapter": "^1.6.1",
-    "vscode-debugprotocol": "^1.6.1",
+    "vscode-debugadapter": "^1.7.0",
+    "vscode-debugprotocol": "^1.8.0-pre.1",
     "xmldom": "^0.1.22"
   },
   "devDependencies": {
