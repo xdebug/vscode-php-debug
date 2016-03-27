@@ -356,11 +356,21 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected sendErrorResponse(response: VSCodeDebugProtocol.Response, error: Error, dest?: vscode.ErrorDestination): void;
     protected sendErrorResponse(response: VSCodeDebugProtocol.Response, codeOrMessage: number | VSCodeDebugProtocol.Message, format?: string, variables?: any, dest?: vscode.ErrorDestination): void;
-    protected sendErrorResponse() {
+    protected sendErrorResponse(response: VSCodeDebugProtocol.Response) {
         if (arguments[1] instanceof Error) {
-            super.sendErrorResponse(arguments[0], arguments[1].code, arguments[1].message, arguments[2]);
+            const error = arguments[1] as Error & {code?: number|string, errno?: number};
+            const dest = arguments[2] as vscode.ErrorDestination;
+            let code: number;
+            if (typeof error.code === 'number') {
+                code = error.code as number;
+            } else if (typeof error.errno === 'number') {
+                code = error.errno;
+            } else {
+                code = 0;
+            }
+            super.sendErrorResponse(response, code, error.message, dest);
         } else {
-            super.sendErrorResponse(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]);
+            super.sendErrorResponse(response, arguments[1], arguments[2], arguments[3], arguments[4]);
         }
     }
 
