@@ -234,8 +234,8 @@ class PhpDebugSession extends vscode.DebugSession {
                     connection.on('warning', warning => {
                         this.sendEvent(new vscode.OutputEvent(warning));
                     });
-                    connection.once('error', disposeConnection);
-                    connection.once('close', disposeConnection);
+                    connection.on('error', disposeConnection);
+                    connection.on('close', disposeConnection);
                     await connection.waitForInitPacket();
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
                     // set max_depth to 1 since VS Code requests nested structures individually anyway
