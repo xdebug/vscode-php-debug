@@ -23,6 +23,16 @@
       "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
       "sourceMaps": true,
       "outDir": "${workspaceRoot}/out"
+    },
+    {
+      "name": "Mocha",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "args": ["out/test", "--no-timeouts"],
+      "cwd": "${workspaceRoot}",
+      "sourceMaps": true,
+      "outDir": "${workspaceRoot}/out"
     }
   ]
 }
