@@ -1,7 +1,7 @@
 {
   "name": "php-debug",
   "displayName": "PHP Debug",
-  "version": "1.5.1",
+  "version": "1.6.0-0",
   "publisher": "felixfbecker",
   "license": "GPL-3.0",
   "description": "Debug support for PHP with XDebug",
