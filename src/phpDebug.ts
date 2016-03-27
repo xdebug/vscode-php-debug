@@ -709,10 +709,10 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected async continueRequest(response: VSCodeDebugProtocol.ContinueResponse, args: VSCodeDebugProtocol.ContinueArguments) {
         try {
-            if (!args.threadId) {
-                throw new Error('No active connection');
-            }
             const connection = this._connections.get(args.threadId);
+            if (!connection) {
+                throw new Error('Unknown thread ID ' + args.threadId);
+            }
             const response = await connection.sendRunCommand();
             this._checkStatus(response);
         } catch (error) {
@@ -724,10 +724,10 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected async nextRequest(response: VSCodeDebugProtocol.NextResponse, args: VSCodeDebugProtocol.NextArguments) {
         try {
-            if (!args.threadId) {
-                throw new Error('No active connection');
-            }
             const connection = this._connections.get(args.threadId);
+            if (!connection) {
+                throw new Error('Unknown thread ID ' + args.threadId);
+            }
             const response = await connection.sendStepOverCommand();
             this._checkStatus(response);
         } catch (error) {
@@ -739,10 +739,10 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected async stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments) {
         try {
-            if (!args.threadId) {
-                throw new Error('No active connection');
-            }
             const connection = this._connections.get(args.threadId);
+            if (!connection) {
+                throw new Error('Unknown thread ID ' + args.threadId);
+            }
             const response = await connection.sendStepIntoCommand();
             this._checkStatus(response);
         } catch (error) {
@@ -754,10 +754,10 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected async stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments) {
         try {
-            if (!args.threadId) {
-                throw new Error('No active connection');
-            }
             const connection = this._connections.get(args.threadId);
+            if (!connection) {
+                throw new Error('Unknown thread ID ' + args.threadId);
+            }
             const response = await connection.sendStepOutCommand();
             this._checkStatus(response);
         } catch (error) {
