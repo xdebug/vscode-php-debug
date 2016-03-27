@@ -38,7 +38,10 @@ export class DbgpConnection extends EventEmitter {
             const nullByteIndex = data.indexOf(0);
             if (nullByteIndex !== -1) {
                 // YES -> we received the data length and are ready to receive the response
-                this._dataLength = parseInt(iconv.decode(data.slice(0, nullByteIndex), ENCODING));
+                const lastPiece = data.slice(0, nullByteIndex);
+                this._chunks.push(lastPiece);
+                this._chunksDataLength += lastPiece.length;
+                this._dataLength = parseInt(iconv.decode(Buffer.concat(this._chunks, this._chunksDataLength), ENCODING));
                 // reset buffered chunks
                 this._chunks = [];
                 this._chunksDataLength = 0;
