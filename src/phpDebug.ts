@@ -547,6 +547,9 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async stackTraceRequest(response: VSCodeDebugProtocol.StackTraceResponse, args: VSCodeDebugProtocol.StackTraceArguments) {
         try {
             const connection = this._connections.get(args.threadId);
+            if (!connection) {
+                throw new Error('Unknown thread ID');
+            }
             const {stack} = await connection.sendStackGetCommand();
             // First delete the old stack trace info ???
             // this._stackFrames.clear();
