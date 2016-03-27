@@ -46,6 +46,7 @@ What is supported?
  - Debug console
  - Watches
  - Run as CLI
+ - Run without debugging
 
 Remote Host Debugging
 ---------------------
