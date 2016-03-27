@@ -5,9 +5,8 @@
       "name": "Debug adapter",
       "type": "node",
       "request": "launch",
-      "runtimeArgs": ["--harmony"],
       "program": "${workspaceRoot}/src/phpDebug.ts",
-      "stopOnEntry": false,
+      "cwd": "${workspaceRoot}",
       "args": ["--server=4711"],
       "env": {
         "NODE_ENV": "development"
