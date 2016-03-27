@@ -2,6 +2,11 @@
   "version": "0.1.0",
   "command": "npm",
   "args": ["run", "--silent"],
+  "options": {
+    "env": {
+      "VSCODE_DEBUG_PORT": "4711"
+    }
+  },
   "isShellCommand": true,
   "showOutput": "silent",
   "tasks": [

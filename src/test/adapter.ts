@@ -13,7 +13,7 @@ describe('PHP Debug Adapter', () => {
 
     beforeEach('start debug adapter', async () => {
         client = new DebugClient('node', path.normalize(__dirname + '/../phpDebug'), 'php');
-        await client.start();
+        await client.start(process.env.VSCODE_DEBUG_PORT && parseInt(process.env.VSCODE_DEBUG_PORT));
     });
 
     afterEach('stop debug adapter', () =>
