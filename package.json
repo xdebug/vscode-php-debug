@@ -46,7 +46,6 @@
     "babel-preset-es2015-node4": "^2.0.3",
     "chai": "^3.5.0",
     "chai-as-promised": "^5.2.0",
-    "file-url": "^1.1.0",
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
     "gulp-sourcemaps": "^1.6.0",
