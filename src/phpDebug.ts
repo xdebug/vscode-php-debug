@@ -641,7 +641,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 if (status.exception) {
                     const variableId = this._variableIdCounter++;
                     this._errorScopes.set(variableId, status);
-                    scopes = [new vscode.Scope(status.exception.name, variableId)];
+                    scopes = [new vscode.Scope(status.exception.name.replace(/^(.*\\)+/g, ''), variableId)];
                 }
             } else {
                 const stackFrame = this._stackFrames.get(args.frameId);
@@ -658,7 +658,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 if (status && status.exception) {
                     const variableId = this._variableIdCounter++;
                     this._errorScopes.set(variableId, status);
-                    scopes.unshift(new vscode.Scope(status.exception.name, variableId));
+                    scopes.unshift(new vscode.Scope(status.exception.name.replace(/^(.*\\)+/g, ''), variableId));
                 }
             }
             response.body = {scopes};
@@ -677,7 +677,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 // this is a virtual error scope
                 const status = this._errorScopes.get(variablesReference);
                 variables = [
-                    new vscode.Variable('name', '"' + status.exception.name + '"'),
+                    new vscode.Variable('type', status.exception.name),
                     new vscode.Variable('message', '"' + status.exception.message + '"')
                 ];
                 if (status.exception.code !== undefined) {
