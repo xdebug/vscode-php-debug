@@ -5,7 +5,7 @@
     "moment": "registry:npm/moment#2.10.5+20160211003958"
   },
   "ambientDependencies": {
-    "node": "registry:dt/node#4.0.0+20160319033040",
+    "node": "registry:dt/node#4.0.0+20160330064709",
     "xmldom": "registry:dt/xmldom#0.1.22+20160319053438"
   },
   "ambientDevDependencies": {
@@ -15,7 +15,7 @@
     "mocha": "registry:dt/mocha#2.2.5+20160317120654"
   },
   "devDependencies": {
-    "chai": "registry:npm/chai#3.4.0+20160308201903",
+    "chai": "registry:npm/chai#3.5.0+20160328084239",
     "chai-as-promised": "registry:npm/chai-as-promised#5.1.0+20160310030142",
     "gulp": "registry:npm/gulp#3.8.0+20160211003958"
   }
