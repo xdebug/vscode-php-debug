@@ -29,6 +29,7 @@ XDebug is a PHP extension (a `.so` file on Linux and a `.dll` on Windows) that n
  2. [Configure PHP to use XDebug](https://xdebug.org/docs/install#configure-php) by adding `zend_extension=path/to/xdebug` to your php.ini.  
   The path of your php.ini is shown in your `phpinfo()` output under "Loaded Configuration File".
  3. Enable remote debugging in your php.ini:
+
   ```ini
   [XDebug]
   xdebug.remote_enable = 1
