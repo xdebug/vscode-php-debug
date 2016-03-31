@@ -16,31 +16,30 @@ Install the extension: Press `F1`, type `ext install php-debug`.
 
 This extension is a debug adapter between VS Code and [XDebug](https://xdebug.org/) by Derick Rethan.
 XDebug is a PHP extension (a `.so` file on Linux and a `.dll` on Windows) that needs to be installed on your server.
-There are installation instructions available [here].
 
- 1. [Install XDebug](https://xdebug.org/docs/install)   
-   ***I highly recommend you make a simple `test.php` file, put a `phpinfo();` statement in there,
-   then copy the output and paste it into the [XDebug installation wizard](https://xdebug.org/wizard.php).
-   It will analyze it and give you tailored installation instructions for your environment.***  
-   In short:
-    - On Windows: [Download](https://xdebug.org/download.php) the appropiate precompiled DLL for your PHP version,
-      architecture (64/32 Bit), thread safety (TS/NTS) and Visual Studio compiler version and place it in your PHP extension folder.
-    - On Linux: Either download the source code as a tarball or [clone it with git](https://xdebug.org/docs/install#source),
-      then [compile it](https://xdebug.org/docs/install#compile).
- - Reference the extension in your php.ini by adding `zend_extension=path/to/xdebug`.  
-   The path of your php.ini is shown in your `phpinfo()` output under "Loaded Configuration File".
- - Enable remote debugging in your php.ini:
-   ```ini
-   [XDebug]
-   xdebug.remote_enable = 1
-   xdebug.remote_autostart = 1
-   ```
-   There are other ways to tell XDebug to connect to a remote debugger than `remote_autostart`, like cookies,
-   query parameters or browser extensions. I recommend `remote_autostart` because it "just works".
-   There are also a variety of other options, like the port (by default 9000),
-   please see the [XDebug documentation on remote debugging](https://xdebug.org/docs/remote#starting) for more information.
- - If you are doing web development, don't forget to restart your webserver to reload the settings
- - Verify your installation by checking your `phpinfo()` output for an XDebug section.
+ 1. [Install XDebug](https://xdebug.org/docs/install)  
+  ***I highly recommend you make a simple `test.php` file, put a `phpinfo();` statement in there,
+  then copy the output and paste it into the [XDebug installation wizard](https://xdebug.org/wizard.php).
+  It will analyze it and give you tailored installation instructions for your environment.***  
+  In short:
+   - On Windows: [Download](https://xdebug.org/download.php) the appropiate precompiled DLL for your PHP version,
+     architecture (64/32 Bit), thread safety (TS/NTS) and Visual Studio compiler version and place it in your PHP extension folder.
+   - On Linux: Either download the source code as a tarball or [clone it with git](https://xdebug.org/docs/install#source),
+     then [compile it](https://xdebug.org/docs/install#compile).
+ 2. [Configure PHP to use XDebug](https://xdebug.org/docs/install#configure-php) by adding `zend_extension=path/to/xdebug` to your php.ini.  
+  The path of your php.ini is shown in your `phpinfo()` output under "Loaded Configuration File".
+ 3. Enable remote debugging in your php.ini:
+  ```ini
+  [XDebug]
+  xdebug.remote_enable = 1
+  xdebug.remote_autostart = 1
+  ```
+  There are other ways to tell XDebug to connect to a remote debugger than `remote_autostart`, like cookies,
+  query parameters or browser extensions. I recommend `remote_autostart` because it "just works".
+  There are also a variety of other options, like the port (by default 9000),
+  please see the [XDebug documentation on remote debugging](https://xdebug.org/docs/remote#starting) for more information.
+ 4. If you are doing web development, don't forget to restart your webserver to reload the settings
+ 5. Verify your installation by checking your `phpinfo()` output for an XDebug section.
 
 ### VS Code Configuration
 In your project, go to the debugger and hit the little gear icon and choose _PHP_.
@@ -62,7 +61,7 @@ A new launch configuration will be created for you with two configurations:
  - `serverSourceRoot`: The path on the remote host where your webroot is located (for example `"/var/www"`)
  - `log`: Wether to log all communication between VS Code and the adapter to the debug console.
    See _Troubleshooting_ further down.
- 
+
 Options specific to CLI debugging:
  - `program`: Path to the script that should be launched
  - `args`: Arguments passed to the script
@@ -91,11 +90,14 @@ Features
 Remote Host Debugging
 ---------------------
 To debug a running application on a remote host, you need to tell XDebug to connect to a different IP than `localhost`.
-This can either be done by setting `xdebug.remote_host` to your IP or by setting `xdebug.remote_connect_back`
+This can either be done by setting [`xdebug.remote_host`](https://xdebug.org/docs/remote#remote_host) to your IP
+or by setting [`xdebug.remote_connect_back = 1`](https://xdebug.org/docs/remote#remote_connect_back)
 to make XDebug always connect back to the machine who did the web request.
-The former is the only setting that supports multiple users debugging the same server and "just works" for web projects.
+The latter is the only setting that supports multiple users debugging the same server and "just works" for web projects.
 Again, please see the [XDebug documentation](https://xdebug.org/docs/remote#communcation) on the subject for more information.
-have to set the `localSourceRoot` and `serverSourceRoot` settings in your launch.json.
+
+To make VS Code map the files on the server to the right files on your local machine,
+you have to set the `localSourceRoot` and `serverSourceRoot` settings in your launch.json.
 Example:
 ```json
 "serverSourceRoot": "/var/www/myproject",
@@ -111,7 +113,8 @@ Troubleshooting
  - If you think you found a bug, [open an issue](https://github.com/felixfbecker/vscode-php-debug/issues)
  - Make sure you have the latest version of this extension and XDebug installed
  - Try out a simple PHP file to recreate the issue, for example from the [testproject](https://github.com/felixfbecker/vscode-php-debug/tree/master/testproject)
- - In your php.ini, set `xdebug.remote_log = /path/to/logfile` (make sure your webserver has write permissions to the file)
+ - In your php.ini, set [`xdebug.remote_log = /path/to/logfile`](https://xdebug.org/docs/remote#remote_log)
+   (make sure your webserver has write permissions to the file)
  - Set `"log": true` in your launch.json
 
 Contributing
