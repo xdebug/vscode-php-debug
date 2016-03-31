@@ -1,4 +1,4 @@
-PHP Debug adapter for Visual Studio Code
+PHP Debug Adapter for Visual Studio Code
 ========================================
 
 [![Latest Release](https://img.shields.io/github/release/felixfbecker/vscode-php-debug.svg)](https://github.com/felixfbecker/vscode-php-debug/releases/latest)
@@ -9,34 +9,71 @@ PHP Debug adapter for Visual Studio Code
 
 ![Demo GIF](images/demo.gif)
 
-How to install
---------------
+Installation
+------------
 
-### Install extension:
-Press `F1`, type `ext install php-debug`.
+Install the extension: Press `F1`, type `ext install php-debug`.
 
-### Install XDebug:
-[Download and install the XDebug extension](http://xdebug.org/download.php).
-Then, in addition to `zend_extension=path/to/xdebug`, add these lines to your php.ini to enable remote debugging:
+This extension is a debug adapter between VS Code and [XDebug](https://xdebug.org/) by Derick Rethan.
+XDebug is a PHP extension (a `.so` file on Linux and a `.dll` on Windows) that needs to be installed on your server.
+There are installation instructions available [here].
 
-```ini
-[XDebug]
-xdebug.remote_enable = 1
-xdebug.remote_autostart = 1
-```
-For web projects, if you haven't already, point your webserver's webroot to your project and don't forget to restart your webserver after you made these changes.
-Now, everytime you do a request to a PHP file, XDebug will automatically try to connect to port 9000 for debugging.
+ 1. [Install XDebug](https://xdebug.org/docs/install)   
+   ***I highly recommend you make a simple `test.php` file, put a `phpinfo();` statement in there,
+   then copy the output and paste it into the [XDebug installation wizard](https://xdebug.org/wizard.php).
+   It will analyze it and give you tailored installation instructions for your environment.***  
+   In short:
+    - On Windows: [Download](https://xdebug.org/download.php) the appropiate precompiled DLL for your PHP version,
+      architecture (64/32 Bit), thread safety (TS/NTS) and Visual Studio compiler version and place it in your PHP extension folder.
+    - On Linux: Either download the source code as a tarball or [clone it with git](https://xdebug.org/docs/install#source),
+      then [compile it](https://xdebug.org/docs/install#compile).
+ - Reference the extension in your php.ini by adding `zend_extension=path/to/xdebug`.  
+   The path of your php.ini is shown in your `phpinfo()` output under "Loaded Configuration File".
+ - Enable remote debugging in your php.ini:
+   ```ini
+   [XDebug]
+   xdebug.remote_enable = 1
+   xdebug.remote_autostart = 1
+   ```
+   There are other ways to tell XDebug to connect to a remote debugger than `remote_autostart`, like cookies,
+   query parameters or browser extensions. I recommend `remote_autostart` because it "just works".
+   There are also a variety of other options, like the port (by default 9000),
+   please see the [XDebug documentation on remote debugging](https://xdebug.org/docs/remote#starting) for more information.
+ - If you are doing web development, don't forget to restart your webserver to reload the settings
+ - Verify your installation by checking your `phpinfo()` output for an XDebug section.
 
-### Start debugging:
-In your project, go to the debugger and hit the little gear icon. Choose PHP. A new launch configuration will be created for you.
-Now, if you select the _Listen for XDebug_ configuration and hit `F5`, VS Code will listen on port 9000 for incoming XDebug requests.
-When you make a request to `localhost` with your webbrowser or run a script from the command line, XDebug will connect to VS Code and you can debug your PHP.
+### VS Code Configuration
+In your project, go to the debugger and hit the little gear icon and choose _PHP_.
+A new launch configuration will be created for you with two configurations:
+ - **Listen for XDebug**  
+   This setting will simply start listening on the specified port (by default 9000) for XDebug.
+   If you configured XDebug like recommended above, everytime you make a request with a browser to your webserver
+   or launch a CLI script XDebug will connect and you can stop on breakpoints, exceptions etc.
+ - **Launch currently open script**  
+   This setting is an example of CLI debugging. It will launch the currently opened script as a CLI,
+   show all stdout/stderr output in the debug console and end the debug session once the script exits.
 
-For CLI scripts, you can set the same options the Node debugger supports: `program`, `runtimeExecutable`, `runtimeArgs`, `args`, `cwd`, `env` and `externalConsole` (see IntelliSense for descriptions).
-The default configuration includes one that runs the currently opened script as an example.
+#### Supported launch.json settings:
+ - `request`: Always `"launch"`
+ - `port`: The port on which to listen for XDebug (default: `9000`)
+ - `stopOnEntry`: Wether to break at the beginning of the script (default: `false`)
+ - `localSourceRoot`: The path to the folder that is being served by your webserver and maps to `serverSourceRoot`
+   (for example `"${workspaceRoot}/public"`)
+ - `serverSourceRoot`: The path on the remote host where your webroot is located (for example `"/var/www"`)
+ - `log`: Wether to log all communication between VS Code and the adapter to the debug console.
+   See _Troubleshooting_ further down.
+ 
+Options specific to CLI debugging:
+ - `program`: Path to the script that should be launched
+ - `args`: Arguments passed to the script
+ - `cwd`: The current working directory to use when launching the script
+ - `runtimeExecutable`: Path to the PHP binary used for launching the script. By default the one on the PATH.
+ - `runtimeArgs`: Additional arguments to pass to the PHP binary
+ - `externalConsole`: Launches the script in an external console window instead of the debug console (default: `false`)
+ - `env`: Environment variables to pass to the script
 
-What is supported?
-------------------
+Features
+--------
  - Line breakpoints
  - Conditional breakpoints
  - Function breakpoints
@@ -53,33 +90,39 @@ What is supported?
 
 Remote Host Debugging
 ---------------------
-If you want to debug a running application on a remote host, you have to set the `localSourceRoot` and `serverSourceRoot` settings in your launch.json.
+To debug a running application on a remote host, you need to tell XDebug to connect to a different IP than `localhost`.
+This can either be done by setting `xdebug.remote_host` to your IP or by setting `xdebug.remote_connect_back`
+to make XDebug always connect back to the machine who did the web request.
+The former is the only setting that supports multiple users debugging the same server and "just works" for web projects.
+Again, please see the [XDebug documentation](https://xdebug.org/docs/remote#communcation) on the subject for more information.
+have to set the `localSourceRoot` and `serverSourceRoot` settings in your launch.json.
 Example:
 ```json
 "serverSourceRoot": "/var/www/myproject",
-"localSourceRoot": "${workspaceRoot}/src"
+"localSourceRoot": "${workspaceRoot}/public"
 ```
-Both paths are normalized, so you can use slashes or backslashes no matter of the OS you're running.
+Please also note that setting any of the CLI debugging options will not work with remote host debugging,
+because the script is always launched locally.
+If you want to debug a CLI script on a remote host, you need to launch it manually from the command line.
 
 Troubleshooting
 ---------------
-When you are facing problems, please don't send me private emails, instead ask on
-[Gitter](https://gitter.im/felixfbecker/vscode-php-debug) or if you think there is a bug in the adapter, [open an issue](https://github.com/felixfbecker/vscode-php-debug/issues).
-If it fails with your ultra-awesome MVC app, please first try it on a dead-simple test.php (like the one in the [testproject](https://github.com/felixfbecker/vscode-php-debug/tree/master/testproject)). Please provide some info by setting `xdebug.remote_log = /path/to/logfile` in your php.ini (you will need to restart your webserver), `"log": true` in your launch.json and posting the two logs.
-
-FAQ
----
-
-#### Where are the variables of the parent scope?
-In opposite to Javascript, PHP does not have closures.
-A scope contains only variables that have been declared, parameters and imported globals with `global` or `use`.
-If you want to see the variables of the scope of the callee, click on it in the stacktrace.
+ - Ask a question on [Gitter](https://gitter.im/felixfbecker/vscode-php-debug)
+ - If you think you found a bug, [open an issue](https://github.com/felixfbecker/vscode-php-debug/issues)
+ - Make sure you have the latest version of this extension and XDebug installed
+ - Try out a simple PHP file to recreate the issue, for example from the [testproject](https://github.com/felixfbecker/vscode-php-debug/tree/master/testproject)
+ - In your php.ini, set `xdebug.remote_log = /path/to/logfile` (make sure your webserver has write permissions to the file)
+ - Set `"log": true` in your launch.json
 
 Contributing
 ------------
 To hack on this adapter, clone the repository and open it in VS Code.
-You can debug it (run it in "server mode") by selecting the "Debug adapter" launch configuration and hitting `F5`.
-Then, open a terminal inside the project, and open the included testproject with VS Code while specifying the current directory as `extensionDevelopmentPath`:
+You need NodeJS and typings installed (`npm install -g typings`).
+Install dependencies by running `npm install` and `typings install`.
+
+You can debug the extension (run it in "server mode") by selecting the "Debug adapter" launch configuration and hitting `F5`.
+Then, open a terminal inside the project, and open the included testproject with VS Code
+while specifying the current directory as `extensionDevelopmentPath`:
 
 ```sh
 code testproject --extensionDevelopmentPath=.
@@ -87,5 +130,12 @@ code testproject --extensionDevelopmentPath=.
 
 VS Code will open an "Extension Development Host" with the debug adapter running. Open `.vscode/launch.json` and
 uncomment the `debugServer` configuration line. Hit `F5` to start a debugging session.
-Now, you can debug the testproject like specified above and set breakpoints inside your first VS Code instance to step through the adapter code.
+Now you can debug the testproject like specified above and set breakpoints inside your first VS Code instance to step through the adapter code.
 
+The extension is written in TypeScript and compiled using a Gulpfile that first transpiles to ES6
+and then uses Babel to specifically target VS Code's Node version.
+You can run the compile task through `npm run compile`, `gulp compile` or from VS Code with `Ctrl`+`Shift`+`B`.
+`npm run watch` / `gulp watch` enables incremental compilation.
+
+Tests are written with Mocha and can be run with `npm test`.
+The tests are run in CI on Linux and Windows against PHP 5.4, 5.6, 7.0 and XDebug 2.3, 2.4.
