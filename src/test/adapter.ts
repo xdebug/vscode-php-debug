@@ -216,22 +216,26 @@ describe('PHP Debug Adapter', () => {
                     client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>
                 ]);
 
-                async function getErrorScope(threadId: number): Promise<{name: string, type?: string, message?: string, code?: string}> {
+                async function getErrorScope(): Promise<{name: string, type?: string, message?: string, code?: string}> {
                     const frameId = (await client.stackTraceRequest({threadId})).body.stackFrames[0].id;
                     const errorScope = (await client.scopesRequest({frameId})).body.scopes[0];
-                    assert.propertyVal(errorScope, 'name', name);
                     const variables = (await client.variablesRequest({variablesReference: errorScope.variablesReference})).body.variables;
+                    const errorInfo: {name: string, type?: string, message?: string, code?: string} = {name: errorScope.name};
                     const type = variables.find(variable => variable.name === 'type');
+                    if (type) {
+                        errorInfo.type = type.value;
+                    }
                     const message = variables.find(variable => variable.name === 'message');
+                    if (message) {
+                        errorInfo.message = message.value;
+                    }
                     const code = variables.find(variable => variable.name === 'code');
-                    return {
-                        name: errorScope.name,
-                        type: type && type.value,
-                        message: message && message.value,
-                        code: code && code.value
-                    };
+                    if (code) {
+                        errorInfo.code = code.value;
+                    }
+                    return errorInfo;
                 }
-                assert.deepEqual(await getErrorScope(threadId), {
+                assert.deepEqual(await getErrorScope(), {
                     name: 'Notice',
                     type: 'Notice',
                     message: '"Undefined index: undefined_index"',
@@ -241,7 +245,7 @@ describe('PHP Debug Adapter', () => {
                     client.continueRequest({threadId}),
                     client.waitForEvent('stopped')
                 ]);
-                assert.deepEqual(await getErrorScope(threadId), {
+                assert.deepEqual(await getErrorScope(), {
                     name: 'Warning',
                     type: 'Warning',
                     message: '"Illegal offset type"',
@@ -251,7 +255,7 @@ describe('PHP Debug Adapter', () => {
                     client.continueRequest({threadId}),
                     client.waitForEvent('stopped')
                 ]);
-                assert.deepEqual(await getErrorScope(threadId), {
+                assert.deepEqual(await getErrorScope(), {
                     name: 'Exception',
                     type: 'Exception',
                     message: '"this is an exception"'
@@ -260,7 +264,7 @@ describe('PHP Debug Adapter', () => {
                     client.continueRequest({threadId}),
                     client.waitForEvent('stopped')
                 ]);
-                const fatalErrorScope = await getErrorScope(threadId);
+                const fatalErrorScope = await getErrorScope();
                 assert.propertyVal(fatalErrorScope, 'name', 'Fatal error');
                 assert.propertyVal(fatalErrorScope, 'type', 'Fatal error');
                 assert.match(fatalErrorScope.message, /^"Uncaught Exception/);
