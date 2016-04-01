@@ -208,7 +208,50 @@ describe('PHP Debug Adapter', () => {
                 ]);
             });
 
-            it('should report the error in a virtual error scope');
+            it('should report the error in a virtual error scope', async () => {
+
+                await client.setExceptionBreakpointsRequest({filters: ['*']});
+                const [, {body: {threadId}}] = await Promise.all([
+                    client.configurationDoneRequest(),
+                    client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>
+                ]);
+
+                async function assertErrorScope(name: string, type: string, message: string|RegExp, code?: string) {
+                    const frameId = (await client.stackTraceRequest({threadId})).body.stackFrames[0].id;
+                    const errorScope = (await client.scopesRequest({frameId})).body.scopes[0];
+                    assert.propertyVal(errorScope, 'name', name);
+                    const errorInfo = (await client.variablesRequest({variablesReference: errorScope.variablesReference})).body.variables;
+                    const actualType = errorInfo.find(variable => variable.name === 'type');
+                    const actualMessage = errorInfo.find(variable => variable.name === 'message');
+                    const actualCode = errorInfo.find(variable => variable.name === 'code');
+                    assert.propertyVal(actualType, 'value', type);
+                    if (message instanceof RegExp) {
+                        assert.match(actualMessage.value, message);
+                    } else {
+                        assert.propertyVal(actualMessage, 'value', message);
+                    }
+                    if (code) {
+                        assert.propertyVal(actualCode, 'value', code);
+                    }
+                }
+
+                await assertErrorScope('Notice', 'Notice', '"Undefined index: undefined_index"', '8');
+                await Promise.all([
+                    client.continueRequest({threadId}),
+                    client.waitForEvent('stopped')
+                ]);
+                await assertErrorScope('Warning', 'Warning', '"Illegal offset type"', '2');
+                await Promise.all([
+                    client.continueRequest({threadId}),
+                    client.waitForEvent('stopped')
+                ]);
+                await assertErrorScope('Exception', 'Exception', '"this is an exception"');
+                await Promise.all([
+                    client.continueRequest({threadId}),
+                    client.waitForEvent('stopped')
+                ]);
+                await assertErrorScope('Fatal error', 'Fatal error', /^"Uncaught Exception: this is an exception(.|\s)*"$/);
+            });
         });
 
         describe('conditional breakpoints', () => {
