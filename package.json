@@ -56,7 +56,6 @@
     "vscode-debugadapter-testsupport": "^1.8.0-pre.6"
   },
   "scripts": {
-    "postversion": "git push && git push --tags",
     "compile": "gulp compile",
     "watch": "gulp watch",
     "start": "code testproject --extensionDevelopmentPath=.",
