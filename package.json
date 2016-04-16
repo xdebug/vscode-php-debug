@@ -49,10 +49,10 @@
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
     "gulp-sourcemaps": "^1.6.0",
-    "gulp-typescript": "^2.12.1",
+    "gulp-typescript": "^2.13.0",
     "mocha": "^2.4.5",
-    "tslint": "^3.6.0",
-    "typescript": "^1.8.9",
+    "tslint": "^3.7.4",
+    "typescript": "^1.8.10",
     "vscode-debugadapter-testsupport": "^1.8.0-pre.6"
   },
   "scripts": {
