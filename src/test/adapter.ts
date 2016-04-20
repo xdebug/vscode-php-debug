@@ -338,7 +338,7 @@ describe('PHP Debug Adapter', () => {
                 client.launch({program}),
                 client.waitForEvent('initialized')
             ]);
-            await client.setBreakpointsRequest({source: {path: program}, breakpoints: [{line: 16}]});
+            await client.setBreakpointsRequest({source: {path: program}, breakpoints: [{line: 17}]});
             const [, event] = await Promise.all([
                 client.configurationDoneRequest(),
                 client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>
@@ -373,6 +373,7 @@ describe('PHP Debug Adapter', () => {
                 assert.propertyVal(variables, '$aFloat', '1.23');
                 assert.propertyVal(variables, '$aString', '"123"');
                 assert.propertyVal(variables, '$anEmptyString', '""');
+                assert.propertyVal(variables, '$aVeryLongString', '"' + 'lol'.repeat(10000) + '"');
                 assert.propertyVal(variables, '$anInt', '123');
                 assert.propertyVal(variables, '$nullValue', 'null');
                 assert.propertyVal(variables, '$variableThatsNotSet', 'uninitialized');
