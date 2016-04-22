@@ -76,7 +76,7 @@ Features
  - Step over, step in, step out
  - Break on entry
  - Breaking on uncaught exceptions and errors / warnings / notices
- - Multiple, parallel requests (Still buggy, see [Microsoft/vscode#1703](https://github.com/Microsoft/vscode/issues/1703))
+ - Multiple, parallel requests
  - Stack traces, scope variables, superglobals, user defined constants
  - Arrays & objects (including classname, private and static properties)
  - Debug console
