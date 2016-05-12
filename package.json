@@ -15,8 +15,8 @@
     "email": "felix.b@outlook.com"
   },
   "engines": {
-    "vscode": "^1.0.0",
-    "node": "^4.1.1"
+    "vscode": "^1.1.0",
+    "node": "^5.10.0"
   },
   "icon": "images/logo.svg",
   "galleryBanner": {
@@ -43,7 +43,7 @@
     "xmldom": "^0.1.22"
   },
   "devDependencies": {
-    "babel-preset-es2015-node4": "^2.0.3",
+    "babel-preset-es2015-node5": "^1.2.0",
     "chai": "^3.5.0",
     "chai-as-promised": "^5.2.0",
     "gulp": "^3.9.1",
