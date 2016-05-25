@@ -21,11 +21,9 @@ before_install:
  - nvm install 5.10.0
  - nvm use 5.10.0
  - npm config -g set progress false
- - npm install -g typings
 
 install:
  - npm install
- - typings install
 
 script:
  - npm run compile --silent

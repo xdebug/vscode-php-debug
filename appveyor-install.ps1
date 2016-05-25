@@ -25,9 +25,7 @@ Write-Output 'Installing Node'
 Install-Product node 5.10.0 x64
 npm config -g set progress=false
 npm config -g set unicode=false
-npm install -g typings
 
 # Install dependencies
 Write-Output 'Installing dependencies'
 npm install
-typings install

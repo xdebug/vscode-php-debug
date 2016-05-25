@@ -4,11 +4,11 @@
   "dependencies": {
     "moment": "registry:npm/moment#2.10.5+20160211003958"
   },
-  "ambientDependencies": {
-    "node": "registry:dt/node#4.0.0+20160330064709",
+  "globalDependencies": {
+    "node": "registry:env/node#4.0.0+20160507210304",
     "xmldom": "registry:dt/xmldom#0.1.22+20160319053438"
   },
-  "ambientDevDependencies": {
+  "globalDevDependencies": {
     "gulp-babel": "registry:dt/gulp-babel#6.1.0+20160316171810",
     "gulp-sourcemaps": "registry:dt/gulp-sourcemaps#0.0.0+20160316155526",
     "gulp-typescript": "registry:dt/gulp-typescript#0.0.0+20160317120654",

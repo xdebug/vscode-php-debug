@@ -1,9 +1,7 @@
 {
   "exclude": [
     "out",
-    "node_modules",
-    "typings/browser",
-    "typings/browser.d.ts"
+    "node_modules"
   ],
   "compilerOptions": {
     "target": "es6",

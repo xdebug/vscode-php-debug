@@ -53,6 +53,7 @@
     "mocha": "^2.4.5",
     "tslint": "^3.7.4",
     "typescript": "^1.8.10",
+    "typings": "^1.0.4",
     "vscode-debugadapter-testsupport": "^1.8.0"
   },
   "scripts": {
@@ -60,7 +61,8 @@
     "watch": "gulp watch",
     "start": "code testproject --extensionDevelopmentPath=.",
     "test": "mocha out/test --timeout 20000 --slow 1000",
-    "lint": "tslint -c tslint.json src/**/*.ts"
+    "lint": "tslint -c tslint.json src/**/*.ts",
+    "postinstall": "typings install"
   },
   "contributes": {
     "debuggers": [
