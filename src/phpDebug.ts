@@ -299,7 +299,9 @@ class PhpDebugSession extends vscode.DebugSession {
             } else {
                 stoppedEventReason = 'breakpoint';
             }
-            this.sendEvent(new vscode.StoppedEvent(stoppedEventReason, connection.id, exceptionText));
+            const event: VSCodeDebugProtocol.StoppedEvent = new vscode.StoppedEvent(stoppedEventReason, connection.id, exceptionText);
+            event.body.allThreadsStopped = false;
+            this.sendEvent(event);
         }
     }
 
@@ -758,6 +760,9 @@ class PhpDebugSession extends vscode.DebugSession {
             this.sendErrorResponse(response, error);
             return;
         }
+        response.body = {
+            allThreadsContinued: false
+        };
         this.sendResponse(response);
     }
 

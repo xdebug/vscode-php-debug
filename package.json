@@ -15,7 +15,7 @@
     "email": "felix.b@outlook.com"
   },
   "engines": {
-    "vscode": "^1.1.0",
+    "vscode": "^1.2.0",
     "node": "^5.10.0"
   },
   "icon": "images/logo.svg",
@@ -38,8 +38,8 @@
     "iconv-lite": "^0.4.13",
     "moment": "^2.12.0",
     "url-relative": "^1.0.0",
-    "vscode-debugadapter": "^1.8.0",
-    "vscode-debugprotocol": "^1.8.0",
+    "vscode-debugadapter": "^1.9.0",
+    "vscode-debugprotocol": "^1.9.0",
     "xmldom": "^0.1.22"
   },
   "devDependencies": {
@@ -54,7 +54,7 @@
     "tslint": "^3.7.4",
     "typescript": "^1.8.10",
     "typings": "^1.0.4",
-    "vscode-debugadapter-testsupport": "^1.8.0"
+    "vscode-debugadapter-testsupport": "^1.9.0"
   },
   "scripts": {
     "compile": "gulp compile",
