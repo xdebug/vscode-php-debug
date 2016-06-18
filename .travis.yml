@@ -9,7 +9,7 @@ env:
   matrix:
     - XDEBUG_VERSION=stable
     - XDEBUG_VERSION=2.3.3
-    - XDEBUG_VERSION=2.2.7
+    - XDEBUG_VERSION=2.2.3 # XDebug version on Vagrant
 
 matrix:
   exclude:
