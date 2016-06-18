@@ -9,10 +9,13 @@ env:
   matrix:
     - XDEBUG_VERSION=stable
     - XDEBUG_VERSION=2.3.3
+    - XDEBUG_VERSION=2.2.7
 
 matrix:
   exclude:
     - env: XDEBUG_VERSION=2.3.3
+      php: '7.0'
+    - env: XDEBUG_VERSION=2.2.7
       php: '7.0'
 
 before_install:

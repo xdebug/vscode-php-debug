@@ -10,6 +10,8 @@ environment:
     - {PHP: 'php-5.6.22-nts-Win32-VC11-x86', XDEBUG: 'php_xdebug-2.3.3-5.6-vc11-nts'}
     - {PHP: 'php-5.4.45-nts-Win32-VC9-x86',  XDEBUG: 'php_xdebug-2.4.0-5.4-vc9-nts'}
     - {PHP: 'php-5.4.45-nts-Win32-VC9-x86',  XDEBUG: 'php_xdebug-2.3.3-5.4-vc9-nts'}
+    - {PHP: 'php-5.6.22-nts-Win32-VC11-x86', XDEBUG: 'php_xdebug-2.2.7-5.6-vc11-nts'}
+    - {PHP: 'php-5.4.45-nts-Win32-VC9-x86',  XDEBUG: 'php_xdebug-2.2.7-5.4-vc9-nts'}
 
 install:
   - ps: . .\appveyor-install.ps1
