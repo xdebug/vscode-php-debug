@@ -11,6 +11,7 @@ import * as util from 'util';
 import * as fs from 'fs';
 import fileUrl from 'file-url';
 import {Terminal} from './terminal';
+import * as semver from 'semver';
 
 if (process.env.VSCODE_NLS_CONFIG) {
     try {
@@ -236,14 +237,14 @@ class PhpDebugSession extends vscode.DebugSession {
                     });
                     connection.on('error', disposeConnection);
                     connection.on('close', disposeConnection);
-                    await connection.waitForInitPacket();
+                    const initPacket = await connection.waitForInitPacket();
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
                     // set max_depth to 1 since VS Code requests nested structures individually anyway
                     await connection.sendFeatureSetCommand('max_depth', '1');
                     // raise default of 32
                     await connection.sendFeatureSetCommand('max_children', '9999');
                     // don't truncate long variable values
-                    await connection.sendFeatureSetCommand('max_data', '0');
+                    await connection.sendFeatureSetCommand('max_data', semver.lt(initPacket.engineVersion, '2.2.4') ? '9999' : '0');
                     // request breakpoints from VS Code
                     await this.sendEvent(new vscode.InitializedEvent());
                 } catch (error) {

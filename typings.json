@@ -2,7 +2,8 @@
   "name": "php-debug",
   "version": false,
   "dependencies": {
-    "moment": "registry:npm/moment#2.10.5+20160211003958"
+    "moment": "registry:npm/moment#2.10.5+20160211003958",
+    "semver": "registry:npm/semver#5.0.0+20160211003958"
   },
   "globalDependencies": {
     "node": "registry:env/node#4.0.0+20160507210304",
