@@ -16,7 +16,12 @@
     },
     {
       "taskName": "watch",
-      "isWatching": true
+      "isWatching": true,
+      "problemMatcher": {
+        "base": "$tsc-watch",
+        "watchedTaskBeginsRegExp": "Starting 'compile'",
+        "watchedTaskEndsRegExp": "Finished 'compile'"
+      }
     },
     {
       "taskName": "test",
