@@ -328,6 +328,15 @@ class PhpDebugSession extends vscode.DebugSession {
         return localPath;
     }
 
+    protected isSameUri(clientUri: string, debuggerUri: string): boolean {
+        if (/^file:\/\/\/[a-zA-Z]:\//.test(debuggerUri)) {
+            // compare case-insensitive on Windows
+            return debuggerUri.toLowerCase() === clientUri.toLowerCase();
+        } else {
+            return debuggerUri === clientUri;
+        }
+    }
+
     /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
     protected convertClientPathToDebugger(localPath: string): string {
         let localFileUri = fileUrl(localPath, {resolve: false});
@@ -426,7 +435,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     await Promise.all(
                         breakpoints
                             // filter to only include line breakpoints for this file
-                            .filter(breakpoint => breakpoint instanceof xdebug.LineBreakpoint && breakpoint.fileUri === fileUri)
+                            .filter(breakpoint => breakpoint instanceof xdebug.LineBreakpoint && this.isSameUri(fileUri, breakpoint.fileUri))
                             // remove them
                             .map(breakpoint => breakpoint.remove())
                     );
