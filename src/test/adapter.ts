@@ -247,7 +247,7 @@ describe('PHP Debug Adapter', () => {
                     }
                     return errorInfo;
                 }
-                const expectedErrorScope: ErrorScope = {
+                let expectedErrorScope: ErrorScope = {
                     name: 'Notice',
                     type: 'Notice',
                     message: '"Undefined index: undefined_index"'
@@ -260,12 +260,15 @@ describe('PHP Debug Adapter', () => {
                     client.continueRequest({threadId}),
                     client.waitForEvent('stopped')
                 ]);
-                assert.deepEqual(await getErrorScope(), {
+                expectedErrorScope = {
                     name: 'Warning',
                     type: 'Warning',
                     message: '"Illegal offset type"',
-                    code: '2'
-                });
+                };
+                if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
+                    expectedErrorScope.code = '2';
+                }
+                assert.deepEqual(await getErrorScope(), expectedErrorScope);
                 await Promise.all([
                     client.continueRequest({threadId}),
                     client.waitForEvent('stopped')
