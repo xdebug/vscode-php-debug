@@ -213,7 +213,7 @@ describe('PHP Debug Adapter', () => {
                 });
             }
 
-            it('should report the error in a virtual error scope', async () => {
+            it.skip('should report the error in a virtual error scope', async () => {
 
                 await client.setExceptionBreakpointsRequest({filters: ['Notice', 'Warning', 'Exception']});
                 const [{body: {threadId}}] = await Promise.all([
