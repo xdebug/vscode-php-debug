@@ -221,11 +221,18 @@ describe('PHP Debug Adapter', () => {
                     client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>
                 ]);
 
-                async function getErrorScope(): Promise<{name: string, type?: string, message?: string, code?: string}> {
+                interface ErrorScope {
+                    name: string;
+                    type?: string;
+                    message?: string;
+                    code?: string;
+                };
+
+                async function getErrorScope(): Promise<ErrorScope> {
                     const frameId = (await client.stackTraceRequest({threadId})).body.stackFrames[0].id;
                     const errorScope = (await client.scopesRequest({frameId})).body.scopes[0];
                     const variables = (await client.variablesRequest({variablesReference: errorScope.variablesReference})).body.variables;
-                    const errorInfo: {name: string, type?: string, message?: string, code?: string} = {name: errorScope.name};
+                    const errorInfo: ErrorScope = {name: errorScope.name};
                     const type = variables.find(variable => variable.name === 'type');
                     if (type) {
                         errorInfo.type = type.value;
@@ -240,12 +247,15 @@ describe('PHP Debug Adapter', () => {
                     }
                     return errorInfo;
                 }
-                assert.deepEqual(await getErrorScope(), {
+                const expectedErrorScope: ErrorScope = {
                     name: 'Notice',
                     type: 'Notice',
-                    message: '"Undefined index: undefined_index"',
-                    code: '8'
-                });
+                    message: '"Undefined index: undefined_index"'
+                };
+                if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
+                    expectedErrorScope.code = '8';
+                }
+                assert.deepEqual(await getErrorScope(), expectedErrorScope);
                 await Promise.all([
                     client.continueRequest({threadId}),
                     client.waitForEvent('stopped')
