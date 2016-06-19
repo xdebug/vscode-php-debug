@@ -7,7 +7,7 @@ $aFloat = 1.23;
 $anInt = 123;
 $aString = '123';
 $anEmptyString = '';
-$aVeryLongString = str_repeat('lol', 10000);
+$aVeryLongString = str_repeat('lol', 5000);
 $aBoolean = true;
 $nullValue = null;
 $variableThatsNotSet;

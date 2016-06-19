@@ -216,9 +216,9 @@ describe('PHP Debug Adapter', () => {
             it('should report the error in a virtual error scope', async () => {
 
                 await client.setExceptionBreakpointsRequest({filters: ['Notice', 'Warning', 'Exception']});
-                const [, {body: {threadId}}] = await Promise.all([
-                    client.configurationDoneRequest(),
-                    client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>
+                const [{body: {threadId}}] = await Promise.all([
+                    client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>,
+                    client.configurationDoneRequest()
                 ]);
 
                 interface ErrorScope {
@@ -394,7 +394,7 @@ describe('PHP Debug Adapter', () => {
                 assert.propertyVal(variables, '$aFloat', '1.23');
                 assert.propertyVal(variables, '$aString', '"123"');
                 assert.propertyVal(variables, '$anEmptyString', '""');
-                assert.propertyVal(variables, '$aVeryLongString', '"' + 'lol'.repeat(10000) + '"');
+                assert.propertyVal(variables, '$aVeryLongString', '"' + 'lol'.repeat(5000) + '"');
                 assert.propertyVal(variables, '$anInt', '123');
                 assert.propertyVal(variables, '$nullValue', 'null');
                 assert.propertyVal(variables, '$variableThatsNotSet', 'uninitialized');
