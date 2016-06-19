@@ -1,7 +1,7 @@
 $client = New-Object System.Net.WebClient
 
 # Install PHP
-$phpUrl = "http://windows.php.net/downloads/releases/$env:PHP.zip"
+$phpUrl = "http://windows.php.net/downloads/releases/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip"
 Write-Output "Downloading $phpUrl"
 $client.DownloadFile($phpUrl, (Join-Path $PWD 'php.zip'))
 7z e php.zip -ophp
@@ -9,7 +9,8 @@ Rename-Item .\php\php.ini-development php.ini
 $env:PATH += ';' + (Join-Path $PWD 'php')
 
 # Install XDebug
-$xdebugUrl = "https://xdebug.org/files/$env:XDEBUG.dll"
+$phpMinorVersion = $env:PHP_VERSION -replace '\.\d+$'
+$xdebugUrl = "https://xdebug.org/files/php_xdebug-$env:XDEBUG_VERSION-$phpMinorVersion-vc$env:VC_VERSION-nts.dll"
 Write-Output "Downloading $xdebugUrl"
 $xdebugPath = Join-Path $PWD 'php\ext\xdebug.dll'
 $client.DownloadFile($xdebugUrl, $xdebugPath)

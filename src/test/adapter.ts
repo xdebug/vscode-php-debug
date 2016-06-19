@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import * as path from 'path';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
+import * as semver from 'semver';
 chai.use(chaiAsPromised);
 const assert = chai.assert;
 
@@ -180,37 +181,41 @@ describe('PHP Debug Adapter', () => {
                 ]);
             });
 
-            it('should support stopping on everything', async () => {
-                await client.setExceptionBreakpointsRequest({filters: ['*']});
-                // Notice
-                const [, {threadId}] = await Promise.all([
-                    client.configurationDoneRequest(),
-                    assertStoppedLocation('exception', program, 6)
-                ]);
-                // Warning
-                await Promise.all([
-                    client.continueRequest({threadId}),
-                    assertStoppedLocation('exception', program, 9)
-                ]);
-                // Exception
-                await Promise.all([
-                    client.continueRequest({threadId}),
-                    assertStoppedLocation('exception', program, 12)
-                ]);
-                // Fatal error: uncaught exception
-                await Promise.all([
-                    client.continueRequest({threadId}),
-                    assertStoppedLocation('exception', program, 12)
-                ]);
-                await Promise.all([
-                    client.continueRequest({threadId}),
-                    client.waitForEvent('terminated')
-                ]);
-            });
+            // support for stopping on "*" was added in 2.3.0
+            if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
+
+                it('should support stopping on everything', async () => {
+                    await client.setExceptionBreakpointsRequest({filters: ['*']});
+                    // Notice
+                    const [, {threadId}] = await Promise.all([
+                        client.configurationDoneRequest(),
+                        assertStoppedLocation('exception', program, 6)
+                    ]);
+                    // Warning
+                    await Promise.all([
+                        client.continueRequest({threadId}),
+                        assertStoppedLocation('exception', program, 9)
+                    ]);
+                    // Exception
+                    await Promise.all([
+                        client.continueRequest({threadId}),
+                        assertStoppedLocation('exception', program, 12)
+                    ]);
+                    // Fatal error: uncaught exception
+                    await Promise.all([
+                        client.continueRequest({threadId}),
+                        assertStoppedLocation('exception', program, 12)
+                    ]);
+                    await Promise.all([
+                        client.continueRequest({threadId}),
+                        client.waitForEvent('terminated')
+                    ]);
+                });
+            }
 
             it('should report the error in a virtual error scope', async () => {
 
-                await client.setExceptionBreakpointsRequest({filters: ['*']});
+                await client.setExceptionBreakpointsRequest({filters: ['Notice', 'Warning', 'Exception']});
                 const [, {body: {threadId}}] = await Promise.all([
                     client.configurationDoneRequest(),
                     client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>
@@ -347,13 +352,16 @@ describe('PHP Debug Adapter', () => {
             const scopes = (await client.scopesRequest({frameId: stackFrame.id})).body.scopes;
             localScope = scopes.find(scope => scope.name === 'Locals');
             superglobalsScope = scopes.find(scope => scope.name === 'Superglobals');
-            constantsScope = scopes.find(scope => scope.name === 'User defined constants');
+            constantsScope = scopes.find(scope => scope.name === 'User defined constants'); // XDebug >2.3 only
         });
 
         it('should report scopes correctly', () => {
             assert.isDefined(localScope, 'Locals');
             assert.isDefined(superglobalsScope, 'Superglobals');
-            assert.isDefined(constantsScope, 'User defined constants');
+            // support for user defined constants was added in 2.3.0
+            if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
+                assert.isDefined(constantsScope, 'User defined constants');
+            }
         });
 
         describe('local variables', () => {
@@ -417,12 +425,16 @@ describe('PHP Debug Adapter', () => {
             });
         });
 
-        it('should report user defined constants correctly', async () => {
-            const constants = (await client.variablesRequest({variablesReference: constantsScope.variablesReference})).body.variables;
-            assert.lengthOf(constants, 1);
-            assert.propertyVal(constants[0], 'name', 'TEST_CONSTANT');
-            assert.propertyVal(constants[0], 'value', '123');
-        });
+        // support for user defined constants was added in 2.3.0
+        if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
+
+            it('should report user defined constants correctly', async () => {
+                const constants = (await client.variablesRequest({variablesReference: constantsScope.variablesReference})).body.variables;
+                assert.lengthOf(constants, 1);
+                assert.propertyVal(constants[0], 'name', 'TEST_CONSTANT');
+                assert.propertyVal(constants[0], 'value', '123');
+            });
+        }
     });
 
     describe('virtual sources', () => {
