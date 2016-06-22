@@ -176,7 +176,8 @@ export class LineBreakpoint extends Breakpoint {
             const breakpointNode: Element = arguments[0];
             const connection: Connection = arguments[1];
             super(breakpointNode, connection);
-            this.line = parseInt(breakpointNode.getAttribute('line'));
+            this.line = parseInt(breakpointNode.getAttribute('lineno'));
+            this.fileUri = breakpointNode.getAttribute('filename');
         } else {
             // construct from arguments
             super('line');
