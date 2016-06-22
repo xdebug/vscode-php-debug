@@ -134,6 +134,32 @@ describe('PHP Debug Adapter', () => {
             it('should stop on a breakpoint identical to the entrypoint', () =>
                 testBreakpointHit(program, 3)
             );
+
+            it('should support removing a breakpoint', async () => {
+                await Promise.all([client.launch({program}), client.waitForEvent('initialized')]);
+                // set two breakpoints
+                let breakpoints = (await client.setBreakpointsRequest({breakpoints: [{line: 3}, {line: 5}], source: {path: program}})).body.breakpoints;
+                assert.lengthOf(breakpoints, 2);
+                assert.isTrue(breakpoints[0].verified, 'breakpoint verification mismatch: verified');
+                assert.equal(breakpoints[0].line, 3, 'breakpoint verification mismatch: line');
+                assert.isTrue(breakpoints[1].verified, 'breakpoint verification mismatch: verified');
+                assert.equal(breakpoints[1].line, 5, 'breakpoint verification mismatch: line');
+                // stop at first
+                const [{threadId}] = await Promise.all([
+                    assertStoppedLocation('breakpoint', program, 3),
+                    client.configurationDoneRequest()
+                ]);
+                // remove second
+                breakpoints = (await client.setBreakpointsRequest({breakpoints: [{line: 3}], source: {path: program}})).body.breakpoints;
+                assert.lengthOf(breakpoints, 1);
+                assert.isTrue(breakpoints[0].verified, 'breakpoint verification mismatch: verified');
+                assert.equal(breakpoints[0].line, 3, 'breakpoint verification mismatch: line');
+                // should run to end
+                await Promise.all([
+                    client.waitForEvent('terminated'),
+                    client.continueRequest({threadId})
+                ]);
+            });
         });
 
         describe('exception breakpoints', () => {
