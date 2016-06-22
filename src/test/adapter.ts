@@ -394,7 +394,7 @@ describe('PHP Debug Adapter', () => {
                 assert.propertyVal(variables, '$aFloat', '1.23');
                 assert.propertyVal(variables, '$aString', '"123"');
                 assert.propertyVal(variables, '$anEmptyString', '""');
-                assert.propertyVal(variables, '$aVeryLongString', '"' + 'lol'.repeat(5000) + '"');
+                assert.propertyVal(variables, '$aVeryLongString', '"' + 'lol'.repeat(1000) + '"');
                 assert.propertyVal(variables, '$anInt', '123');
                 assert.propertyVal(variables, '$nullValue', 'null');
                 assert.propertyVal(variables, '$variableThatsNotSet', 'uninitialized');
