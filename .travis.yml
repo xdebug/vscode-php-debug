@@ -33,4 +33,7 @@ script:
  - npm run lint --silent
  - npm test --silent
 
+after_script:
+ - cat /tmp/xdebug.log
+
 sudo: false
