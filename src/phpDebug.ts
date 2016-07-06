@@ -244,7 +244,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     // raise default of 32
                     await connection.sendFeatureSetCommand('max_children', '10000');
                     // don't truncate long variable values
-                    await connection.sendFeatureSetCommand('max_data', semver.lt(initPacket.engineVersion, '2.2.4') ? '10000' : '0');
+                    await connection.sendFeatureSetCommand('max_data', semver.lt(initPacket.engineVersion.replace(/((?:dev|alpha|beta|RC|stable)\d*)$/, '-$1'), '2.2.4') ? '10000' : '0');
                     // request breakpoints from VS Code
                     await this.sendEvent(new vscode.InitializedEvent());
                 } catch (error) {
