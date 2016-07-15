@@ -3,6 +3,9 @@
 insert_spaces = true
 indent_size = 4
 trim_trailing_whitespace = true
+insert_final_newline = true
+end_of_line = lf
+charset = utf-8
 
 [*.json,*.yml]
 indent_size = 2
