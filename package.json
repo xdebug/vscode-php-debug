@@ -62,7 +62,7 @@
     "watch": "gulp watch",
     "start": "code testproject --extensionDevelopmentPath=.",
     "test": "mocha out/test --timeout 20000 --slow 1000",
-    "lint": "tslint -c tslint.json src/**/*.ts",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'",
     "postinstall": "typings install"
   },
   "contributes": {
