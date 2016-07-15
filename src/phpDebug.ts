@@ -2,15 +2,14 @@ import * as vscode from 'vscode-debugadapter';
 import {DebugProtocol as VSCodeDebugProtocol} from 'vscode-debugprotocol';
 import * as net from 'net';
 import * as xdebug from './xdebugConnection';
-import urlRelative from 'url-relative';
 import moment from 'moment';
 import * as url from 'url';
 import * as childProcess from 'child_process';
 import * as path from 'path';
 import * as util from 'util';
 import * as fs from 'fs';
-import fileUrl from 'file-url';
 import {Terminal} from './terminal';
+import {isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient} from './paths';
 import * as semver from 'semver';
 
 if (process.env.VSCODE_NLS_CONFIG) {
@@ -305,61 +304,6 @@ class PhpDebugSession extends vscode.DebugSession {
         }
     }
 
-    /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
-    protected convertDebuggerPathToClient(fileUri: string|url.Url): string {
-        if (typeof fileUri === 'string') {
-            fileUri = url.parse(<string>fileUri);
-        }
-        // convert the file URI to a path
-        let serverPath = decodeURI((<url.Url>fileUri).pathname);
-        // strip the trailing slash from Windows paths (indicated by a drive letter with a colon)
-        if (/^\/[a-zA-Z]:\//.test(serverPath)) {
-            serverPath = serverPath.substr(1);
-        }
-        let localPath: string;
-        if (this._args.serverSourceRoot && this._args.localSourceRoot) {
-            // get the part of the path that is relative to the source root
-            const pathRelativeToSourceRoot = path.relative(this._args.serverSourceRoot, serverPath);
-            // resolve from the local source root
-            localPath = path.resolve(this._args.localSourceRoot, pathRelativeToSourceRoot);
-        } else {
-            localPath = path.normalize(serverPath);
-        }
-        return localPath;
-    }
-
-    protected isSameUri(clientUri: string, debuggerUri: string): boolean {
-        if (/^file:\/\/\/[a-zA-Z]:\//.test(debuggerUri)) {
-            // compare case-insensitive on Windows
-            return debuggerUri.toLowerCase() === clientUri.toLowerCase();
-        } else {
-            return debuggerUri === clientUri;
-        }
-    }
-
-    /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
-    protected convertClientPathToDebugger(localPath: string): string {
-        let localFileUri = fileUrl(localPath, {resolve: false});
-        let serverFileUri: string;
-        if (this._args.serverSourceRoot && this._args.localSourceRoot) {
-            let localSourceRootUrl = fileUrl(this._args.localSourceRoot, {resolve: false});
-            if (!localSourceRootUrl.endsWith('/')) {
-                localSourceRootUrl += '/';
-            }
-            let serverSourceRootUrl = fileUrl(this._args.serverSourceRoot, {resolve: false});
-            if (!serverSourceRootUrl.endsWith('/')) {
-                serverSourceRootUrl += '/';
-            }
-            // get the part of the path that is relative to the source root
-            const urlRelativeToSourceRoot = urlRelative(localSourceRootUrl, localFileUri);
-            // resolve from the server source root
-            serverFileUri = url.resolve(serverSourceRootUrl, urlRelativeToSourceRoot);
-        } else {
-            serverFileUri = localFileUri;
-        }
-        return serverFileUri;
-    }
-
     /** Logs all requests before dispatching */
     protected dispatchRequest(request: VSCodeDebugProtocol.Request): void {
         if (this._args && this._args.log) {
@@ -435,7 +379,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     await Promise.all(
                         breakpoints
                             // filter to only include line breakpoints for this file
-                            .filter(breakpoint => breakpoint instanceof xdebug.LineBreakpoint && this.isSameUri(fileUri, breakpoint.fileUri))
+                            .filter(breakpoint => breakpoint instanceof xdebug.LineBreakpoint && isSameUri(fileUri, breakpoint.fileUri))
                             // remove them
                             .map(breakpoint => breakpoint.remove())
                     );
@@ -594,7 +538,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     line++;
                 } else {
                     // XDebug paths are URIs, VS Code file paths
-                    const filePath = this.convertDebuggerPathToClient(urlObject);
+                    const filePath = convertDebuggerPathToClient(urlObject, this._args.localSourceRoot, this._args.serverSourceRoot);
                     // "Name" of the source and the actual file path
                     source = new vscode.Source(path.basename(filePath), filePath);
                 }
@@ -615,7 +559,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             line++;
                         } else {
                             // XDebug paths are URIs, VS Code file paths
-                            const filePath = this.convertDebuggerPathToClient(urlObject);
+                            const filePath = convertDebuggerPathToClient(urlObject, this._args.localSourceRoot, this._args.serverSourceRoot);
                             // "Name" of the source and the actual file path
                             source = new vscode.Source(path.basename(filePath), filePath);
                         }
