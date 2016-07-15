@@ -252,7 +252,7 @@ describe('PHP Debug Adapter', () => {
                     type?: string;
                     message?: string;
                     code?: string;
-                };
+                }
 
                 async function getErrorScope(): Promise<ErrorScope> {
                     const frameId = (await client.stackTraceRequest({threadId})).body.stackFrames[0].id;
@@ -289,7 +289,7 @@ describe('PHP Debug Adapter', () => {
                 expectedErrorScope = {
                     name: 'Warning',
                     type: 'Warning',
-                    message: '"Illegal offset type"',
+                    message: '"Illegal offset type"'
                 };
                 if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
                     expectedErrorScope.code = '2';
