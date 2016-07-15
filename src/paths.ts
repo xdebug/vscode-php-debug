@@ -12,13 +12,14 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, localSource
     // convert the file URI to a path
     let serverPath = decodeURI((<url.Url>fileUri).pathname);
     // strip the trailing slash from Windows paths (indicated by a drive letter with a colon)
-    if (/^\/[a-zA-Z]:\//.test(serverPath)) {
+    const serverIsWindows = /^\/[a-zA-Z]:\//.test(serverPath);
+    if (serverIsWindows) {
         serverPath = serverPath.substr(1);
     }
     let localPath: string;
     if (serverSourceRoot && localSourceRoot) {
         // get the part of the path that is relative to the source root
-        const pathRelativeToSourceRoot = path.relative(serverSourceRoot, serverPath);
+        const pathRelativeToSourceRoot = (serverIsWindows ? path.win32 : path.posix).relative(serverSourceRoot, serverPath);
         // resolve from the local source root
         localPath = path.resolve(localSourceRoot, pathRelativeToSourceRoot);
     } else {
