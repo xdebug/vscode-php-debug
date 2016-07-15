@@ -1,6 +1,5 @@
 
 import * as net from 'net';
-import {Thread} from 'vscode-debugadapter';
 import * as iconv from 'iconv-lite';
 import {DbgpConnection} from './dbgp';
 
@@ -240,7 +239,7 @@ export class ExceptionBreakpoint extends Breakpoint {
 export class ConditionalBreakpoint extends Breakpoint {
     /** File URI */
     fileUri: string;
-    /** Line (optional)*/
+    /** Line (optional) */
     line: number;
     /** The PHP expression under which to break on */
     expression: string;
@@ -775,7 +774,7 @@ export class Connection extends DbgpConnection {
     /** Sends a property_get command */
     public async sendPropertyGetCommand(property: Property): Promise<PropertyGetResponse> {
         const escapedFullName = '"' + property.fullName.replace(/"/g, '\\"') + '"';
-        return new PropertyGetResponse(await this._enqueueCommand('property_get', `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${property.fullName}`), property);
+        return new PropertyGetResponse(await this._enqueueCommand('property_get', `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${escapedFullName}`), property);
     }
 
     // ------------------------------- eval -----------------------------------------
