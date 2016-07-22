@@ -352,7 +352,7 @@ class PhpDebugSession extends vscode.DebugSession {
     /** This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change. */
     protected async setBreakPointsRequest(response: VSCodeDebugProtocol.SetBreakpointsResponse, args: VSCodeDebugProtocol.SetBreakpointsArguments) {
         try {
-            const fileUri = convertClientPathToDebugger(args.source.path);
+            const fileUri = convertClientPathToDebugger(args.source.path, this._args.localSourceRoot, this._args.serverSourceRoot);
             const connections = Array.from(this._connections.values());
             let xdebugBreakpoints: Array<xdebug.ConditionalBreakpoint|xdebug.LineBreakpoint>;
             response.body = {breakpoints: []};
