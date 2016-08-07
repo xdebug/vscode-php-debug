@@ -2,22 +2,17 @@
   "name": "php-debug",
   "version": false,
   "dependencies": {
-    "moment": "registry:npm/moment#2.10.5+20160211003958",
-    "semver": "registry:npm/semver#5.0.0+20160211003958"
+    "semver": "registry:npm/semver#5.0.0+20160723033700"
   },
   "globalDependencies": {
-    "node": "registry:env/node#4.0.0+20160507210304",
+    "node": "registry:env/node#6.0.0+20160723033700",
     "xmldom": "registry:dt/xmldom#0.1.22+20160319053438"
   },
-  "globalDevDependencies": {
-    "gulp-babel": "registry:dt/gulp-babel#6.1.0+20160316171810",
-    "gulp-sourcemaps": "registry:dt/gulp-sourcemaps#0.0.0+20160316155526",
-    "gulp-typescript": "registry:dt/gulp-typescript#0.0.0+20160317120654",
-    "mocha": "registry:dt/mocha#2.2.5+20160317120654"
-  },
   "devDependencies": {
-    "chai": "registry:npm/chai#3.5.0+20160328084239",
-    "chai-as-promised": "registry:npm/chai-as-promised#5.1.0+20160310030142",
-    "gulp": "registry:npm/gulp#3.8.0+20160211003958"
+    "chai": "registry:npm/chai#3.5.0+20160723033700",
+    "chai-as-promised": "registry:npm/chai-as-promised#5.1.0+20160310030142"
+  },
+  "globalDevDependencies": {
+    "mocha": "registry:env/mocha#2.2.5+20160723033700"
   }
 }

@@ -51,8 +51,12 @@ export function convertClientPathToDebugger(localPath: string, localSourceRoot?:
     return serverFileUri;
 }
 
+function isWindowsUri(path: string): boolean {
+    return /^file:\/\/\/[a-zA-Z]:\//.test(path);
+}
+
 export function isSameUri(clientUri: string, debuggerUri: string): boolean {
-    if (/^file:\/\/\/[a-zA-Z]:\//.test(debuggerUri)) {
+    if (isWindowsUri(clientUri) || isWindowsUri(debuggerUri)) {
         // compare case-insensitive on Windows
         return debuggerUri.toLowerCase() === clientUri.toLowerCase();
     } else {
