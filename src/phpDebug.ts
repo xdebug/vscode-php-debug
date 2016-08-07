@@ -635,7 +635,7 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async variablesRequest(response: VSCodeDebugProtocol.VariablesResponse, args: VSCodeDebugProtocol.VariablesArguments) {
         try {
             const variablesReference = args.variablesReference;
-            let variables: vscode.Variable[];
+            let variables: VSCodeDebugProtocol.Variable[];
             if (this._errorScopes.has(variablesReference)) {
                 // this is a virtual error scope
                 const status = this._errorScopes.get(variablesReference);
@@ -680,7 +680,13 @@ class PhpDebugSession extends vscode.DebugSession {
                     } else {
                         variablesReference = 0;
                     }
-                    return new vscode.Variable(property.name, displayValue, variablesReference);
+                    const variable: VSCodeDebugProtocol.Variable = {
+                        name: property.name,
+                        value: displayValue,
+                        type: property.type,
+                        variablesReference
+                    };
+                    return variable;
                 });
             }
             response.body = {variables};
