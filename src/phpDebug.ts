@@ -643,10 +643,10 @@ class PhpDebugSession extends vscode.DebugSession {
                     new vscode.Variable('type', status.exception.name),
                     new vscode.Variable('message', '"' + status.exception.message + '"')
                 ];
-                
+
                 // drop the messages into the full debug pane where it can be read in full.
                 this.sendEvent(new vscode.OutputEvent(status.exception.message + '\n'));
-                
+
                 if (status.exception.code !== undefined) {
                     variables.push(new vscode.Variable('code', status.exception.code + ''));
                 }
