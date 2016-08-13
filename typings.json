@@ -9,10 +9,12 @@
     "xmldom": "registry:dt/xmldom#0.1.22+20160319053438"
   },
   "devDependencies": {
+    "bluebird": "registry:npm/bluebird#3.4.1+20160811213708",
     "chai": "registry:npm/chai#3.5.0+20160723033700",
     "chai-as-promised": "registry:npm/chai-as-promised#5.1.0+20160310030142"
   },
   "globalDevDependencies": {
+    "bluebird-retry": "registry:dt/bluebird-retry#0.0.0+20160317120654",
     "mocha": "registry:env/mocha#2.2.5+20160723033700"
   }
 }

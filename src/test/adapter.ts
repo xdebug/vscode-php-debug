@@ -1,6 +1,7 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import * as path from 'path';
+import retry from 'bluebird-retry';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
 import * as semver from 'semver';
@@ -13,11 +14,11 @@ describe('PHP Debug Adapter', () => {
 
     let client: DebugClient;
 
-    beforeEach('start debug adapter', async () => {
+    beforeEach('start debug adapter', () => retry(async () => {
         client = new DebugClient('node', path.normalize(__dirname + '/../phpDebug'), 'php');
         client.defaultTimeout = 10000;
         await client.start(process.env.VSCODE_DEBUG_PORT && parseInt(process.env.VSCODE_DEBUG_PORT));
-    });
+    }));
 
     afterEach('stop debug adapter', () =>
         client.stop()
@@ -25,13 +26,13 @@ describe('PHP Debug Adapter', () => {
 
     describe('initialization', () => {
 
-        it('should return supported features', async () => {
+        it('should return supported features', () => retry(async () => {
             const response = await client.initializeRequest();
             assert.equal(response.body.supportsConfigurationDoneRequest, true);
             assert.equal(response.body.supportsEvaluateForHovers, false);
             assert.equal(response.body.supportsConditionalBreakpoints, true);
             assert.equal(response.body.supportsFunctionBreakpoints, true);
-        });
+        }));
     });
 
     describe('launch as CLI', () => {
@@ -50,14 +51,14 @@ describe('PHP Debug Adapter', () => {
             ])
         );
 
-        it('should stop on entry', async () => {
+        it('should stop on entry', () => retry(async () => {
             const [event] = await Promise.all([
                 client.waitForEvent('stopped'),
                 client.launch({program, stopOnEntry: true}),
                 client.configurationSequence()
             ]);
             assert.propertyVal(event.body, 'reason', 'entry');
-        });
+        }));
 
         it('should not stop if launched without debugging', () =>
             Promise.all([
@@ -80,13 +81,13 @@ describe('PHP Debug Adapter', () => {
             assert.isRejected(client.pauseRequest({threadId: 1}))
         );
 
-        it('should handle disconnect', async () => {
+        it('should handle disconnect', () => retry(async () => {
             await Promise.all([
                 client.launch({program, stopOnEntry: true}),
                 client.waitForEvent('initialized')
             ]);
             await client.disconnectRequest();
-        });
+        }));
     });
 
     async function assertStoppedLocation(reason: 'entry' | 'breakpoint' | 'exception', path: string, line: number): Promise<{threadId: number, frame: DebugProtocol.StackFrame}> {
@@ -135,7 +136,7 @@ describe('PHP Debug Adapter', () => {
                 testBreakpointHit(program, 3)
             );
 
-            it('should support removing a breakpoint', async () => {
+            it('should support removing a breakpoint', () => retry(async () => {
                 await Promise.all([client.launch({program}), client.waitForEvent('initialized')]);
                 // set two breakpoints
                 let breakpoints = (await client.setBreakpointsRequest({breakpoints: [{line: 3}, {line: 5}], source: {path: program}})).body.breakpoints;
@@ -159,7 +160,7 @@ describe('PHP Debug Adapter', () => {
                     client.waitForEvent('terminated'),
                     client.continueRequest({threadId})
                 ]);
-            });
+            }));
         });
 
         describe('exception breakpoints', () => {
@@ -171,7 +172,7 @@ describe('PHP Debug Adapter', () => {
                 client.waitForEvent('initialized')
             ]));
 
-            it('should support stopping only on a notice', async () => {
+            it('should support stopping only on a notice', () => retry(async () => {
                 await client.setExceptionBreakpointsRequest({filters: ['Notice']});
                 const [, {threadId}] = await Promise.all([
                     client.configurationDoneRequest(),
@@ -181,9 +182,9 @@ describe('PHP Debug Adapter', () => {
                     client.continueRequest({threadId}),
                     client.waitForEvent('terminated')
                 ]);
-            });
+            }));
 
-            it('should support stopping only on a warning', async () => {
+            it('should support stopping only on a warning', () => retry(async () => {
                 await client.setExceptionBreakpointsRequest({filters: ['Warning']});
                 const [{threadId}] = await Promise.all([
                     assertStoppedLocation('exception', program, 9),
@@ -193,9 +194,9 @@ describe('PHP Debug Adapter', () => {
                     client.continueRequest({threadId}),
                     client.waitForEvent('terminated')
                 ]);
-            });
+            }));
 
-            it('should support stopping only on an exception', async () => {
+            it('should support stopping only on an exception', () => retry(async () => {
                 await client.setExceptionBreakpointsRequest({filters: ['Exception']});
                 const [, {threadId}] = await Promise.all([
                     client.configurationDoneRequest(),
@@ -205,12 +206,12 @@ describe('PHP Debug Adapter', () => {
                     client.continueRequest({threadId}),
                     client.waitForEvent('terminated')
                 ]);
-            });
+            }));
 
             // support for stopping on "*" was added in 2.3.0
             if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
 
-                it('should support stopping on everything', async () => {
+                it('should support stopping on everything', () => retry(async () => {
                     await client.setExceptionBreakpointsRequest({filters: ['*']});
                     // Notice
                     const [, {threadId}] = await Promise.all([
@@ -236,10 +237,10 @@ describe('PHP Debug Adapter', () => {
                         client.continueRequest({threadId}),
                         client.waitForEvent('terminated')
                     ]);
-                });
+                }));
             }
 
-            it.skip('should report the error in a virtual error scope', async () => {
+            it.skip('should report the error in a virtual error scope', () => retry(async () => {
 
                 await client.setExceptionBreakpointsRequest({filters: ['Notice', 'Warning', 'Exception']});
                 const [{body: {threadId}}] = await Promise.all([
@@ -314,14 +315,14 @@ describe('PHP Debug Adapter', () => {
                 assert.match(fatalErrorScope.message, /^"Uncaught Exception/i);
                 assert.match(fatalErrorScope.message, /this is an exception/);
                 assert.match(fatalErrorScope.message, /"$/);
-            });
+            }));
         });
 
         describe('conditional breakpoints', () => {
 
             const program = path.join(TEST_PROJECT, 'variables.php');
 
-            it('should stop on a conditional breakpoint when condition is true', async () => {
+            it('should stop on a conditional breakpoint when condition is true', () => retry(async () => {
                 await Promise.all([
                     client.launch({program}),
                     client.waitForEvent('initialized')
@@ -335,9 +336,9 @@ describe('PHP Debug Adapter', () => {
                 ]);
                 const result = (await client.evaluateRequest({context: 'watch', frameId: frame.id, expression: '$anInt'})).body.result;
                 assert.equal(result, 123);
-            });
+            }));
 
-            it('should not stop on a conditional breakpoint when condition is false', async () => {
+            it('should not stop on a conditional breakpoint when condition is false', () => retry(async () => {
                 await Promise.all([
                     client.launch({program}),
                     client.waitForEvent('initialized')
@@ -349,14 +350,14 @@ describe('PHP Debug Adapter', () => {
                     client.configurationDoneRequest(),
                     client.waitForEvent('terminated')
                 ]);
-            });
+            }));
         });
 
         describe('function breakpoints', () => {
 
             const program = path.join(TEST_PROJECT, 'function.php');
 
-            it('should stop on a function breakpoint', async () => {
+            it('should stop on a function breakpoint', () => retry(async () => {
                 await client.launch({program});
                 await client.waitForEvent('initialized');
                 const breakpoint = (await client.setFunctionBreakpointsRequest({breakpoints: [{name: 'a_function'}]})).body.breakpoints[0];
@@ -365,7 +366,7 @@ describe('PHP Debug Adapter', () => {
                     client.configurationDoneRequest(),
                     assertStoppedLocation('breakpoint', program, 5)
                 ]);
-            });
+            }));
         });
     });
 
@@ -377,7 +378,7 @@ describe('PHP Debug Adapter', () => {
         let superglobalsScope: DebugProtocol.Scope;
         let constantsScope: DebugProtocol.Scope;
 
-        beforeEach(async () => {
+        beforeEach(() => retry(async () => {
             await Promise.all([
                 client.launch({program}),
                 client.waitForEvent('initialized')
@@ -392,7 +393,7 @@ describe('PHP Debug Adapter', () => {
             localScope = scopes.find(scope => scope.name === 'Locals');
             superglobalsScope = scopes.find(scope => scope.name === 'Superglobals');
             constantsScope = scopes.find(scope => scope.name === 'User defined constants'); // XDebug >2.3 only
-        });
+        }));
 
         it('should report scopes correctly', () => {
             assert.isDefined(localScope, 'Locals');
@@ -407,11 +408,11 @@ describe('PHP Debug Adapter', () => {
 
             let localVariables: DebugProtocol.Variable[];
 
-            beforeEach(async () => {
+            beforeEach(() => retry(async () => {
                 localVariables = (await client.variablesRequest({variablesReference: localScope.variablesReference})).body.variables;
-            });
+            }));
 
-            it('should report local scalar variables correctly', async () => {
+            it('should report local scalar variables correctly', () => retry(async () => {
                 const variables: {[name: string]: string} = Object.create(null);
                 for (const variable of localVariables) {
                     variables[variable.name] = variable.value;
@@ -424,9 +425,9 @@ describe('PHP Debug Adapter', () => {
                 assert.propertyVal(variables, '$anInt', '123');
                 assert.propertyVal(variables, '$nullValue', 'null');
                 assert.propertyVal(variables, '$variableThatsNotSet', 'uninitialized');
-            });
+            }));
 
-            it('should report arrays correctly', async () => {
+            it('should report arrays correctly', () => retry(async () => {
                 const anArray = localVariables.find(variable => variable.name === '$anArray');
                 assert.isDefined(anArray);
                 assert.propertyVal(anArray, 'value', 'array(2)');
@@ -437,9 +438,9 @@ describe('PHP Debug Adapter', () => {
                 assert.propertyVal(items[0], 'value', '1');
                 assert.propertyVal(items[1], 'name', 'test');
                 assert.propertyVal(items[1], 'value', '2');
-            });
+            }));
 
-            it('should report large arrays correctly', async () => {
+            it('should report large arrays correctly', () => retry(async () => {
                 const aLargeArray = localVariables.find(variable => variable.name === '$aLargeArray');
                 assert.isDefined(aLargeArray);
                 assert.propertyVal(aLargeArray, 'value', 'array(100)');
@@ -450,9 +451,9 @@ describe('PHP Debug Adapter', () => {
                 assert.propertyVal(largeArrayItems[0], 'value', '"test"');
                 assert.propertyVal(largeArrayItems[99], 'name', '99');
                 assert.propertyVal(largeArrayItems[99], 'value', '"test"');
-            });
+            }));
 
-            it('should report keys with spaces correctly', async () => {
+            it('should report keys with spaces correctly', () => retry(async () => {
                 const arrayWithSpaceKey = localVariables.find(variable => variable.name === '$arrayWithSpaceKey');
                 assert.isDefined(arrayWithSpaceKey);
                 assert.propertyVal(arrayWithSpaceKey, 'value', 'array(1)');
@@ -461,18 +462,18 @@ describe('PHP Debug Adapter', () => {
                 assert.lengthOf(arrayWithSpaceKeyItems, 1);
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'name', 'space key');
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'value', '1');
-            });
+            }));
         });
 
         // support for user defined constants was added in 2.3.0
         if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
 
-            it('should report user defined constants correctly', async () => {
+            it('should report user defined constants correctly', () => retry(async () => {
                 const constants = (await client.variablesRequest({variablesReference: constantsScope.variablesReference})).body.variables;
                 assert.lengthOf(constants, 1);
                 assert.propertyVal(constants[0], 'name', 'TEST_CONSTANT');
                 assert.propertyVal(constants[0], 'value', '123');
-            });
+            }));
         }
     });
 
@@ -494,13 +495,13 @@ describe('PHP Debug Adapter', () => {
 
         const program = path.join(TEST_PROJECT, 'output.php');
 
-        it('stdout and stderr events should be complete and in correct order', async () => {
+        it('stdout and stderr events should be complete and in correct order', () => retry(async () => {
             await Promise.all([
                 client.launch({program}),
                 client.configurationSequence()
             ]);
             await client.assertOutput('stdout', 'stdout output 1\nstdout output 2');
             await client.assertOutput('stderr', 'stderr output 1\nstderr output 2');
-        });
+        }));
     });
 });
