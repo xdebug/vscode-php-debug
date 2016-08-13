@@ -587,7 +587,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 // we do this because otherwise VS Code would not show syntax highlighting for eval() code
                 source = '<?php\n' + source;
             }
-            response.body = {content: source};
+            response.body = {content: source, mimeType: 'application/x-php'};
         } catch (error) {
             this.sendErrorResponse(response, error);
             return;
