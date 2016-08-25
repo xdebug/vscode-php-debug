@@ -7,7 +7,7 @@ php:
 
 env:
   matrix:
-    - XDEBUG_VERSION=2.4.0
+    - XDEBUG_VERSION=2.4.1
     - XDEBUG_VERSION=2.3.3
     - XDEBUG_VERSION=2.2.3 # XDebug version on Vagrant
 

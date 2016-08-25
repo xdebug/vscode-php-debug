@@ -5,11 +5,11 @@ platform:
 
 environment:
   matrix:
-    - {PHP_VERSION: '7.0.9',  VC_VERSION: '14', XDEBUG_VERSION: '2.4.0'}
-    - {PHP_VERSION: '5.6.24', VC_VERSION: '11', XDEBUG_VERSION: '2.4.0'}
-    - {PHP_VERSION: '5.6.24', VC_VERSION: '11', XDEBUG_VERSION: '2.3.3'}
-    - {PHP_VERSION: '5.6.24', VC_VERSION: '11', XDEBUG_VERSION: '2.2.3'}  # XDebug version on Vagrant
-    - {PHP_VERSION: '5.4.45', VC_VERSION:  '9', XDEBUG_VERSION: '2.4.0'}
+    - {PHP_VERSION: '7.0.10', VC_VERSION: '14', XDEBUG_VERSION: '2.4.1'}
+    - {PHP_VERSION: '5.6.25', VC_VERSION: '11', XDEBUG_VERSION: '2.4.1'}
+    - {PHP_VERSION: '5.6.25', VC_VERSION: '11', XDEBUG_VERSION: '2.3.3'}
+    - {PHP_VERSION: '5.6.25', VC_VERSION: '11', XDEBUG_VERSION: '2.2.3'}  # XDebug version on Vagrant
+    - {PHP_VERSION: '5.4.45', VC_VERSION:  '9', XDEBUG_VERSION: '2.4.1'}
     - {PHP_VERSION: '5.4.45', VC_VERSION:  '9', XDEBUG_VERSION: '2.3.3'}
     - {PHP_VERSION: '5.4.45', VC_VERSION:  '9', XDEBUG_VERSION: '2.2.3'}  # XDebug version on Vagrant
 
