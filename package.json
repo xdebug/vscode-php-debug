@@ -45,7 +45,6 @@
   },
   "devDependencies": {
     "babel-preset-es2015-node5": "^1.2.0",
-    "bluebird-retry": "^0.8.0",
     "chai": "^3.5.0",
     "chai-as-promised": "^5.3.0",
     "gulp": "^3.9.1",
@@ -62,7 +61,7 @@
     "compile": "gulp compile",
     "watch": "gulp watch",
     "start": "code testproject --extensionDevelopmentPath=.",
-    "test": "mocha out/test --timeout 20000 --slow 1000",
+    "test": "mocha out/test --timeout 20000 --slow 1000 --retries 4",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
     "postinstall": "typings install"
   },
