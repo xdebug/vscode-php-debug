@@ -2,7 +2,7 @@
 
 define('TEST_CONSTANT', 123);
 
-$anArray = array(1, 'test' => 2);
+$anArray = array(1, 'test' => 2, 'test2' => ['t' => 123]);
 $aFloat = 1.23;
 $anInt = 123;
 $aString = '123';
