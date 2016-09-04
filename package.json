@@ -61,7 +61,7 @@
     "compile": "gulp compile",
     "watch": "gulp watch",
     "start": "code testproject --extensionDevelopmentPath=.",
-    "test": "mocha out/test --timeout 35000 --slow 5000 --retries 4",
+    "test": "mocha out/test --timeout 20000 --slow 1000 --retries 4",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
     "postinstall": "typings install"
   },
