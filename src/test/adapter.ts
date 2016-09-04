@@ -429,14 +429,20 @@ describe('PHP Debug Adapter', () => {
             it('should report arrays correctly', async () => {
                 const anArray = localVariables.find(variable => variable.name === '$anArray');
                 assert.isDefined(anArray);
-                assert.propertyVal(anArray, 'value', 'array(2)');
+                assert.propertyVal(anArray, 'value', 'array(3)');
                 assert.property(anArray, 'variablesReference');
                 const items = (await client.variablesRequest({variablesReference: anArray.variablesReference})).body.variables;
-                assert.lengthOf(items, 2);
+                assert.lengthOf(items, 3);
                 assert.propertyVal(items[0], 'name', '0');
                 assert.propertyVal(items[0], 'value', '1');
                 assert.propertyVal(items[1], 'name', 'test');
                 assert.propertyVal(items[1], 'value', '2');
+                assert.propertyVal(items[2], 'name', 'test2');
+                assert.propertyVal(items[2], 'value', 'array(1)');
+                const test2Items = (await client.variablesRequest({variablesReference: items[2].variablesReference})).body.variables;
+                assert.lengthOf(test2Items, 1);
+                assert.propertyVal(test2Items[0], 'name', 't');
+                assert.propertyVal(test2Items[0], 'value', '123');
             });
 
             it('should report large arrays correctly', async () => {

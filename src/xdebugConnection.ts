@@ -395,6 +395,9 @@ export abstract class BaseProperty {
     numberOfChildren: number;
     /** the value of the property for primitive types */
     value: string;
+    /** children that were already included in the response */
+    children: BaseProperty[];
+
     constructor(propertyNode: Element) {
         if (propertyNode.hasAttribute('name')) {
             this.name = propertyNode.getAttribute('name');
@@ -414,6 +417,9 @@ export abstract class BaseProperty {
                 this.value = propertyNode.textContent;
             }
         }
+        if (this.hasChildren) {
+            this.children = Array.from(propertyNode.childNodes).map((propertyNode: Element) => new (<any>this.constructor)(propertyNode));
+        }
     }
 }
 
@@ -423,6 +429,9 @@ export class Property extends BaseProperty {
     fullName: string;
     /** the context this property belongs to */
     context: Context;
+
+    children: Property[];
+
     /**
      * @param  {Element} propertyNode
      * @param  {Context} context
@@ -477,9 +486,6 @@ export class EvalResultProperty extends BaseProperty {
     children: EvalResultProperty[];
     constructor(propertyNode: Element) {
         super(propertyNode);
-        if (this.hasChildren) {
-            this.children = Array.from(propertyNode.childNodes).map((propertyNode: Element) => new EvalResultProperty(propertyNode));
-        }
     }
 }
 

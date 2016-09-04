@@ -239,7 +239,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     const initPacket = await connection.waitForInitPacket();
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
                     // set max_depth to 1 since VS Code requests nested structures individually anyway
-                    await connection.sendFeatureSetCommand('max_depth', '1');
+                    await connection.sendFeatureSetCommand('max_depth', '10');
                     // raise default of 32
                     await connection.sendFeatureSetCommand('max_children', '10000');
                     // don't truncate long variable values
@@ -656,7 +656,15 @@ class PhpDebugSession extends vscode.DebugSession {
                 } else if (this._properties.has(variablesReference)) {
                     // VS Code is requesting the subelements for a variable, so we have to do a property_get
                     const property = this._properties.get(variablesReference);
-                    properties = property.hasChildren ? await property.getChildren() : [];
+                    if (property.hasChildren) {
+                        if (property.children.length === property.numberOfChildren) {
+                            properties = property.children;
+                        } else {
+                            properties = await property.getChildren();
+                        }
+                    } else {
+                        properties = [];
+                    }
                 } else if (this._evalResultProperties.has(variablesReference)) {
                     // the children of properties returned from an eval command are always inlined, so we simply resolve them
                     const property = this._evalResultProperties.get(variablesReference);
