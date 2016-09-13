@@ -3,6 +3,9 @@ version: '{build}'
 platform:
   - x64
 
+cache:
+  - node_modules
+
 environment:
   matrix:
     - {PHP_VERSION: '7.0.10', VC_VERSION: '14', XDEBUG_VERSION: '2.4.1'}
