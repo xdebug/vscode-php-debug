@@ -156,6 +156,10 @@ class PhpDebugSession extends vscode.DebugSession {
                 label: 'Exceptions'
             },
             {
+                filter: 'Error',
+                label: 'Errors'
+            },
+            {
                 filter: '*',
                 label: 'Everything',
                 default: true
