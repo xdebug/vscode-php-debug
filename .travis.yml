@@ -21,8 +21,8 @@ matrix:
 before_install:
  - pecl install xdebug-$XDEBUG_VERSION
  - phpenv config-add travis-php.ini
- - nvm install 5.10.0
- - nvm use 5.10.0
+ - nvm install 6.5.0
+ - nvm use 6.5.0
  - npm config -g set progress false
 
 install:
