@@ -23,7 +23,7 @@ xdebug.remote_autostart=1
 
 # Install Node
 Write-Output 'Installing Node'
-Install-Product node 5.10.0 x64
+Install-Product node 6.5.0 x64
 npm config -g set progress=false
 npm config -g set unicode=false
 
