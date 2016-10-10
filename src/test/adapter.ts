@@ -1,5 +1,5 @@
-import chai from 'chai';
-import chaiAsPromised from 'chai-as-promised';
+import * as chai from 'chai';
+import chaiAsPromised = require('chai-as-promised');
 import * as path from 'path';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 import {DebugProtocol} from 'vscode-debugprotocol';
@@ -16,7 +16,7 @@ describe('PHP Debug Adapter', () => {
     beforeEach('start debug adapter', async () => {
         client = new DebugClient('node', path.normalize(__dirname + '/../phpDebug'), 'php');
         client.defaultTimeout = 10000;
-        await client.start(process.env.VSCODE_DEBUG_PORT && parseInt(process.env.VSCODE_DEBUG_PORT));
+        await client.start(process.env['VSCODE_DEBUG_PORT'] ? parseInt(process.env['VSCODE_DEBUG_PORT']) : undefined);
     });
 
     afterEach('stop debug adapter', () =>
@@ -27,10 +27,10 @@ describe('PHP Debug Adapter', () => {
 
         it('should return supported features', async () => {
             const response = await client.initializeRequest();
-            assert.equal(response.body.supportsConfigurationDoneRequest, true);
-            assert.equal(response.body.supportsEvaluateForHovers, false);
-            assert.equal(response.body.supportsConditionalBreakpoints, true);
-            assert.equal(response.body.supportsFunctionBreakpoints, true);
+            assert.equal(response.body!.supportsConfigurationDoneRequest, true);
+            assert.equal(response.body!.supportsEvaluateForHovers, false);
+            assert.equal(response.body!.supportsConditionalBreakpoints, true);
+            assert.equal(response.body!.supportsFunctionBreakpoints, true);
         });
     });
 
@@ -92,11 +92,11 @@ describe('PHP Debug Adapter', () => {
     async function assertStoppedLocation(reason: 'entry' | 'breakpoint' | 'exception', path: string, line: number): Promise<{threadId: number, frame: DebugProtocol.StackFrame}> {
         const event = await client.waitForEvent('stopped') as DebugProtocol.StoppedEvent;
         assert.propertyVal(event.body, 'reason', reason);
-        const threadId = event.body.threadId;
+        const threadId = event.body.threadId!;
         const response = await client.stackTraceRequest({threadId});
         const frame = response.body.stackFrames[0];
         let expectedPath = path;
-        let actualPath = frame.source.path;
+        let actualPath = frame.source!.path!;
         if (process.platform === 'win32') {
             expectedPath = expectedPath.toLowerCase();
             actualPath = actualPath.toLowerCase();
@@ -208,7 +208,7 @@ describe('PHP Debug Adapter', () => {
             });
 
             // support for stopping on "*" was added in 2.3.0
-            if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
+            if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
 
                 it('should support stopping on everything', async () => {
                     await client.setExceptionBreakpointsRequest({filters: ['*']});
@@ -255,7 +255,7 @@ describe('PHP Debug Adapter', () => {
                 }
 
                 async function getErrorScope(): Promise<ErrorScope> {
-                    const frameId = (await client.stackTraceRequest({threadId})).body.stackFrames[0].id;
+                    const frameId = (await client.stackTraceRequest({threadId: threadId!})).body.stackFrames[0].id;
                     const errorScope = (await client.scopesRequest({frameId})).body.scopes[0];
                     const variables = (await client.variablesRequest({variablesReference: errorScope.variablesReference})).body.variables;
                     const errorInfo: ErrorScope = {name: errorScope.name};
@@ -278,12 +278,12 @@ describe('PHP Debug Adapter', () => {
                     type: 'Notice',
                     message: '"Undefined index: undefined_index"'
                 };
-                if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
+                if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
                     expectedErrorScope.code = '8';
                 }
                 assert.deepEqual(await getErrorScope(), expectedErrorScope);
                 await Promise.all([
-                    client.continueRequest({threadId}),
+                    client.continueRequest({threadId: threadId!}),
                     client.waitForEvent('stopped')
                 ]);
                 expectedErrorScope = {
@@ -291,12 +291,12 @@ describe('PHP Debug Adapter', () => {
                     type: 'Warning',
                     message: '"Illegal offset type"'
                 };
-                if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
+                if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
                     expectedErrorScope.code = '2';
                 }
                 assert.deepEqual(await getErrorScope(), expectedErrorScope);
                 await Promise.all([
-                    client.continueRequest({threadId}),
+                    client.continueRequest({threadId: threadId!}),
                     client.waitForEvent('stopped')
                 ]);
                 assert.deepEqual(await getErrorScope(), {
@@ -305,7 +305,7 @@ describe('PHP Debug Adapter', () => {
                     message: '"this is an exception"'
                 });
                 await Promise.all([
-                    client.continueRequest({threadId}),
+                    client.continueRequest({threadId: threadId!}),
                     client.waitForEvent('stopped')
                 ]);
                 const fatalErrorScope = await getErrorScope();
@@ -373,9 +373,9 @@ describe('PHP Debug Adapter', () => {
 
         const program = path.join(TEST_PROJECT, 'variables.php');
 
-        let localScope: DebugProtocol.Scope;
-        let superglobalsScope: DebugProtocol.Scope;
-        let constantsScope: DebugProtocol.Scope;
+        let localScope: DebugProtocol.Scope | undefined;
+        let superglobalsScope: DebugProtocol.Scope | undefined;
+        let constantsScope: DebugProtocol.Scope | undefined;
 
         beforeEach(async () => {
             await Promise.all([
@@ -387,7 +387,7 @@ describe('PHP Debug Adapter', () => {
                 client.configurationDoneRequest(),
                 client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>
             ]);
-            const stackFrame = (await client.stackTraceRequest({threadId: event.body.threadId})).body.stackFrames[0];
+            const stackFrame = (await client.stackTraceRequest({threadId: event.body.threadId!})).body.stackFrames[0];
             const scopes = (await client.scopesRequest({frameId: stackFrame.id})).body.scopes;
             localScope = scopes.find(scope => scope.name === 'Locals');
             superglobalsScope = scopes.find(scope => scope.name === 'Superglobals');
@@ -398,7 +398,7 @@ describe('PHP Debug Adapter', () => {
             assert.isDefined(localScope, 'Locals');
             assert.isDefined(superglobalsScope, 'Superglobals');
             // support for user defined constants was added in 2.3.0
-            if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
+            if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
                 assert.isDefined(constantsScope, 'User defined constants');
             }
         });
@@ -408,7 +408,7 @@ describe('PHP Debug Adapter', () => {
             let localVariables: DebugProtocol.Variable[];
 
             beforeEach(async () => {
-                localVariables = (await client.variablesRequest({variablesReference: localScope.variablesReference})).body.variables;
+                localVariables = (await client.variablesRequest({variablesReference: localScope!.variablesReference})).body.variables;
             });
 
             it('should report local scalar variables correctly', async () => {
@@ -429,9 +429,9 @@ describe('PHP Debug Adapter', () => {
             it('should report arrays correctly', async () => {
                 const anArray = localVariables.find(variable => variable.name === '$anArray');
                 assert.isDefined(anArray);
-                assert.propertyVal(anArray, 'value', 'array(3)');
-                assert.property(anArray, 'variablesReference');
-                const items = (await client.variablesRequest({variablesReference: anArray.variablesReference})).body.variables;
+                assert.propertyVal(anArray!, 'value', 'array(3)');
+                assert.property(anArray!, 'variablesReference');
+                const items = (await client.variablesRequest({variablesReference: anArray!.variablesReference})).body.variables;
                 assert.lengthOf(items, 3);
                 assert.propertyVal(items[0], 'name', '0');
                 assert.propertyVal(items[0], 'value', '1');
@@ -448,9 +448,9 @@ describe('PHP Debug Adapter', () => {
             it('should report large arrays correctly', async () => {
                 const aLargeArray = localVariables.find(variable => variable.name === '$aLargeArray');
                 assert.isDefined(aLargeArray);
-                assert.propertyVal(aLargeArray, 'value', 'array(100)');
-                assert.property(aLargeArray, 'variablesReference');
-                const largeArrayItems = (await client.variablesRequest({variablesReference: aLargeArray.variablesReference})).body.variables;
+                assert.propertyVal(aLargeArray!, 'value', 'array(100)');
+                assert.property(aLargeArray!, 'variablesReference');
+                const largeArrayItems = (await client.variablesRequest({variablesReference: aLargeArray!.variablesReference})).body.variables;
                 assert.lengthOf(largeArrayItems, 100);
                 assert.propertyVal(largeArrayItems[0], 'name', '0');
                 assert.propertyVal(largeArrayItems[0], 'value', '"test"');
@@ -461,9 +461,9 @@ describe('PHP Debug Adapter', () => {
             it('should report keys with spaces correctly', async () => {
                 const arrayWithSpaceKey = localVariables.find(variable => variable.name === '$arrayWithSpaceKey');
                 assert.isDefined(arrayWithSpaceKey);
-                assert.propertyVal(arrayWithSpaceKey, 'value', 'array(1)');
-                assert.property(arrayWithSpaceKey, 'variablesReference');
-                const arrayWithSpaceKeyItems = (await client.variablesRequest({variablesReference: arrayWithSpaceKey.variablesReference})).body.variables;
+                assert.propertyVal(arrayWithSpaceKey!, 'value', 'array(1)');
+                assert.property(arrayWithSpaceKey!, 'variablesReference');
+                const arrayWithSpaceKeyItems = (await client.variablesRequest({variablesReference: arrayWithSpaceKey!.variablesReference})).body.variables;
                 assert.lengthOf(arrayWithSpaceKeyItems, 1);
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'name', 'space key');
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'value', '1');
@@ -471,10 +471,10 @@ describe('PHP Debug Adapter', () => {
         });
 
         // support for user defined constants was added in 2.3.0
-        if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
+        if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
 
             it('should report user defined constants correctly', async () => {
-                const constants = (await client.variablesRequest({variablesReference: constantsScope.variablesReference})).body.variables;
+                const constants = (await client.variablesRequest({variablesReference: constantsScope!.variablesReference})).body.variables;
                 assert.lengthOf(constants, 1);
                 assert.propertyVal(constants[0], 'name', 'TEST_CONSTANT');
                 assert.propertyVal(constants[0], 'value', '123');

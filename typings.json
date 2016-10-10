@@ -5,7 +5,8 @@
     "semver": "registry:npm/semver#5.0.0+20160723033700"
   },
   "globalDependencies": {
-    "node": "registry:env/node#6.0.0+20160723033700",
+    "mocha": "registry:env/mocha#2.2.5+20160926180742",
+    "node": "registry:env/node#6.0.0+20160918225031",
     "xmldom": "registry:dt/xmldom#0.1.22+20160319053438"
   },
   "devDependencies": {

@@ -1,15 +1,18 @@
 {
   "exclude": [
-    "out",
-    "node_modules"
+    "node_modules",
+    "out"
   ],
   "compilerOptions": {
     "target": "es6",
+    "module": "commonjs",
     "rootDir": "src",
+    "outDir": "out",
     "moduleResolution": "node",
     "noImplicitAny": false,
     "removeComments": false,
     "preserveConstEnums": true,
-    "allowSyntheticDefaultImports": true
+    "sourceMap": true,
+    "strictNullChecks": true
   }
 }

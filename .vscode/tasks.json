@@ -12,16 +12,13 @@
   "tasks": [
     {
       "taskName": "compile",
-      "isBuildCommand": true
+      "isBuildCommand": true,
+      "problemMatcher": "$tsc"
     },
     {
       "taskName": "watch",
       "isWatching": true,
-      "problemMatcher": {
-        "base": "$tsc-watch",
-        "watchedTaskBeginsRegExp": "Starting 'compile'",
-        "watchedTaskEndsRegExp": "Finished 'compile'"
-      }
+      "problemMatcher": "$tsc-watch"
     },
     {
       "taskName": "test",

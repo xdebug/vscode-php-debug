@@ -1,3 +1,4 @@
 declare module 'file-url' {
-    export default function fileUrl(path: string, options?: {resolve: boolean}): string;
+    function fileUrl(path: string, options?: {resolve: boolean}): string;
+    export = fileUrl;
 }

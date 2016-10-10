@@ -1,3 +1,4 @@
 declare module 'url-relative' {
-    export default function relative(from: string, to: string): string;
+    function relative(from: string, to: string): string;
+    export = relative;
 }

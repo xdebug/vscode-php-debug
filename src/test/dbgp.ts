@@ -1,7 +1,7 @@
 import {DbgpConnection, ENCODING} from '../dbgp';
 import {Socket} from 'net';
 import * as iconv from 'iconv-lite';
-import chai from 'chai';
+import * as chai from 'chai';
 const assert = chai.assert;
 
 describe('DbgpConnection', () => {

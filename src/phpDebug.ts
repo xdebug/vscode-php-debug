@@ -2,7 +2,7 @@ import * as vscode from 'vscode-debugadapter';
 import {DebugProtocol as VSCodeDebugProtocol} from 'vscode-debugprotocol';
 import * as net from 'net';
 import * as xdebug from './xdebugConnection';
-import moment from 'moment';
+import moment = require('moment');
 import * as url from 'url';
 import * as childProcess from 'child_process';
 import * as path from 'path';
@@ -12,9 +12,9 @@ import {Terminal} from './terminal';
 import {isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient} from './paths';
 import * as semver from 'semver';
 
-if (process.env.VSCODE_NLS_CONFIG) {
+if (process.env['VSCODE_NLS_CONFIG']) {
     try {
-        moment.locale(JSON.parse(process.env.VSCODE_NLS_CONFIG).locale);
+        moment.locale(JSON.parse(process.env['VSCODE_NLS_CONFIG']).locale);
     } catch (e) {
         // ignore
     }
@@ -138,29 +138,31 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected initializeRequest(response: VSCodeDebugProtocol.InitializeResponse, args: VSCodeDebugProtocol.InitializeRequestArguments): void {
-        response.body.supportsConfigurationDoneRequest = true;
-        response.body.supportsEvaluateForHovers = false;
-        response.body.supportsConditionalBreakpoints = true;
-        response.body.supportsFunctionBreakpoints = true;
-        response.body.exceptionBreakpointFilters = [
-            {
-                filter: 'Notice',
-                label: 'Notices'
-            },
-            {
-                filter: 'Warning',
-                label: 'Warnings'
-            },
-            {
-                filter: 'Exception',
-                label: 'Exceptions'
-            },
-            {
-                filter: '*',
-                label: 'Everything',
-                default: true
-            }
-        ];
+        response.body = {
+            supportsConfigurationDoneRequest: true,
+            supportsEvaluateForHovers: false,
+            supportsConditionalBreakpoints: true,
+            supportsFunctionBreakpoints: true,
+            exceptionBreakpointFilters: [
+                {
+                    filter: 'Notice',
+                    label: 'Notices'
+                },
+                {
+                    filter: 'Warning',
+                    label: 'Warnings'
+                },
+                {
+                    filter: 'Exception',
+                    label: 'Exceptions'
+                },
+                {
+                    filter: '*',
+                    label: 'Everything',
+                    default: true
+                }
+            ]
+        };
         this.sendResponse(response);
     }
 
@@ -174,7 +176,7 @@ class PhpDebugSession extends vscode.DebugSession {
         /** launches the script as CLI */
         const launchScript = async () => {
             // check if program exists
-            await new Promise((resolve, reject) => fs.access(args.program, fs.F_OK, err => err ? reject(err) : resolve()));
+            await new Promise((resolve, reject) => fs.access(args.program!, fs.F_OK, err => err ? reject(err) : resolve()));
             const runtimeArgs = args.runtimeArgs || [];
             const runtimeExecutable = args.runtimeExecutable || 'php';
             const programArgs = args.args || [];
@@ -182,13 +184,13 @@ class PhpDebugSession extends vscode.DebugSession {
             const env = args.env || process.env;
             // launch in CLI mode
             if (args.externalConsole) {
-                const script = await Terminal.launchInTerminal(cwd, [runtimeExecutable, ...runtimeArgs, args.program, ...programArgs], env);
+                const script = await Terminal.launchInTerminal(cwd, [runtimeExecutable, ...runtimeArgs, args.program!, ...programArgs], env);
                 // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
                 script.on('exit', () => {
                     this.sendEvent(new vscode.TerminatedEvent());
                 });
             } else {
-                const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program, ...programArgs], {cwd, env});
+                const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program!, ...programArgs], {cwd, env});
                 // redirect output to debug console
                 script.stdout.on('data', (data: Buffer) => {
                     this.sendEvent(new vscode.OutputEvent(data + '', 'stdout'));
@@ -287,7 +289,7 @@ class PhpDebugSession extends vscode.DebugSession {
         } else if (response.status === 'break') {
             // StoppedEvent reason can be 'step', 'breakpoint', 'exception' or 'pause'
             let stoppedEventReason: 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry';
-            let exceptionText: string;
+            let exceptionText: string | undefined;
             if (response.exception) {
                 stoppedEventReason = 'exception';
                 exceptionText = response.exception.name + ': ' + response.exception.message; // this seems to be ignored currently by VS Code
@@ -307,7 +309,7 @@ class PhpDebugSession extends vscode.DebugSession {
     /** Logs all requests before dispatching */
     protected dispatchRequest(request: VSCodeDebugProtocol.Request): void {
         if (this._args && this._args.log) {
-            const log = `-> ${request.command}Request\n${util.inspect(request, {depth: null})}\n\n`;
+            const log = `-> ${request.command}Request\n${util.inspect(request, {depth: Infinity})}\n\n`;
             super.sendEvent(new vscode.OutputEvent(log));
         }
         super.dispatchRequest(request);
@@ -315,7 +317,7 @@ class PhpDebugSession extends vscode.DebugSession {
 
     public sendEvent(event: VSCodeDebugProtocol.Event, bypassLog: boolean = false): void {
         if (this._args && this._args.log && !bypassLog) {
-            const log = `<- ${event.event}Event\n${util.inspect(event, {depth: null})}\n\n`;
+            const log = `<- ${event.event}Event\n${util.inspect(event, {depth: Infinity})}\n\n`;
             super.sendEvent(new vscode.OutputEvent(log));
         }
         super.sendEvent(event);
@@ -323,7 +325,7 @@ class PhpDebugSession extends vscode.DebugSession {
 
     public sendResponse(response: VSCodeDebugProtocol.Response): void {
         if (this._args && this._args.log) {
-            const log = `<- ${response.command}Response\n${util.inspect(response, {depth: null})}\n\n`;
+            const log = `<- ${response.command}Response\n${util.inspect(response, {depth: Infinity})}\n\n`;
             super.sendEvent(new vscode.OutputEvent(log));
         }
         super.sendResponse(response);
@@ -352,7 +354,7 @@ class PhpDebugSession extends vscode.DebugSession {
     /** This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change. */
     protected async setBreakPointsRequest(response: VSCodeDebugProtocol.SetBreakpointsResponse, args: VSCodeDebugProtocol.SetBreakpointsArguments) {
         try {
-            const fileUri = convertClientPathToDebugger(args.source.path, this._args.localSourceRoot, this._args.serverSourceRoot);
+            const fileUri = convertClientPathToDebugger(args.source.path!, this._args.localSourceRoot, this._args.serverSourceRoot);
             const connections = Array.from(this._connections.values());
             let xdebugBreakpoints: Array<xdebug.ConditionalBreakpoint|xdebug.LineBreakpoint>;
             response.body = {breakpoints: []};
@@ -360,11 +362,11 @@ class PhpDebugSession extends vscode.DebugSession {
             let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[];
             if (connections.length === 0) {
                 // if there are no connections yet, we cannot verify any breakpoint
-                vscodeBreakpoints = args.breakpoints.map(breakpoint => ({verified: false, line: breakpoint.line}));
+                vscodeBreakpoints = args.breakpoints!.map(breakpoint => ({verified: false, line: breakpoint.line}));
             } else {
                 vscodeBreakpoints = [];
                 // create XDebug breakpoints from the arguments
-                xdebugBreakpoints = args.breakpoints.map(breakpoint => {
+                xdebugBreakpoints = args.breakpoints!.map(breakpoint => {
                     if (breakpoint.condition) {
                         return new xdebug.ConditionalBreakpoint(breakpoint.condition, fileUri, breakpoint.line);
                     } else {
@@ -527,48 +529,48 @@ class PhpDebugSession extends vscode.DebugSession {
                 const id = this._stackFrameIdCounter++;
                 const name = status.exception.name;
                 let line = status.line;
-                let source: vscode.Source;
+                let source: VSCodeDebugProtocol.Source;
                 const urlObject = url.parse(status.fileUri);
                 if (urlObject.protocol === 'dbgp:') {
                     const sourceReference = this._sourceIdCounter++;
                     this._sources.set(sourceReference, {connection, url: status.fileUri});
                     // for eval code, we need to include .php extension to get syntax highlighting
-                    source = new vscode.Source(status.exception.name + '.php', null, sourceReference, status.exception.name);
+                    source = {name: status.exception.name + '.php', sourceReference, origin: status.exception.name};
                     // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
                     line++;
                 } else {
                     // XDebug paths are URIs, VS Code file paths
                     const filePath = convertDebuggerPathToClient(urlObject, this._args.localSourceRoot, this._args.serverSourceRoot);
                     // "Name" of the source and the actual file path
-                    source = new vscode.Source(path.basename(filePath), filePath);
+                    source = {name: path.basename(filePath), path: filePath};
                 }
                 this._errorStackFrames.set(id, status);
-                response.body = {stackFrames: [new vscode.StackFrame(id, name, source, status.line, 1)]};
+                response.body = {stackFrames: [{id, name, source, line: status.line, column: 1}]};
             } else {
                 response.body = {
-                    stackFrames: stack.map(stackFrame => {
-                        let source: vscode.Source;
+                    stackFrames: stack.map((stackFrame): VSCodeDebugProtocol.StackFrame => {
+                        let source: VSCodeDebugProtocol.Source;
                         let line = stackFrame.line;
                         const urlObject = url.parse(stackFrame.fileUri);
                         if (urlObject.protocol === 'dbgp:') {
                             const sourceReference = this._sourceIdCounter++;
                             this._sources.set(sourceReference, {connection, url: stackFrame.fileUri});
                             // for eval code, we need to include .php extension to get syntax highlighting
-                            source = new vscode.Source(stackFrame.type === 'eval' ? 'eval.php' : stackFrame.name, null, sourceReference, stackFrame.type);
+                            source = {name: stackFrame.type === 'eval' ? 'eval.php' : stackFrame.name, sourceReference, origin: stackFrame.type};
                             // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
                             line++;
                         } else {
                             // XDebug paths are URIs, VS Code file paths
                             const filePath = convertDebuggerPathToClient(urlObject, this._args.localSourceRoot, this._args.serverSourceRoot);
                             // "Name" of the source and the actual file path
-                            source = new vscode.Source(path.basename(filePath), filePath);
+                            source = {name: path.basename(filePath), path: filePath};
                         }
                         // a new, unique ID for scopeRequests
                         const stackFrameId = this._stackFrameIdCounter++;
                         // save the connection this stackframe belongs to and the level of the stackframe under the stacktrace id
                         this._stackFrames.set(stackFrameId, stackFrame);
                         // prepare response for VS Code (column is always 1 since XDebug doesn't tell us the column)
-                        return new vscode.StackFrame(stackFrameId, stackFrame.name, source, line, 1);
+                        return {id: stackFrameId, name: stackFrame.name, source, line, column: 1};
                     })
                 };
             }
@@ -706,7 +708,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected async continueRequest(response: VSCodeDebugProtocol.ContinueResponse, args: VSCodeDebugProtocol.ContinueArguments) {
-        let xdebugResponse: xdebug.StatusResponse;
+        let xdebugResponse: xdebug.StatusResponse | undefined;
         try {
             const connection = this._connections.get(args.threadId);
             if (!connection) {
@@ -725,7 +727,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected async nextRequest(response: VSCodeDebugProtocol.NextResponse, args: VSCodeDebugProtocol.NextArguments) {
-        let xdebugResponse: xdebug.StatusResponse;
+        let xdebugResponse: xdebug.StatusResponse | undefined;
         try {
             const connection = this._connections.get(args.threadId);
             if (!connection) {
@@ -747,7 +749,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected async stepInRequest(response: VSCodeDebugProtocol.StepInResponse, args: VSCodeDebugProtocol.StepInArguments) {
-        let xdebugResponse: xdebug.StatusResponse;
+        let xdebugResponse: xdebug.StatusResponse | undefined;
         try {
             const connection = this._connections.get(args.threadId);
             if (!connection) {
@@ -766,7 +768,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected async stepOutRequest(response: VSCodeDebugProtocol.StepOutResponse, args: VSCodeDebugProtocol.StepOutArguments) {
-        let xdebugResponse: xdebug.StatusResponse;
+        let xdebugResponse: xdebug.StatusResponse | undefined;
         try {
             const connection = this._connections.get(args.threadId);
             if (!connection) {
@@ -809,6 +811,9 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected async evaluateRequest(response: VSCodeDebugProtocol.EvaluateResponse, args: VSCodeDebugProtocol.EvaluateArguments) {
         try {
+            if (!args.frameId) {
+                throw new Error('Cannot evaluate code without a connection');
+            }
             const connection = this._stackFrames.get(args.frameId).connection;
             const {result} = await connection.sendEvalCommand(args.expression);
             if (result) {

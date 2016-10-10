@@ -26,11 +26,11 @@ export class InitPacket {
      */
     constructor(document: XMLDocument, connection: Connection) {
         const documentElement = document.documentElement;
-        this.fileUri = documentElement.getAttribute('fileuri');
-        this.language = documentElement.getAttribute('language');
-        this.protocolVersion = documentElement.getAttribute('protocol_version');
-        this.ideKey = documentElement.getAttribute('idekey');
-        this.engineVersion = documentElement.getElementsByTagName('engine')[0].getAttribute('version');
+        this.fileUri = documentElement.getAttribute('fileuri')!;
+        this.language = documentElement.getAttribute('language')!;
+        this.protocolVersion = documentElement.getAttribute('protocol_version')!;
+        this.ideKey = documentElement.getAttribute('idekey')!;
+        this.engineVersion = documentElement.getElementsByTagName('engine')[0].getAttribute('version')!;
         this.connection = connection;
     }
 }
@@ -64,12 +64,12 @@ export class Response {
         const documentElement = document.documentElement;
         if (documentElement.hasChildNodes() && documentElement.firstChild.nodeName === 'error') {
             const errorNode = <Element>documentElement.firstChild;
-            const code = parseInt(errorNode.getAttribute('code'));
-            const message = errorNode.textContent;
+            const code = parseInt(errorNode.getAttribute('code')!);
+            const message = errorNode.textContent!;
             throw new XDebugError(message, code);
         }
-        this.transactionId = parseInt(documentElement.getAttribute('transaction_id'));
-        this.command = documentElement.getAttribute('command');
+        this.transactionId = parseInt(documentElement.getAttribute('transaction_id')!);
+        this.command = documentElement.getAttribute('command')!;
         this.connection = connection;
     }
 }
@@ -93,24 +93,24 @@ export class StatusResponse extends Response {
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
         const documentElement = document.documentElement;
-        this.status = documentElement.getAttribute('status');
-        this.reason = documentElement.getAttribute('reason');
+        this.status = documentElement.getAttribute('status')!;
+        this.reason = documentElement.getAttribute('reason')!;
         if (documentElement.hasChildNodes()) {
             const messageNode = <Element>documentElement.firstChild;
             if (messageNode.hasAttribute('exception')) {
                 this.exception = {
-                    name: messageNode.getAttribute('exception'),
-                    message: messageNode.textContent
+                    name: messageNode.getAttribute('exception')!,
+                    message: messageNode.textContent!
                 };
                 if (messageNode.hasAttribute('code')) {
-                    this.exception.code = parseInt(messageNode.getAttribute('code'));
+                    this.exception.code = parseInt(messageNode.getAttribute('code')!);
                 }
             }
             if (messageNode.hasAttribute('filename')) {
-                this.fileUri = messageNode.getAttribute('filename');
+                this.fileUri = messageNode.getAttribute('filename')!;
             }
             if (messageNode.hasAttribute('lineno')) {
-                this.line = parseInt(messageNode.getAttribute('lineno'));
+                this.line = parseInt(messageNode.getAttribute('lineno')!);
             }
         }
     }
@@ -136,6 +136,7 @@ export abstract class Breakpoint {
             case 'line': return new LineBreakpoint(breakpointNode, connection);
             case 'conditional': return new ConditionalBreakpoint(breakpointNode, connection);
             case 'call': return new CallBreakpoint(breakpointNode, connection);
+            default: throw new Error(`Invalid type ${breakpointNode.getAttribute('type')}`);
         }
     }
     /** Constructs a breakpoint object from an XML node from a XDebug response */
@@ -148,7 +149,7 @@ export abstract class Breakpoint {
             const breakpointNode: Element = arguments[0];
             this.connection = arguments[1];
             this.type = <BreakpointType>breakpointNode.getAttribute('type');
-            this.id = parseInt(breakpointNode.getAttribute('id'));
+            this.id = parseInt(breakpointNode.getAttribute('id')!);
             this.state = <BreakpointState>breakpointNode.getAttribute('state');
         } else {
             this.type = arguments[0];
@@ -175,8 +176,8 @@ export class LineBreakpoint extends Breakpoint {
             const breakpointNode: Element = arguments[0];
             const connection: Connection = arguments[1];
             super(breakpointNode, connection);
-            this.line = parseInt(breakpointNode.getAttribute('lineno'));
-            this.fileUri = breakpointNode.getAttribute('filename');
+            this.line = parseInt(breakpointNode.getAttribute('lineno')!);
+            this.fileUri = breakpointNode.getAttribute('filename')!;
         } else {
             // construct from arguments
             super('line');
@@ -201,8 +202,8 @@ export class CallBreakpoint extends Breakpoint {
             const breakpointNode: Element = arguments[0];
             const connection: Connection = arguments[1];
             super(breakpointNode, connection);
-            this.fn = breakpointNode.getAttribute('function');
-            this.expression = breakpointNode.getAttribute('expression'); // Base64 encoded?
+            this.fn = breakpointNode.getAttribute('function')!;
+            this.expression = breakpointNode.getAttribute('expression')!; // Base64 encoded?
         } else {
             // construct from arguments
             super('call');
@@ -226,7 +227,7 @@ export class ExceptionBreakpoint extends Breakpoint {
             const breakpointNode: Element = arguments[0];
             const connection: Connection = arguments[1];
             super(breakpointNode, connection);
-            this.exception = breakpointNode.getAttribute('exception');
+            this.exception = breakpointNode.getAttribute('exception')!;
         } else {
             // from arguments
             super('exception');
@@ -253,7 +254,7 @@ export class ConditionalBreakpoint extends Breakpoint {
             const breakpointNode: Element = arguments[0];
             const connection: Connection = arguments[1];
             super(breakpointNode, connection);
-            this.expression = breakpointNode.getAttribute('expression'); // Base64 encoded?
+            this.expression = breakpointNode.getAttribute('expression')!; // Base64 encoded?
         } else {
             // from arguments
             super('conditional');
@@ -269,7 +270,7 @@ export class BreakpointSetResponse extends Response {
     breakpointId: number;
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
-        this.breakpointId = parseInt(document.documentElement.getAttribute('id'));
+        this.breakpointId = parseInt(document.documentElement.getAttribute('id')!);
     }
 }
 
@@ -306,11 +307,11 @@ export class StackFrame {
      * @param  {Connection} connection
      */
     constructor(stackFrameNode: Element, connection: Connection) {
-        this.name = stackFrameNode.getAttribute('where');
-        this.fileUri = stackFrameNode.getAttribute('filename');
-        this.type = stackFrameNode.getAttribute('type');
-        this.line = parseInt(stackFrameNode.getAttribute('lineno'));
-        this.level = parseInt(stackFrameNode.getAttribute('level'));
+        this.name = stackFrameNode.getAttribute('where')!;
+        this.fileUri = stackFrameNode.getAttribute('filename')!;
+        this.type = stackFrameNode.getAttribute('type')!;
+        this.line = parseInt(stackFrameNode.getAttribute('lineno')!);
+        this.level = parseInt(stackFrameNode.getAttribute('level')!);
         this.connection = connection;
     }
     /** Returns the available contexts (scopes, such as "Local" and "Superglobals") by doing a context_names command */
@@ -337,7 +338,7 @@ export class SourceResponse extends Response {
     source: string;
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
-        this.source = (new Buffer(document.documentElement.textContent, 'base64')).toString();
+        this.source = (new Buffer(document.documentElement.textContent!, 'base64')).toString();
     }
 }
 
@@ -354,8 +355,8 @@ export class Context {
      * @param  {StackFrame} stackFrame
      */
     constructor(contextNode: Element, stackFrame: StackFrame) {
-        this.id = parseInt(contextNode.getAttribute('id'));
-        this.name = contextNode.getAttribute('name');
+        this.id = parseInt(contextNode.getAttribute('id')!);
+        this.name = contextNode.getAttribute('name')!;
         this.stackFrame = stackFrame;
     }
     /**
@@ -400,21 +401,21 @@ export abstract class BaseProperty {
 
     constructor(propertyNode: Element) {
         if (propertyNode.hasAttribute('name')) {
-            this.name = propertyNode.getAttribute('name');
+            this.name = propertyNode.getAttribute('name')!;
         }
-        this.type = propertyNode.getAttribute('type');
+        this.type = propertyNode.getAttribute('type')!;
         if (propertyNode.hasAttribute('classname')) {
-            this.class = propertyNode.getAttribute('classname');
+            this.class = propertyNode.getAttribute('classname')!;
         }
-        this.hasChildren = !!parseInt(propertyNode.getAttribute('children'));
+        this.hasChildren = !!parseInt(propertyNode.getAttribute('children')!);
         if (this.hasChildren) {
-            this.numberOfChildren = parseInt(propertyNode.getAttribute('numchildren'));
+            this.numberOfChildren = parseInt(propertyNode.getAttribute('numchildren')!);
         } else {
             const encoding = propertyNode.getAttribute('encoding');
             if (encoding) {
-                this.value = iconv.encode(propertyNode.textContent, encoding) + '';
+                this.value = iconv.encode(propertyNode.textContent!, encoding) + '';
             } else {
-                this.value = propertyNode.textContent;
+                this.value = propertyNode.textContent!;
             }
         }
         if (this.hasChildren) {
@@ -438,7 +439,7 @@ export class Property extends BaseProperty {
      */
     constructor(propertyNode: Element, context: Context) {
         super(propertyNode);
-        this.fullName = propertyNode.getAttribute('fullname');
+        this.fullName = propertyNode.getAttribute('fullname')!;
         this.context = context;
     }
     /**
@@ -507,7 +508,7 @@ export class FeatureSetResponse extends Response {
     feature: string;
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection);
-        this.feature = document.documentElement.getAttribute('feature');
+        this.feature = document.documentElement.getAttribute('feature')!;
     }
 }
 
@@ -577,14 +578,14 @@ export class Connection extends DbgpConnection {
             if (response.documentElement.nodeName === 'init') {
                 this._initPromiseResolveFn(new InitPacket(response, this));
             } else {
-                const transactionId = parseInt(response.documentElement.getAttribute('transaction_id'));
+                const transactionId = parseInt(response.documentElement.getAttribute('transaction_id')!);
                 if (this._pendingCommands.has(transactionId)) {
                     const command = this._pendingCommands.get(transactionId);
                     this._pendingCommands.delete(transactionId);
                     command.resolveFn(response);
                 }
                 if (this._commandQueue.length > 0) {
-                    const command = this._commandQueue.shift();
+                    const command = this._commandQueue.shift()!;
                     this._executeCommand(command).catch(command.rejectFn);
                 }
             }
@@ -699,7 +700,7 @@ export class Connection extends DbgpConnection {
      */
     public async sendBreakpointSetCommand(breakpoint: Breakpoint): Promise<BreakpointSetResponse> {
         let args = `-t ${breakpoint.type}`;
-        let data: string;
+        let data: string | undefined;
         if (breakpoint instanceof LineBreakpoint) {
             args += ` -f ${breakpoint.fileUri} -n ${breakpoint.line}`;
         } else if (breakpoint instanceof ExceptionBreakpoint) {
@@ -787,6 +788,6 @@ export class Connection extends DbgpConnection {
 
     /** sends an eval command */
     public async sendEvalCommand(expression: string): Promise<EvalResponse> {
-        return new EvalResponse(await this._enqueueCommand('eval', null, expression), this);
+        return new EvalResponse(await this._enqueueCommand('eval', undefined, expression), this);
     }
 }
