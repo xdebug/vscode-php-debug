@@ -33,6 +33,9 @@ script:
  - npm run lint --silent
  - npm test --silent
 
+after_success:
+ - 'nyc report --reporter=lcov > coverage.lcov && codecov'
+
 after_script:
  - cat /tmp/xdebug.log
 

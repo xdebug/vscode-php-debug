@@ -46,7 +46,9 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
+    "codecov": "^1.0.1",
     "mocha": "^3.0.1",
+    "nyc": "^8.3.1",
     "tslint": "^3.14.0",
     "typescript": "^2.0.3",
     "typings": "^1.3.2",
@@ -57,8 +59,17 @@
     "watch": "tsc -w -p .",
     "start": "code testproject --extensionDevelopmentPath=.",
     "test": "mocha out/test --timeout 20000 --slow 1000 --retries 4",
+    "cover": "nyc --all mocha out/test --timeout 20000 --slow 1000 --retries 4",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
     "postinstall": "typings install"
+  },
+  "nyc": {
+    "include": [
+      "out/**/*.js"
+    ],
+    "exclude": [
+      "out/test/**/*.js"
+    ]
   },
   "contributes": {
     "debuggers": [
