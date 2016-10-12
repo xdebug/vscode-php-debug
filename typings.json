@@ -2,6 +2,7 @@
   "name": "php-debug",
   "version": false,
   "dependencies": {
+    "mz": "registry:npm/mz#2.4.0+20160911015431",
     "semver": "registry:npm/semver#5.0.0+20160723033700"
   },
   "globalDependencies": {
