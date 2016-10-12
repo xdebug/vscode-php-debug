@@ -454,7 +454,7 @@ describe('PHP Debug Adapter', () => {
                 assert.lengthOf(largeArrayItems, 32);
                 assert.propertyVal(largeArrayItems[0], 'name', '0');
                 assert.propertyVal(largeArrayItems[0], 'value', '"test"');
-                assert.propertyVal(largeArrayItems[31], 'name', '99');
+                assert.propertyVal(largeArrayItems[31], 'name', '31');
                 assert.propertyVal(largeArrayItems[31], 'value', '"test"');
             });
 
