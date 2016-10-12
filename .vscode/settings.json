@@ -4,5 +4,6 @@
     "eslint.enable": false,
     "editor.insertSpaces": true,
     "editor.tabSize": 4,
-    "tslint.ignoreDefinitionFiles": true
+    "tslint.ignoreDefinitionFiles": true,
+    "typescript.tsdk": "./node_modules/typescript/lib"
 }
