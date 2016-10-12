@@ -451,11 +451,11 @@ describe('PHP Debug Adapter', () => {
                 assert.propertyVal(aLargeArray!, 'value', 'array(100)');
                 assert.property(aLargeArray!, 'variablesReference');
                 const largeArrayItems = (await client.variablesRequest({variablesReference: aLargeArray!.variablesReference})).body.variables;
-                assert.lengthOf(largeArrayItems, 100);
+                assert.lengthOf(largeArrayItems, 32);
                 assert.propertyVal(largeArrayItems[0], 'name', '0');
                 assert.propertyVal(largeArrayItems[0], 'value', '"test"');
-                assert.propertyVal(largeArrayItems[99], 'name', '99');
-                assert.propertyVal(largeArrayItems[99], 'value', '"test"');
+                assert.propertyVal(largeArrayItems[31], 'name', '99');
+                assert.propertyVal(largeArrayItems[31], 'value', '"test"');
             });
 
             it('should report keys with spaces correctly', async () => {
