@@ -418,9 +418,6 @@ export abstract class BaseProperty {
                 this.value = propertyNode.textContent!;
             }
         }
-        if (this.hasChildren) {
-            this.children = Array.from(propertyNode.childNodes).map((propertyNode: Element) => new (<any>this.constructor)(propertyNode));
-        }
     }
 }
 
@@ -441,6 +438,9 @@ export class Property extends BaseProperty {
         super(propertyNode);
         this.fullName = propertyNode.getAttribute('fullname')!;
         this.context = context;
+        if (this.hasChildren) {
+            this.children = Array.from(propertyNode.childNodes).map((propertyNode: Element) => new Property(propertyNode, context));
+        }
     }
     /**
      * Returns the child properties of this property by doing another property_get
@@ -487,6 +487,9 @@ export class EvalResultProperty extends BaseProperty {
     children: EvalResultProperty[];
     constructor(propertyNode: Element) {
         super(propertyNode);
+        if (this.hasChildren) {
+            this.children = Array.from(propertyNode.childNodes).map((propertyNode: Element) => new EvalResultProperty(propertyNode));
+        }
     }
 }
 
