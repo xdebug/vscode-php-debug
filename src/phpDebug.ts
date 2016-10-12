@@ -241,8 +241,6 @@ class PhpDebugSession extends vscode.DebugSession {
                     const initPacket = await connection.waitForInitPacket();
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
                     await connection.sendFeatureSetCommand('max_depth', '5');
-                    // raise default of 32
-                    await connection.sendFeatureSetCommand('max_children', '100');
                     // don't truncate long variable values
                     await connection.sendFeatureSetCommand('max_data', semver.lt(initPacket.engineVersion.replace(/((?:dev|alpha|beta|RC|stable)\d*)$/, '-$1'), '2.2.4') ? '10000' : '0');
                     // request breakpoints from VS Code
@@ -661,7 +659,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         if (property.children.length === property.numberOfChildren) {
                             properties = property.children;
                         } else {
-                            properties = await property.getChildren();
+                            properties = await property.getChildren(args.start);
                         }
                     } else {
                         properties = [];
@@ -695,6 +693,9 @@ class PhpDebugSession extends vscode.DebugSession {
                         type: property.type,
                         variablesReference
                     };
+                    if (property.hasChildren) {
+                        variable.namedVariables = property.numberOfChildren;
+                    }
                     return variable;
                 });
             }

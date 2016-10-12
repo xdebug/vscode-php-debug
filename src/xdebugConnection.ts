@@ -446,11 +446,11 @@ export class Property extends BaseProperty {
      * Returns the child properties of this property by doing another property_get
      * @returns Promise.<Property[]>
      */
-    public async getChildren(): Promise<Property[]> {
+    public async getChildren(page?: number): Promise<Property[]> {
         if (!this.hasChildren) {
             throw new Error('This property has no children');
         }
-        return (await this.context.stackFrame.connection.sendPropertyGetCommand(this)).children;
+        return (await this.context.stackFrame.connection.sendPropertyGetCommand(this, page)).children;
     }
 }
 
@@ -782,9 +782,14 @@ export class Connection extends DbgpConnection {
     }
 
     /** Sends a property_get command */
-    public async sendPropertyGetCommand(property: Property): Promise<PropertyGetResponse> {
+    public async sendPropertyGetCommand(property: Property, page: number = 0): Promise<PropertyGetResponse> {
         const escapedFullName = '"' + property.fullName.replace(/("|\\)/g, '\\$1') + '"';
-        return new PropertyGetResponse(await this._enqueueCommand('property_get', `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${escapedFullName}`), property);
+        return new PropertyGetResponse(await this._enqueueCommand('property_get', [
+            '-d', property.context.stackFrame.level,
+            '-c', property.context.id,
+            '-n', escapedFullName,
+            '-p', page
+        ].join(' ')), property);
     }
 
     // ------------------------------- eval -----------------------------------------
