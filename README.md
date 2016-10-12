@@ -44,6 +44,7 @@ In your project, go to the debugger and hit the little gear icon and choose _PHP
  - `localSourceRoot`: The path to the folder that is being served by your webserver and maps to `serverSourceRoot` (for example `"${workspaceRoot}/public"`)
  - `serverSourceRoot`: The path on the remote host where your webroot is located (for example `"/var/www"`)
  - `log`: Wether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
+ - `ignore`: An optional array of glob patterns that errors should be ignored from (for example `**/vendor/*.php`)
 
 Options specific to CLI debugging:
  - `program`: Path to the script that should be launched

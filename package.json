@@ -36,6 +36,7 @@
   "dependencies": {
     "file-url": "^1.1.0",
     "iconv-lite": "^0.4.13",
+    "minimatch": "^3.0.3",
     "moment": "^2.14.1",
     "semver": "^5.3.0",
     "url-relative": "^1.0.0",
@@ -147,6 +148,14 @@
               "localSourceRoot": {
                 "type": "string",
                 "description": "The source root on this machine that is the equivalent to the serverSourceRoot on the server."
+              },
+              "ignore": {
+                "type": "array",
+                "items": "string",
+                "description": "Array of glob patterns that errors should be ignored from",
+                "default": [
+                  "**/vendor/*.php"
+                ]
               },
               "log": {
                 "type": "boolean",
