@@ -119,6 +119,7 @@ export class StatusResponse extends Response {
 }
 
 export type NotifyName = 'breakpoint_resolved'
+export type HitCondition = '>=' | '==' | '%';
 
 /** Abstract base class for all notify packets */
 export class Notify {
@@ -162,8 +163,16 @@ export abstract class Breakpoint {
     type: BreakpointType
     /** State of the breakpoint: enabled, disabled */
     state: BreakpointState
-    /** Flag to denote whether a breakpoint has been resolved */
-    resolved: BreakpointResolved
+    /** A numeric value used together with the hit_condition to determine if the breakpoint should pause execution or be skipped. */
+    hitValue?: number;
+    /**
+     * A string indicating a condition to use to compare hit_count and hit_value.
+     * The following values are legal:
+     * >= break if hit_count is greater than or equal to hit_value [default]
+     * == break if hit_count is equal to hit_value
+     * %  break if hit_count is a multiple of hit_value
+     */
+    hitCondition?: HitCondition;
     /** The connection this breakpoint is set on */
     connection: Connection
     /** dynamically detects the type of breakpoint and returns the appropiate object */
@@ -184,7 +193,7 @@ export abstract class Breakpoint {
     /** Constructs a breakpoint object from an XML node from a Xdebug response */
     constructor(breakpointNode: Element, connection: Connection)
     /** To create a new breakpoint in derived classes */
-    constructor(type: BreakpointType)
+    constructor(type: BreakpointType, hitCondition?: HitCondition, hitValue?: number)
     constructor() {
         if (typeof arguments[0] === 'object') {
             // from XML
@@ -194,8 +203,16 @@ export abstract class Breakpoint {
             this.id = parseInt(breakpointNode.getAttribute('id')!)
             this.state = <BreakpointState>breakpointNode.getAttribute('state')
             this.resolved = <BreakpointResolved>breakpointNode.getAttribute('resolved')
+            if (breakpointNode.hasAttribute('hit_condition')) {
+                this.hitCondition = <HitCondition>breakpointNode.getAttribute('hit_condition');
+            }
+            if (breakpointNode.hasAttribute('hit_value')) {
+                this.hitValue = parseInt(breakpointNode.getAttribute('hit_value')!);
+            }
         } else {
             this.type = arguments[0]
+            this.hitCondition = arguments[1];
+            this.hitValue = arguments[2];
         }
     }
     /** Removes the breakpoint by sending a breakpoint_remove command */
@@ -213,7 +230,7 @@ export class LineBreakpoint extends Breakpoint {
     /** constructs a line breakpoint from an XML node */
     constructor(breakpointNode: Element, connection: Connection)
     /** contructs a line breakpoint for passing to sendSetBreakpointCommand */
-    constructor(fileUri: string, line: number)
+    constructor(fileUri: string, line: number, hitCondition?: HitCondition, hitValue?: number)
     constructor() {
         if (typeof arguments[0] === 'object') {
             const breakpointNode: Element = arguments[0]
@@ -223,7 +240,7 @@ export class LineBreakpoint extends Breakpoint {
             this.fileUri = breakpointNode.getAttribute('filename')!
         } else {
             // construct from arguments
-            super('line')
+            super('line', arguments[2], arguments[3])
             this.fileUri = arguments[0]
             this.line = arguments[1]
         }
@@ -239,7 +256,7 @@ export class CallBreakpoint extends Breakpoint {
     /** constructs a call breakpoint from an XML node */
     constructor(breakpointNode: Element, connection: Connection)
     /** contructs a call breakpoint for passing to sendSetBreakpointCommand */
-    constructor(fn: string, expression?: string)
+    constructor(fn: string, expression?: string, hitCondition?: HitCondition, hitValue?: number)
     constructor() {
         if (typeof arguments[0] === 'object') {
             const breakpointNode: Element = arguments[0]
@@ -249,7 +266,7 @@ export class CallBreakpoint extends Breakpoint {
             this.expression = breakpointNode.getAttribute('expression')! // Base64 encoded?
         } else {
             // construct from arguments
-            super('call')
+            super('call', arguments[2], arguments[3])
             this.fn = arguments[0]
             this.expression = arguments[1]
         }
@@ -263,7 +280,7 @@ export class ExceptionBreakpoint extends Breakpoint {
     /** Constructs a breakpoint object from an XML node from a Xdebug response */
     constructor(breakpointNode: Element, connection: Connection)
     /** Constructs a breakpoint for passing it to sendSetBreakpointCommand */
-    constructor(exception: string)
+    constructor(exception: string, hitCondition?: HitCondition, hitValue?: number)
     constructor() {
         if (typeof arguments[0] === 'object') {
             // from XML
@@ -273,7 +290,7 @@ export class ExceptionBreakpoint extends Breakpoint {
             this.exception = breakpointNode.getAttribute('exception')!
         } else {
             // from arguments
-            super('exception')
+            super('exception', arguments[1], arguments[2])
             this.exception = arguments[0]
         }
     }
@@ -290,7 +307,7 @@ export class ConditionalBreakpoint extends Breakpoint {
     /** Constructs a breakpoint object from an XML node from a Xdebug response */
     constructor(breakpointNode: Element, connection: Connection)
     /** Contructs a breakpoint object for passing to sendSetBreakpointCommand */
-    constructor(expression: string, fileUri: string, line?: number)
+    constructor(expression: string, fileUri: string, line?: number, hitCondition?: HitCondition, hitValue?: number)
     constructor() {
         if (typeof arguments[0] === 'object') {
             // from XML
@@ -300,7 +317,7 @@ export class ConditionalBreakpoint extends Breakpoint {
             this.expression = breakpointNode.getAttribute('expression')! // Base64 encoded?
         } else {
             // from arguments
-            super('conditional')
+            super('conditional', arguments[3], arguments[4])
             this.expression = arguments[0]
             this.fileUri = arguments[1]
             this.line = arguments[2]
@@ -856,6 +873,12 @@ export class Connection extends DbgpConnection {
         } else if (breakpoint instanceof CallBreakpoint) {
             args += ` -m ${breakpoint.fn}`
             data = breakpoint.expression
+        }
+        if (breakpoint.hitCondition) {
+            args += ` -o ${breakpoint.hitCondition}`
+        }
+        if (breakpoint.hitValue) {
+            args += ` -h ${breakpoint.hitValue}`
         }
         return new BreakpointSetResponse(await this._enqueueCommand('breakpoint_set', args, data), this)
     }

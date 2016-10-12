@@ -389,6 +389,15 @@ describe('PHP Debug Adapter', () => {
                 await assertStoppedLocation('breakpoint', program, 5)
             })
         })
+
+        describe('hit count breakpoints', () => {
+
+            it('should stop when the hit count is gte than 3 with condition "3"')
+            it('should stop when the hit count is gte than 3 with condition ">=3"')
+            it('should stop when the hit count is equal to 3 with condition "==3"')
+            it('should stop on every 2nd hit with condition "%2"')
+        })
+
     })
 
     describe('variables', () => {
