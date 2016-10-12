@@ -240,10 +240,9 @@ class PhpDebugSession extends vscode.DebugSession {
                     connection.on('close', disposeConnection);
                     const initPacket = await connection.waitForInitPacket();
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
-                    // set max_depth to 1 since VS Code requests nested structures individually anyway
-                    await connection.sendFeatureSetCommand('max_depth', '10');
+                    await connection.sendFeatureSetCommand('max_depth', '5');
                     // raise default of 32
-                    await connection.sendFeatureSetCommand('max_children', '10000');
+                    await connection.sendFeatureSetCommand('max_children', '100');
                     // don't truncate long variable values
                     await connection.sendFeatureSetCommand('max_data', semver.lt(initPacket.engineVersion.replace(/((?:dev|alpha|beta|RC|stable)\d*)$/, '-$1'), '2.2.4') ? '10000' : '0');
                     // request breakpoints from VS Code
