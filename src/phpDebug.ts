@@ -233,7 +233,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             this._waitingConnections.delete(connection);
                         }
                     };
-                    connection.on('warning', warning => {
+                    connection.on('warning', (warning: string) => {
                         this.sendEvent(new vscode.OutputEvent(warning));
                     });
                     connection.on('error', disposeConnection);
@@ -255,7 +255,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 this.sendEvent(new vscode.OutputEvent(error.message));
                 this.shutdown();
             });
-            server.listen(args.port || 9000, error => error ? reject(error) : resolve());
+            server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => error ? reject(error) : resolve());
         });
         try {
             if (!args.noDebug) {

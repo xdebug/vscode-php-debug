@@ -222,7 +222,7 @@ class MacTerminalService extends DefaultTerminalService {
             let stderr = '';
             const osa = CP.spawn(MacTerminalService.OSASCRIPT, osaArgs);
             osa.on('error', reject);
-            osa.stderr.on('data', (data) => {
+            osa.stderr.on('data', (data: Buffer) => {
                 stderr += data.toString();
             });
             osa.on('exit', (code: number) => {
@@ -246,7 +246,7 @@ function extendObject<T>(objectCopy: T, object: T): T {
 
     for (let key in object) {
         if (object.hasOwnProperty(key)) {
-            objectCopy[key] = object[key];
+            (<any>objectCopy)[key] = (<any>object)[key];
         }
     }
 
