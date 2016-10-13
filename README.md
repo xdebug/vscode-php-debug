@@ -119,6 +119,7 @@ Options specific to CLI debugging:
 - Stack traces, scope variables, superglobals, user defined constants
 - Arrays & objects (including classname, private and static properties)
 - Debug console
+ - Autocompletion in debug console for variables, array indexes, object properties (even nested)
 - Watches
 - Set variables
 - Run as CLI

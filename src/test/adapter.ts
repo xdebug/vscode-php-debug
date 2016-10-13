@@ -812,6 +812,14 @@ describe('PHP Debug Adapter', () => {
         })
     })
 
+    describe('completion', () => {
+        it('should provide completion for local variables');
+        it('should provide completion for superglobals');
+        it('should provide completion for object properties');
+        it('should provide completion for numeric array indexes');
+        it('should provide completion for string array indexes');
+    });
+
     describe.skip('output events', () => {
         const program = path.join(TEST_PROJECT, 'output.php')
 
