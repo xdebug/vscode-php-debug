@@ -9,10 +9,11 @@
     "rootDir": "src",
     "outDir": "out",
     "moduleResolution": "node",
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "removeComments": false,
     "preserveConstEnums": true,
     "sourceMap": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "noImplicitReturns": true
   }
 }
