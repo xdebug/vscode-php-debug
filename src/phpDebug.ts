@@ -60,6 +60,8 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     localSourceRoot?: string;
     /** If true, will log all communication between VS Code and the adapter to the console */
     log?: boolean;
+    /** XDebug configuration */
+    xdebugSettings?: { [key: string]: string; };
 
     // CLI options
 
@@ -130,6 +132,12 @@ class PhpDebugSession extends vscode.DebugSession {
     /** A map from unique VS Code variable IDs to XDebug eval result properties, because property children returned from eval commands are always inlined */
     private _evalResultProperties = new Map<number, xdebug.EvalResultProperty>();
 
+    /** The default XDebug settings */
+    private _defaultXdebugSettings =  {
+        maxDepth: '5',
+        maxChildren: '100'
+    };
+
     public constructor() {
         super();
         this.setDebuggerColumnsStartAt1(true);
@@ -173,6 +181,10 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected async launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this._args = args;
+        const xdebugSettings = Object.assign(
+            this._defaultXdebugSettings,
+            args.xdebugSettings || {}
+        );
         /** launches the script as CLI */
         const launchScript = async () => {
             // check if program exists
@@ -240,9 +252,9 @@ class PhpDebugSession extends vscode.DebugSession {
                     connection.on('close', disposeConnection);
                     const initPacket = await connection.waitForInitPacket();
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
-                    await connection.sendFeatureSetCommand('max_depth', '5');
-                    // raise default of 32
-                    await connection.sendFeatureSetCommand('max_children', '100');
+                    // setup Xdebug from launch configuration
+                    await connection.sendFeatureSetCommand('max_depth', xdebugSettings.maxDepth);
+                    await connection.sendFeatureSetCommand('max_children', xdebugSettings.maxChildren);
                     // don't truncate long variable values
                     await connection.sendFeatureSetCommand('max_data', semver.lt(initPacket.engineVersion.replace(/((?:dev|alpha|beta|RC|stable)\d*)$/, '-$1'), '2.2.4') ? '10000' : '0');
                     // request breakpoints from VS Code

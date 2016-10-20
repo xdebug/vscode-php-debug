@@ -44,6 +44,11 @@ In your project, go to the debugger and hit the little gear icon and choose _PHP
  - `localSourceRoot`: The path to the folder that is being served by your webserver and maps to `serverSourceRoot` (for example `"${workspaceRoot}/public"`)
  - `serverSourceRoot`: The path on the remote host where your webroot is located (for example `"/var/www"`)
  - `log`: Wether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
+ - `xdebugSettings`: Contains configuration to fine tuning Xdebug to your needs. Possible values are
+    - `maxDepth`: The max number of nested levels of array elements and object properties are displayed (default 5)
+    - `maxChildren`: The max number of array children and object properties shown when variables are displayed (default 100)
+
+    For example, if debugger is slow loading vars you can try to work on this property for example lower `maxDepth` or `maxChildren`. 
 
 Options specific to CLI debugging:
  - `program`: Path to the script that should be launched

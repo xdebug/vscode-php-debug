@@ -151,6 +151,14 @@
               "log": {
                 "type": "boolean",
                 "description": "If true, will log all communication between VS Code and the adapter"
+              },
+              "xdebugSettings": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Xdebug settings to fine tuning",
+                "default": {}
               }
             }
           }
@@ -160,7 +168,11 @@
             "name": "Listen for XDebug",
             "type": "php",
             "request": "launch",
-            "port": 9000
+            "port": 9000,
+            "xdebugSettings": {
+              "maxDepth": "5",
+              "maxChildren": "100"
+            }
           },
           {
             "name": "Launch currently open script",
@@ -168,7 +180,11 @@
             "request": "launch",
             "program": "${file}",
             "cwd": "${fileDirname}",
-            "port": 9000
+            "port": 9000,
+            "xdebugSettings": {
+              "maxDepth": "5",
+              "maxChildren": "100"
+            }
           }
         ]
       }
