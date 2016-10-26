@@ -169,10 +169,7 @@
             "type": "php",
             "request": "launch",
             "port": 9000,
-            "xdebugSettings": {
-              "maxDepth": "5",
-              "maxChildren": "100"
-            }
+            "xdebugSettings": {}
           },
           {
             "name": "Launch currently open script",
@@ -181,10 +178,7 @@
             "program": "${file}",
             "cwd": "${fileDirname}",
             "port": 9000,
-            "xdebugSettings": {
-              "maxDepth": "5",
-              "maxChildren": "100"
-            }
+            "xdebugSettings": {}
           }
         ]
       }

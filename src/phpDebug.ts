@@ -132,12 +132,6 @@ class PhpDebugSession extends vscode.DebugSession {
     /** A map from unique VS Code variable IDs to XDebug eval result properties, because property children returned from eval commands are always inlined */
     private _evalResultProperties = new Map<number, xdebug.EvalResultProperty>();
 
-    /** The default XDebug settings */
-    private _defaultXdebugSettings =  {
-        maxDepth: '5',
-        maxChildren: '100'
-    };
-
     public constructor() {
         super();
         this.setDebuggerColumnsStartAt1(true);
@@ -181,10 +175,6 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected async launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this._args = args;
-        const xdebugSettings = Object.assign(
-            this._defaultXdebugSettings,
-            args.xdebugSettings || {}
-        );
         /** launches the script as CLI */
         const launchScript = async () => {
             // check if program exists
@@ -252,11 +242,19 @@ class PhpDebugSession extends vscode.DebugSession {
                     connection.on('close', disposeConnection);
                     const initPacket = await connection.waitForInitPacket();
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
+
                     // setup Xdebug from launch configuration
-                    await connection.sendFeatureSetCommand('max_depth', xdebugSettings.maxDepth);
-                    await connection.sendFeatureSetCommand('max_children', xdebugSettings.maxChildren);
-                    // don't truncate long variable values
-                    await connection.sendFeatureSetCommand('max_data', semver.lt(initPacket.engineVersion.replace(/((?:dev|alpha|beta|RC|stable)\d*)$/, '-$1'), '2.2.4') ? '10000' : '0');
+                    const xdebugSettings = Object.assign(
+                        {
+                            // don't truncate long variable values
+                            max_data: semver.lt(initPacket.engineVersion.replace(/((?:dev|alpha|beta|RC|stable)\d*)$/, '-$1'), '2.2.4') ? '10000' : '0'
+                        },
+                        args.xdebugSettings || {}
+                    );
+                    for (let xdebugCommand of Object.keys(xdebugSettings)) {
+                        await connection.sendFeatureSetCommand(xdebugCommand, xdebugSettings[xdebugCommand]);
+                    }
+
                     // request breakpoints from VS Code
                     await this.sendEvent(new vscode.InitializedEvent());
                 } catch (error) {
