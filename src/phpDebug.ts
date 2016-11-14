@@ -10,7 +10,6 @@ import * as util from 'util';
 import * as fs from 'fs';
 import {Terminal} from './terminal';
 import {isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient} from './paths';
-import * as semver from 'semver';
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
