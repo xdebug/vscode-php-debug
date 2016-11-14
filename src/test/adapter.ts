@@ -382,7 +382,8 @@ describe('PHP Debug Adapter', () => {
                 client.launch({
                     program,
                     xdebugSettings: {
-                        max_children: '100'
+                        max_data: 10000,
+                        max_children: 100
                     }
                 }),
                 client.waitForEvent('initialized')
