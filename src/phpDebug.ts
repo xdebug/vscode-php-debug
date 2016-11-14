@@ -61,7 +61,7 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     /** If true, will log all communication between VS Code and the adapter to the console */
     log?: boolean;
     /** XDebug configuration */
-    xdebugSettings?: { [key: string]: string; };
+    xdebugSettings?: { [featureName: string]: string | number; };
 
     // CLI options
 
@@ -240,20 +240,14 @@ class PhpDebugSession extends vscode.DebugSession {
                     });
                     connection.on('error', disposeConnection);
                     connection.on('close', disposeConnection);
-                    const initPacket = await connection.waitForInitPacket();
+                    await connection.waitForInitPacket();
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
 
-                    // setup Xdebug from launch configuration
-                    const xdebugSettings = Object.assign(
-                        {
-                            // don't truncate long variable values
-                            max_data: semver.lt(initPacket.engineVersion.replace(/((?:dev|alpha|beta|RC|stable)\d*)$/, '-$1'), '2.2.4') ? '10000' : '0'
-                        },
-                        args.xdebugSettings || {}
-                    );
-                    for (let xdebugCommand of Object.keys(xdebugSettings)) {
-                        await connection.sendFeatureSetCommand(xdebugCommand, xdebugSettings[xdebugCommand]);
-                    }
+                    // override features from launch.json
+                    const xdebugSettings = args.xdebugSettings || {};
+                    await Promise.all(Object.keys(xdebugSettings).map(setting =>
+                        connection.sendFeatureSetCommand(setting, xdebugSettings[setting])
+                    ));
 
                     // request breakpoints from VS Code
                     await this.sendEvent(new vscode.InitializedEvent());

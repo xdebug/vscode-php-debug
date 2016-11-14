@@ -690,7 +690,7 @@ export class Connection extends DbgpConnection {
      *  - show_hidden
      *  - notify_ok
      */
-    public async sendFeatureSetCommand(feature: string, value: string): Promise<FeatureSetResponse> {
+    public async sendFeatureSetCommand(feature: string, value: string | number): Promise<FeatureSetResponse> {
         return new FeatureSetResponse(await this._enqueueCommand('feature_set', `-n ${feature} -v ${value}`), this);
     }
 

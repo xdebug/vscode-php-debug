@@ -44,13 +44,12 @@ In your project, go to the debugger and hit the little gear icon and choose _PHP
  - `localSourceRoot`: The path to the folder that is being served by your webserver and maps to `serverSourceRoot` (for example `"${workspaceRoot}/public"`)
  - `serverSourceRoot`: The path on the remote host where your webroot is located (for example `"/var/www"`)
  - `log`: Wether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
- - `xdebugSettings`: Contains configuration to fine tuning Xdebug to your needs.
-    See feature names that can be set in [Xdebug documentation](https://xdebug.org/docs-dbgp.php#feature-names).
-    Remember that values **must** be string. The default Xdebug values are used if not defined.
-
-    For example, you can play with `max_children` and `max_depth` to change the max number of array or object children retrieved
-    and the max depth in structures as array and object. This give you the ability to speed up the debugger obviously showing
-    less data. 
+ - `xdebugSettings`: Allows you to override XDebug's remote debugging settings to fine tuning XDebug to your needs. For example, you can play with `max_children` and `max_depth` to change the max number of array and object children that are retrieved and the max depth in structures like arrays and objects. This can speed up the debugger on slow machines.
+   For a full list of feature names that can be set please refer to the [XDebug documentation](https://xdebug.org/docs-dbgp.php#feature-names).
+    - `max_children`: max number of array or object children to initially retrieve
+    - `max_data`: max amount of variable data to initially retrieve.
+    - `max_depth`: maximum depth that the debugger engine may return when sending arrays, hashs or object structures to the IDE.
+    - `show_hidden`: This feature can get set by the IDE if it wants to have more detailed internal information on properties (eg. private members of classes, etc.) Zero means that hidden members are not shown to the IDE.
 
 Options specific to CLI debugging:
  - `program`: Path to the script that should be launched
