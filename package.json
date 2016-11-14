@@ -151,6 +151,25 @@
               "log": {
                 "type": "boolean",
                 "description": "If true, will log all communication between VS Code and the adapter"
+              },
+              "xdebugSettings": {
+                "type": "object",
+                "properties": {
+                  "max_children": {
+                    "type": "integer",
+                    "description": "max number of array or object children to initially retrieve"
+                  },
+                  "max_data": {
+                    "type": "integer",
+                    "description": "max amount of variable data to initially retrieve"
+                  },
+                  "show_hidden": {
+                    "enum": [0, 1],
+                    "description": "This feature can get set by the IDE if it wants to have more detailed internal information on properties (eg. private members of classes, etc.) Zero means that hidden members are not shown to the IDE"
+                  }
+                },
+                "description": "Overrides for XDebug remote debugging settings. See https://xdebug.org/docs-dbgp.php#feature-names",
+                "default": {}
               }
             }
           }

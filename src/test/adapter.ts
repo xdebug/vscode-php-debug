@@ -379,7 +379,13 @@ describe('PHP Debug Adapter', () => {
 
         beforeEach(async () => {
             await Promise.all([
-                client.launch({program}),
+                client.launch({
+                    program,
+                    xdebugSettings: {
+                        max_data: 10000,
+                        max_children: 100
+                    }
+                }),
                 client.waitForEvent('initialized')
             ]);
             await client.setBreakpointsRequest({source: {path: program}, breakpoints: [{line: 17}]});
