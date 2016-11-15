@@ -1,7 +1,7 @@
 {
   "name": "php-debug",
   "displayName": "PHP Debug",
-  "version": "1.9.7",
+  "version": "1.10.0",
   "publisher": "felixfbecker",
   "license": "MIT",
   "description": "Debug support for PHP with XDebug",
@@ -164,7 +164,10 @@
                     "description": "max amount of variable data to initially retrieve"
                   },
                   "show_hidden": {
-                    "enum": [0, 1],
+                    "enum": [
+                      0,
+                      1
+                    ],
                     "description": "This feature can get set by the IDE if it wants to have more detailed internal information on properties (eg. private members of classes, etc.) Zero means that hidden members are not shown to the IDE"
                   }
                 },
