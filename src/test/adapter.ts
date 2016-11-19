@@ -195,6 +195,8 @@ describe('PHP Debug Adapter', () => {
                 ]);
             });
 
+            it('should support stopping only on an error');
+
             it('should support stopping only on an exception', async () => {
                 await client.setExceptionBreakpointsRequest({filters: ['Exception']});
                 const [, {threadId}] = await Promise.all([

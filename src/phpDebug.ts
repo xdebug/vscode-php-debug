@@ -154,6 +154,10 @@ class PhpDebugSession extends vscode.DebugSession {
                     label: 'Warnings'
                 },
                 {
+                    filter: 'Error',
+                    label: 'Errors'
+                },
+                {
                     filter: 'Exception',
                     label: 'Exceptions'
                 },
