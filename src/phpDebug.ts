@@ -10,7 +10,6 @@ import * as util from 'util';
 import * as fs from 'fs';
 import {Terminal} from './terminal';
 import {isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient} from './paths';
-import * as semver from 'semver';
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -60,6 +59,8 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     localSourceRoot?: string;
     /** If true, will log all communication between VS Code and the adapter to the console */
     log?: boolean;
+    /** XDebug configuration */
+    xdebugSettings?: { [featureName: string]: string | number; };
 
     // CLI options
 
@@ -242,13 +243,15 @@ class PhpDebugSession extends vscode.DebugSession {
                     });
                     connection.on('error', disposeConnection);
                     connection.on('close', disposeConnection);
-                    const initPacket = await connection.waitForInitPacket();
+                    await connection.waitForInitPacket();
                     this.sendEvent(new vscode.ThreadEvent('started', connection.id));
-                    await connection.sendFeatureSetCommand('max_depth', '5');
-                    // raise default of 32
-                    await connection.sendFeatureSetCommand('max_children', '100');
-                    // don't truncate long variable values
-                    await connection.sendFeatureSetCommand('max_data', semver.lt(initPacket.engineVersion.replace(/((?:dev|alpha|beta|RC|stable)\d*)$/, '-$1'), '2.2.4') ? '10000' : '0');
+
+                    // override features from launch.json
+                    const xdebugSettings = args.xdebugSettings || {};
+                    await Promise.all(Object.keys(xdebugSettings).map(setting =>
+                        connection.sendFeatureSetCommand(setting, xdebugSettings[setting])
+                    ));
+
                     // request breakpoints from VS Code
                     await this.sendEvent(new vscode.InitializedEvent());
                 } catch (error) {
