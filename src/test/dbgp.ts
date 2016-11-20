@@ -1,8 +1,7 @@
 import {DbgpConnection, ENCODING} from '../dbgp';
 import {Socket} from 'net';
 import * as iconv from 'iconv-lite';
-import * as chai from 'chai';
-const assert = chai.assert;
+import {assert} from 'chai';
 
 describe('DbgpConnection', () => {
 
@@ -21,7 +20,7 @@ describe('DbgpConnection', () => {
         conn = new DbgpConnection(socket);
     });
 
-    it('should parse a response in one data event', done => {
+    it('should parse a response in one data event', (done: MochaDone) => {
         conn.on('message', (document: XMLDocument) => {
             assert.equal(document.documentElement.nodeName, 'init');
             assert.equal(document.documentElement.textContent, 'This is just a test');
@@ -34,7 +33,7 @@ describe('DbgpConnection', () => {
         }, 100);
     });
 
-    it('should parse a response over multiple data events', done => {
+    it('should parse a response over multiple data events', (done: MochaDone) => {
         conn.on('message', (document: XMLDocument) => {
             assert.equal(document.documentElement.nodeName, 'init');
             assert.equal(document.documentElement.textContent, 'This is just a test');
@@ -56,7 +55,7 @@ describe('DbgpConnection', () => {
         }, 100);
     });
 
-    it('should parse multiple responses in one data event', done => {
+    it('should parse multiple responses in one data event', (done: MochaDone) => {
         conn.once('message', (document: XMLDocument) => {
             assert.equal(document.documentElement.nodeName, 'init');
             assert.equal(document.documentElement.textContent, 'This is just a test');
