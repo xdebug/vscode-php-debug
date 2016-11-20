@@ -18,6 +18,8 @@ matrix:
       php: '7.0'
     - env: XDEBUG_VERSION=2.2.3
       php: '7.0'
+    - env: XDEBUG_VERSION=2.5.1RC1
+      php: '5.4'
 
 before_install:
  - pecl install xdebug-$XDEBUG_VERSION
