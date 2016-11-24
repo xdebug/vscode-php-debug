@@ -50,7 +50,7 @@
     "nyc": "^9.0.1",
     "semver": "^5.3.0",
     "tslint": "^3.14.0",
-    "typescript": "^2.0.3",
+    "typescript": "^2.0.10",
     "typings": "^2.0.0",
     "vscode-debugadapter-testsupport": "^1.11.0"
   },
