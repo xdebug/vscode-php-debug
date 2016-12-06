@@ -50,7 +50,10 @@ In your project, go to the debugger and hit the little gear icon and choose _PHP
     - `max_data`: max amount of variable data to initially retrieve.
     - `max_depth`: maximum depth that the debugger engine may return when sending arrays, hashs or object structures to the IDE.
     - `show_hidden`: This feature can get set by the IDE if it wants to have more detailed internal information on properties (eg. private members of classes, etc.) Zero means that hidden members are not shown to the IDE.
-
+ - `proxyHost`: It is usefull for XDebug server that uses DBgp proxy to handle multiple users. Please refer to the [XDebug documentation](https://xdebug.org/docs/remote#multiple-users).
+ - `proxyPort`: See proxyHost.
+ - `ideKey`: See proxyHost.
+ 
 Options specific to CLI debugging:
  - `program`: Path to the script that should be launched
  - `args`: Arguments passed to the script

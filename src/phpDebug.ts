@@ -78,6 +78,12 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     env?: { [key: string]: string; };
     /** If true launch the target in an external console. */
     externalConsole?: boolean;
+    /** DBGp Proxy Host ip */
+    proxyHost?: string;
+    /** DBGp Proxy Host ip */
+    proxyPort?: number;
+    /** Unique key that identifies the IDE/user */
+    ideKey?: string;
 }
 
 class PhpDebugSession extends vscode.DebugSession {
@@ -87,6 +93,9 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** The TCP server that listens for XDebug connections */
     private _server: net.Server;
+
+    /** The Proxy client used to register IDE for XDebug that uses DBgp proxy to handle multiple connections */
+    private _proxyClient: net.Socket;
 
     /**
      * A map from VS Code thread IDs to XDebug Connections.
@@ -264,8 +273,30 @@ class PhpDebugSession extends vscode.DebugSession {
             });
             server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => error ? reject(error) : resolve());
         });
+
+        /** sets up a client to register IDE to DBgp proxy */
+        const createProxyClient = () => new Promise((resolve, reject) => {
+            const client = this._proxyClient = net.createConnection({port: args.proxyPort | 9001, host: args.proxyHost}, () => {
+                this.sendEvent(new vscode.OutputEvent('DBgp proxy: connected to ' + args.proxyHost + ':' + args.proxyPort + '\n'));
+                client.write('proxyinit -p ' + args.proxyPort + ' -k ' + args.ideKey + ' -m 1');
+            });
+
+            client.on('data', (data:string) => {
+                client.end();
+            });
+            
+            client.on('end', () => {
+                this.sendEvent(new vscode.OutputEvent('DBgp proxy: disconnected from ' + args.proxyHost + ':' + args.proxyPort + '\n'));
+                resolve();
+            });
+        });
+
         try {
             if (!args.noDebug) {
+                //register IDE to DBgp proxy
+                if(args.proxyHost && args.proxyPort && args.ideKey) {
+                    await createProxyClient();
+                }
                 await createServer();
             }
             if (args.program) {

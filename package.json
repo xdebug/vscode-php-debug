@@ -152,6 +152,18 @@
                 "type": "boolean",
                 "description": "If true, will log all communication between VS Code and the adapter"
               },
+              "proxyHost": {
+                "type": "string",
+                "description": "DBGp Proxy host"
+              },
+              "proxyPort": {
+                "type": "number",
+                "description": "DBGp Proxy port"
+              },
+              "ideKey": {
+                "type": "string",
+                "description": "Unique key that identifies the IDE/user"
+              },
               "xdebugSettings": {
                 "type": "object",
                 "properties": {
