@@ -62,7 +62,7 @@ export class Response {
      */
     constructor(document: XMLDocument, connection: Connection) {
         const documentElement = document.documentElement;
-        if (documentElement.hasChildNodes() && documentElement.firstChild.nodeName === 'error') {
+        if (documentElement.firstChild && documentElement.firstChild.nodeName === 'error') {
             const errorNode = <Element>documentElement.firstChild;
             const code = parseInt(errorNode.getAttribute('code')!);
             const message = errorNode.textContent!;
@@ -478,7 +478,7 @@ export class PropertyGetResponse extends Response {
      */
     constructor(document: XMLDocument, property: Property) {
         super(document, property.context.stackFrame.connection);
-        this.children = Array.from(document.documentElement.firstChild.childNodes).map((propertyNode: Element) => new Property(propertyNode, property.context));
+        this.children = Array.from(document.documentElement.firstChild!.childNodes).map((propertyNode: Element) => new Property(propertyNode, property.context));
     }
 }
 
