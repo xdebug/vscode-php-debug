@@ -3,6 +3,7 @@ import urlRelative = require('url-relative');
 import fileUrl = require('file-url');
 import * as url from 'url';
 import * as path from 'path';
+import {decode} from 'urlencode';
 
 /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
 export function convertDebuggerPathToClient(fileUri: string|url.Url, localSourceRoot?: string, serverSourceRoot?: string): string {
@@ -10,7 +11,7 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, localSource
         fileUri = url.parse(fileUri);
     }
     // convert the file URI to a path
-    let serverPath = decodeURI(fileUri.pathname!);
+    let serverPath = decode(fileUri.pathname!);
     // strip the trailing slash from Windows paths (indicated by a drive letter with a colon)
     const serverIsWindows = /^\/[a-zA-Z]:\//.test(serverPath);
     if (serverIsWindows) {
