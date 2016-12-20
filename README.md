@@ -19,7 +19,7 @@ This extension is a debug adapter between VS Code and [XDebug](https://xdebug.or
    - On Linux Copy/Paste:
       - Ubuntu: `sudo apt-get install php-xdebug`
       - Fedora: `sudo dnf install php-pecl-xdebug`
-      - Other:  If your package manager doesn't have it and you're feeling adventurous, download the source code as a tarball or [clone it with git](https://xdebug.org/docs/install#source), then [compile it](https://xdebug.org/docs/install#compile).
+      - Other:  If your package manager doesn't have it, consider installing via pecl; otherwise, if you're feeling adventurous, download the source code as a tarball or [clone it with git](https://xdebug.org/docs/install#source), then [compile it](https://xdebug.org/docs/install#compile).
  2. [Configure PHP to use XDebug](https://xdebug.org/docs/install#configure-php) by adding `zend_extension=path/to/xdebug` to your php.ini.  
   The path of your php.ini is shown in your `phpinfo()` output under "Loaded Configuration File".
  3. Enable remote debugging. Paths may vary
