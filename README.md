@@ -16,10 +16,15 @@ This extension is a debug adapter between VS Code and [XDebug](https://xdebug.or
   ***I highly recommend you make a simple `test.php` file, put a `phpinfo();` statement in there, then copy the output and paste it into the [XDebug installation wizard](https://xdebug.org/wizard.php). It will analyze it and give you tailored installation instructions for your environment.***  
   In short:
    - On Windows: [Download](https://xdebug.org/download.php) the appropiate precompiled DLL for your PHP version, architecture (64/32 Bit), thread safety (TS/NTS) and Visual Studio compiler version and place it in your PHP extension folder.
-   - On Linux: Either download the source code as a tarball or [clone it with git](https://xdebug.org/docs/install#source), then [compile it](https://xdebug.org/docs/install#compile).
+   - On Linux Copy/Paste:
+      - Ubuntu: `sudo apt-get install php-xdebug`
+      - Fedora: `sudo dnf install php-pecl-xdebug`
+      - Other:  If your package manager doesn't have it and you're feeling adventurous, download the source code as a tarball or [clone it with git](https://xdebug.org/docs/install#source), then [compile it](https://xdebug.org/docs/install#compile).
  2. [Configure PHP to use XDebug](https://xdebug.org/docs/install#configure-php) by adding `zend_extension=path/to/xdebug` to your php.ini.  
   The path of your php.ini is shown in your `phpinfo()` output under "Loaded Configuration File".
- 3. Enable remote debugging in your php.ini:
+ 3. Enable remote debugging. Paths may vary
+    - Ubuntu: `/etc/php/7.0/fpm/conf.d/20-xdebug.ini`
+    - Others: Check your php.ini file (Make sure it's for the server, not CLI).
 
   ```ini
   [XDebug]
