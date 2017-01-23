@@ -52,7 +52,7 @@
     "tslint": "^3.14.0",
     "typescript": "^2.1.4",
     "typings": "^2.0.0",
-    "vscode-debugadapter-testsupport": "^1.11.0"
+    "vscode-debugadapter-testsupport": "^1.16.0"
   },
   "scripts": {
     "compile": "tsc -p .",
