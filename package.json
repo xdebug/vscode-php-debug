@@ -34,7 +34,7 @@
     "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
   },
   "dependencies": {
-    "file-url": "^2.0.0",
+    "file-url": "^2.0.2",
     "iconv-lite": "^0.4.15",
     "moment": "2.17.1",
     "url-relative": "^1.0.0",
