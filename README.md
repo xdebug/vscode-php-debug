@@ -87,12 +87,45 @@ To make VS Code map the files on the server to the right files on your local mac
 ```
 Please also note that setting any of the CLI debugging options will not work with remote host debugging, because the script is always launched locally. If you want to debug a CLI script on a remote host, you need to launch it manually from the command line.
 
+Docker Debugging
+----------------
+Here are some considerations when using Visual Code and XDebug with Docker:
+- In your Dockerfile, you will need to install the XDebug extension and configure it:
+````
+RUN yes | pecl install xdebug \
+    && echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.remote_port=9000" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.remote_autostart=1" >> /usr/local/etc/php/conf.d/xdebug.ini 
+````
+- Debugging PHP running in a container on your local machine is similar to remote host debugging.  By default, Docker will run its containers in its "bridge" network mode, which requires you to configure Docker to connect to a specific IP address other than localhost (127.0.0.1).  If you have a fixed IP address for your network adapter (i.e. you do not use DHCP), that address will work fine.  Otherwise, in Windows, you can install Microsoft's loopback network adapter (see [this article](https://social.technet.microsoft.com/Forums/windows/en-US/259c7ef2-3770-4212-8fca-c58936979851/how-to-install-microsoft-loopback-adapter?forum=w7itpronetworking) to see how, one small change for, in Windows 10 the adapture was called "Microsoft KM-TEST-Loopback Adapter"), give it an IP address like 10.254.254.254 (anything unique and reserved) with a subnet of 255.255.255.0.  For Linux systems, youc an set up an IP alias for your loopback address 
+````
+ifconfig lo:0 127.0.0.2 netmask 255.0.0.0 up
+````
+- When you launch your PHP container, you will need to provide your IP address to XDebug in docker via an environment variable.  If you are doing a Docker run:
+````
+docker run -e XDEBUG_CONFIG="remote_host={{YOUR_IP_ADDRESS}}" your-image
+```` 
+
+````
+# docker-compose.yml
+foo:
+  build: path/to/Dockerfile
+  environment:
+    XDEBUG_CONFIG: remote_host={{YOUR_IP_ADDRESS}}
+````
+- Set up your launch.json localSourceRoot, serverSourceRoot and port (for the sources, make sure you get the capitalization correct)
+- If you are running multiple Docker containers on your machine, each can have its own port defined in its Dockerfile, and you can set up individual debug configurations in Visual Studio Code specifying those ports.
+
+Thanks to [Hadrien de Cuzey](https://gist.github.com/chadrien/c90927ec2d160ffea9c4) for his info on setting up Docker with XDebug.
+
 Troubleshooting
 ---------------
  - Ask a question on [Gitter](https://gitter.im/felixfbecker/vscode-php-debug)
  - If you think you found a bug, [open an issue](https://github.com/felixfbecker/vscode-php-debug/issues)
  - Make sure you have the latest version of this extension and XDebug installed
  - Try out a simple PHP file to recreate the issue, for example from the [testproject](https://github.com/felixfbecker/vscode-php-debug/tree/master/testproject)
+ - If the Visual Code debugger breaks when there is an exception or error, but does not stop on your breakpoints, carefully check your localSourceRoot setting, capitalization is important if you are debugging PHP running on a VM or Docker container
  - In your php.ini, set [`xdebug.remote_log = /path/to/logfile`](https://xdebug.org/docs/remote#remote_log)
    (make sure your webserver has write permissions to the file)
  - Set `"log": true` in your launch.json
