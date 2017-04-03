@@ -728,6 +728,9 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             return;
         }
+        response.body = {
+            allThreadsContinued: false
+        };
         this.sendResponse(response);
         this._checkStatus(xdebugResponse);
     }
@@ -747,9 +750,6 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             return;
         }
-        response.body = {
-            allThreadsContinued: false
-        };
         this.sendResponse(response);
         this._checkStatus(xdebugResponse);
     }
