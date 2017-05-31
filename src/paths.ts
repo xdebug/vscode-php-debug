@@ -21,7 +21,7 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, localSource
         serverPath = serverPath.substr(1);
     }
 
-    if ( pathMapping !== {} && typeof pathMapping !== 'undefined' ) {
+    if ( typeof pathMapping !== 'undefined' && pathMapping !== {} ) {
         let mappedLocalSource: string;
 
         for (mappedLocalSource of Object.keys(pathMapping) ) {
@@ -63,7 +63,7 @@ export function convertClientPathToDebugger(localPath: string, localSourceRoot?:
     let localFileUri = fileUrl(localPath, {resolve: false});
     let serverFileUri: string;
 
-    if ( pathMapping !== {} && typeof pathMapping !== 'undefined' ) {
+    if ( typeof pathMapping !== 'undefined' && pathMapping !== {} ) {
         let mappedLocalSource: string;
 
         for (mappedLocalSource of Object.keys(pathMapping) ) {
