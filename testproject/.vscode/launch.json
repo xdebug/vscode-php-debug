@@ -15,7 +15,12 @@
       "type": "php",
       "program": "${file}",
       "cwd": "${workspaceRoot}",
-      "externalConsole": false
+      "externalConsole": false,
+
+      "path_mappings": {
+        "${workspaceRoot}/folder with spaces": "/var/www/html/folder with spaces",
+        "${workspaceRoot}/second folder": "/var/www/html/second folder"
+      }
     }
   ]
 }
