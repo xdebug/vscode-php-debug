@@ -20,7 +20,6 @@ try {
 7z e php.zip -ophp
 Rename-Item .\php\php.ini-development php.ini
 $env:PATH += ';' + (Join-Path $PWD 'php')
-exit
 
 # Install XDebug
 $phpMinorVersion = $env:PHP_VERSION -replace '\.\d+$'
