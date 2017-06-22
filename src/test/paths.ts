@@ -68,7 +68,7 @@ describe('paths', () => {
             (process.platform === 'win32' ? it : it.skip)('should handle non-unicode special characters', () => {
                 assert.equal(
                     convertDebuggerPathToClient('file:///d:/arx%20iT/2-R%C3%A9alisation/mmi/V1.0/Web/core/header.php'),
-                    'file:///d:/arx iT/2-Réalisation/mmi/V1.0/Web/core/header.php'
+                    'd:\\arx iT\\2-Réalisation\\mmi\\V1.0\\Web\\core\\header.php'
                 );
             });
         });
