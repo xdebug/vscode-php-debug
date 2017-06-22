@@ -12,7 +12,7 @@ try {
         $phpUrl = "http://windows.php.net/downloads/releases/archives/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip"
         Write-Output "Downloading $phpUrl"
         $client.DownloadFile($phpUrl, $target)
-        Write-Warning "$env:PHP_VERSION is outdated"
+        Write-Warning "PHP $env:PHP_VERSION is outdated and was moved to archives"
     } else {
         throw $_
     }
