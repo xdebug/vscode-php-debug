@@ -19,7 +19,7 @@ build_script:
 
 test_script:
   - npm run lint --silent
-  - npm test --silent
+  - npm cover --silent
 
 after_test:
   - ps: |
