@@ -88,6 +88,9 @@ class PhpDebugSession extends vscode.DebugSession {
     /** The TCP server that listens for XDebug connections */
     private _server: net.Server;
 
+    /** The child process of the launched PHP script, if launched by the debug adapter */
+    private _phpProcess?: childProcess.ChildProcess;
+
     /**
      * A map from VS Code thread IDs to XDebug Connections.
      * XDebug makes a new connection for each request to the webserver, we present these as threads to VS Code.
@@ -210,6 +213,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 script.on('error', (error: Error) => {
                     this.sendEvent(new vscode.OutputEvent(error.message));
                 });
+                this._phpProcess = script;
             }
         };
         /** sets up a TCP server to listen for XDebug connections */
@@ -805,13 +809,20 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async disconnectRequest(response: VSCodeDebugProtocol.DisconnectResponse, args: VSCodeDebugProtocol.DisconnectArguments) {
         try {
             await Promise.all(Array.from(this._connections).map(async ([id, connection]) => {
-                await connection.sendStopCommand();
+                // Try to send stop command for 500ms
+                // If the script is running, just close the connection
+                await Promise.race([connection.sendStopCommand(), new Promise(resolve => setTimeout(resolve, 500))]);
                 await connection.close();
                 this._connections.delete(id);
                 this._waitingConnections.delete(connection);
             }));
+            // If listening for connections, close server
             if (this._server) {
                 await new Promise(resolve => this._server.close(resolve));
+            }
+            // If launched as CLI, kill process
+            if (this._phpProcess) {
+                this._phpProcess.kill();
             }
         } catch (error) {
             this.sendErrorResponse(response, error);
