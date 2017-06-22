@@ -7,6 +7,7 @@ php:
 
 env:
   matrix:
+    - XDEBUG_VERSION=2.5.0
     - XDEBUG_VERSION=2.4.1
     - XDEBUG_VERSION=2.3.3
     - XDEBUG_VERSION=2.2.3 # XDebug version on Vagrant
@@ -17,6 +18,8 @@ matrix:
       php: '7.0'
     - env: XDEBUG_VERSION=2.2.3
       php: '7.0'
+    - env: XDEBUG_VERSION=2.5.0
+      php: '5.4'
 
 before_install:
  - pecl install xdebug-$XDEBUG_VERSION
