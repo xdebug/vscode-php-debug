@@ -14,6 +14,11 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "strictNullChecks": true,
-    "noImplicitReturns": true
+    "noImplicitReturns": true,
+    "typeRoots": [
+      "typings/globals",
+      "typings/modules",
+      "node_modules/@types"
+    ]
   }
 }
