@@ -181,7 +181,7 @@ class PhpDebugSession extends vscode.DebugSession {
         /** launches the script as CLI */
         const launchScript = async () => {
             // check if program exists
-            await new Promise((resolve, reject) => fs.access(args.program!, fs.F_OK, err => err ? reject(err) : resolve()));
+            await new Promise((resolve, reject) => fs.access(args.program!, fs.constants.F_OK, err => err ? reject(err) : resolve()));
             const runtimeArgs = args.runtimeArgs || [];
             const runtimeExecutable = args.runtimeExecutable || 'php';
             const programArgs = args.args || [];

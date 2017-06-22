@@ -43,6 +43,7 @@
     "xmldom": "^0.1.22"
   },
   "devDependencies": {
+    "@types/node": "7.0.32",
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
     "codecov": "^1.0.1",
