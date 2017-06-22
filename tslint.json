@@ -36,10 +36,7 @@
     "one-variable-per-declaration": [true, "ignore-for-loop"],
     "curly": true,
     "no-empty": true,
-    "no-duplicate-key": true,
-    "no-unreachable": true,
     "no-unused-expression": true,
-    "no-unused-variable": [true],
     "eofline": true,
     "trailing-comma": [true, {"singleline": "never", "multiline": "never"}],
     "align": [true, "parameters", "statements"]
