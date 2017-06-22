@@ -1,28 +1,18 @@
 language: php
 
 php:
- - '5.4'
  - '5.6'
  - '7.0'
 
 env:
   matrix:
-    - XDEBUG_VERSION=2.4.1
-    - XDEBUG_VERSION=2.3.3
-    - XDEBUG_VERSION=2.2.3 # XDebug version on Vagrant
-
-matrix:
-  exclude:
-    - env: XDEBUG_VERSION=2.3.3
-      php: '7.0'
-    - env: XDEBUG_VERSION=2.2.3
-      php: '7.0'
+    - XDEBUG_VERSION=2.5.5
 
 before_install:
  - pecl install xdebug-$XDEBUG_VERSION
  - phpenv config-add travis-php.ini
- - nvm install 6.5.0
- - nvm use 6.5.0
+ - nvm install 7.4.0
+ - nvm use 7.4.0
  - npm config -g set progress false
 
 install:
