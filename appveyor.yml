@@ -20,3 +20,10 @@ build_script:
 test_script:
   - npm run lint --silent
   - npm test --silent
+
+after_test:
+  - ps: |
+      node_modules\.bin\nyc report --reporter=lcov
+      $env:PATH = 'C:\msys64\usr\bin;' + $env:PATH
+      Invoke-WebRequest -Uri 'https://codecov.io/bash' -OutFile codecov.sh
+      bash codecov.sh -f "coverage\lcov.info"
