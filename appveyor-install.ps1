@@ -6,7 +6,7 @@ $target = Join-Path $PWD 'php.zip'
 Write-Output "Downloading $phpUrl"
 try {
     $client.DownloadFile($phpUrl, $target)
-} catch {
+} catch [System.Net.WebException] {
     if ($_.Exception.Response.StatusCode.Value__ -eq 404) {
         # Older releases get moved to archives/
         $phpUrl = "http://windows.php.net/downloads/releases/archives/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip"
@@ -20,6 +20,7 @@ try {
 7z e php.zip -ophp
 Rename-Item .\php\php.ini-development php.ini
 $env:PATH += ';' + (Join-Path $PWD 'php')
+exit
 
 # Install XDebug
 $phpMinorVersion = $env:PHP_VERSION -replace '\.\d+$'
