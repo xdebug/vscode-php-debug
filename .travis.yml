@@ -24,7 +24,7 @@ script:
  - npm run cover --silent
 
 after_success:
- - 'nyc report --reporter=lcov > coverage.lcov && codecov'
+ - 'nyc report --reporter=lcov > coverage.lcov && bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info'
 
 after_script:
  - cat /tmp/xdebug.log
