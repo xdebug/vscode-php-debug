@@ -90,6 +90,9 @@ class PhpDebugSession extends vscode.DebugSession {
     /** The TCP server that listens for XDebug connections */
     private _server: net.Server;
 
+    /** The child process of the launched PHP script, if launched by the debug adapter */
+    private _phpProcess?: childProcess.ChildProcess;
+
     /**
      * A map from VS Code thread IDs to XDebug Connections.
      * XDebug makes a new connection for each request to the webserver, we present these as threads to VS Code.
@@ -183,7 +186,7 @@ class PhpDebugSession extends vscode.DebugSession {
         /** launches the script as CLI */
         const launchScript = async () => {
             // check if program exists
-            await new Promise((resolve, reject) => fs.access(args.program!, fs.F_OK, err => err ? reject(err) : resolve()));
+            await new Promise((resolve, reject) => fs.access(args.program!, fs.constants.F_OK, err => err ? reject(err) : resolve()));
             const runtimeArgs = args.runtimeArgs || [];
             const runtimeExecutable = args.runtimeExecutable || 'php';
             const programArgs = args.args || [];
@@ -212,6 +215,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 script.on('error', (error: Error) => {
                     this.sendEvent(new vscode.OutputEvent(error.message));
                 });
+                this._phpProcess = script;
             }
         };
         /** sets up a TCP server to listen for XDebug connections */
@@ -533,7 +537,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 // special case: if a fatal error occurs (for example after an uncaught exception), the stack trace is EMPTY.
                 // in that case, VS Code would normally not show any information to the user at all
                 // to avoid this, we create a virtual stack frame with the info from the last status response we got
-                const status = this._statuses.get(connection);
+                const status = this._statuses.get(connection)!;
                 const id = this._stackFrameIdCounter++;
                 const name = status.exception.name;
                 let line = status.line;
@@ -591,7 +595,10 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected async sourceRequest(response: VSCodeDebugProtocol.SourceResponse, args: VSCodeDebugProtocol.SourceArguments) {
         try {
-            const {connection, url} = this._sources.get(args.sourceReference);
+            if (!this._sources.has(args.sourceReference)) {
+                throw new Error(`Unknown sourceReference ${args.sourceReference}`);
+            }
+            const {connection, url} = this._sources.get(args.sourceReference)!;
             let {source} = await connection.sendSourceCommand(url);
             if (!/^\s*<\?(php|=)/.test(source)) {
                 // we do this because otherwise VS Code would not show syntax highlighting for eval() code
@@ -610,7 +617,7 @@ class PhpDebugSession extends vscode.DebugSession {
             let scopes: vscode.Scope[] = [];
             if (this._errorStackFrames.has(args.frameId)) {
                 // VS Code is requesting the scopes for a virtual error stack frame
-                const status = this._errorStackFrames.get(args.frameId);
+                const status = this._errorStackFrames.get(args.frameId)!;
                 if (status.exception) {
                     const variableId = this._variableIdCounter++;
                     this._errorScopes.set(variableId, status);
@@ -618,6 +625,9 @@ class PhpDebugSession extends vscode.DebugSession {
                 }
             } else {
                 const stackFrame = this._stackFrames.get(args.frameId);
+                if (!stackFrame) {
+                    throw new Error(`Unknown frameId ${args.frameId}`);
+                }
                 const contexts = await stackFrame.getContexts();
                 scopes = contexts.map(context => {
                     const variableId = this._variableIdCounter++;
@@ -648,7 +658,7 @@ class PhpDebugSession extends vscode.DebugSession {
             let variables: VSCodeDebugProtocol.Variable[];
             if (this._errorScopes.has(variablesReference)) {
                 // this is a virtual error scope
-                const status = this._errorScopes.get(variablesReference);
+                const status = this._errorScopes.get(variablesReference)!;
                 variables = [
                     new vscode.Variable('type', status.exception.name),
                     new vscode.Variable('message', '"' + status.exception.message + '"')
@@ -661,11 +671,11 @@ class PhpDebugSession extends vscode.DebugSession {
                 let properties: xdebug.BaseProperty[];
                 if (this._contexts.has(variablesReference)) {
                     // VS Code is requesting the variables for a SCOPE, so we have to do a context_get
-                    const context = this._contexts.get(variablesReference);
+                    const context = this._contexts.get(variablesReference)!;
                     properties = await context.getProperties();
                 } else if (this._properties.has(variablesReference)) {
                     // VS Code is requesting the subelements for a variable, so we have to do a property_get
-                    const property = this._properties.get(variablesReference);
+                    const property = this._properties.get(variablesReference)!;
                     if (property.hasChildren) {
                         if (property.children.length === property.numberOfChildren) {
                             properties = property.children;
@@ -677,7 +687,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     }
                 } else if (this._evalResultProperties.has(variablesReference)) {
                     // the children of properties returned from an eval command are always inlined, so we simply resolve them
-                    const property = this._evalResultProperties.get(variablesReference);
+                    const property = this._evalResultProperties.get(variablesReference)!;
                     properties = property.hasChildren ? property.children : [];
                 } else {
                     throw new Error('Unknown variable reference');
@@ -730,6 +740,9 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             return;
         }
+        response.body = {
+            allThreadsContinued: false
+        };
         this.sendResponse(response);
         this._checkStatus(xdebugResponse);
     }
@@ -749,9 +762,6 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             return;
         }
-        response.body = {
-            allThreadsContinued: false
-        };
         this.sendResponse(response);
         this._checkStatus(xdebugResponse);
     }
@@ -801,13 +811,20 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async disconnectRequest(response: VSCodeDebugProtocol.DisconnectResponse, args: VSCodeDebugProtocol.DisconnectArguments) {
         try {
             await Promise.all(Array.from(this._connections).map(async ([id, connection]) => {
-                await connection.sendStopCommand();
+                // Try to send stop command for 500ms
+                // If the script is running, just close the connection
+                await Promise.race([connection.sendStopCommand(), new Promise(resolve => setTimeout(resolve, 500))]);
                 await connection.close();
                 this._connections.delete(id);
                 this._waitingConnections.delete(connection);
             }));
+            // If listening for connections, close server
             if (this._server) {
                 await new Promise(resolve => this._server.close(resolve));
+            }
+            // If launched as CLI, kill process
+            if (this._phpProcess) {
+                this._phpProcess.kill();
             }
         } catch (error) {
             this.sendErrorResponse(response, error);
@@ -822,7 +839,10 @@ class PhpDebugSession extends vscode.DebugSession {
             if (!args.frameId) {
                 throw new Error('Cannot evaluate code without a connection');
             }
-            const connection = this._stackFrames.get(args.frameId).connection;
+            if (!this._stackFrames.has(args.frameId)) {
+                throw new Error(`Unknown frameId ${args.frameId}`);
+            }
+            const connection = this._stackFrames.get(args.frameId)!.connection;
             const {result} = await connection.sendEvalCommand(args.expression);
             if (result) {
                 const displayValue = formatPropertyValue(result);

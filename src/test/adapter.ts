@@ -9,7 +9,7 @@ const assert = chai.assert;
 
 describe('PHP Debug Adapter', () => {
 
-    const TEST_PROJECT = path.normalize(__dirname + '/../../testproject');
+    const TEST_PROJECT = path.normalize(__dirname + '/../../testproject/main');
 
     let client: DebugClient;
 
