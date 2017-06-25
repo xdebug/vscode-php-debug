@@ -58,7 +58,7 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. */
     localSourceRoot?: string;
     /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. */
-    pathMapping?: { [index: string]: string };
+    pathMappings?: { [index: string]: string };
     /** If true, will log all communication between VS Code and the adapter to the console */
     log?: boolean;
     /** XDebug configuration */
@@ -362,7 +362,7 @@ class PhpDebugSession extends vscode.DebugSession {
     /** This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change. */
     protected async setBreakPointsRequest(response: VSCodeDebugProtocol.SetBreakpointsResponse, args: VSCodeDebugProtocol.SetBreakpointsArguments) {
         try {
-            const fileUri = convertClientPathToDebugger(args.source.path!, this._args.localSourceRoot, this._args.serverSourceRoot, this._args.pathMapping);
+            const fileUri = convertClientPathToDebugger(args.source.path!, this._args.localSourceRoot, this._args.serverSourceRoot, this._args.pathMappings);
             const connections = Array.from(this._connections.values());
             let xdebugBreakpoints: Array<xdebug.ConditionalBreakpoint|xdebug.LineBreakpoint>;
             response.body = {breakpoints: []};
@@ -548,7 +548,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     line++;
                 } else {
                     // XDebug paths are URIs, VS Code file paths
-                    const filePath = convertDebuggerPathToClient(urlObject, this._args.localSourceRoot, this._args.serverSourceRoot, this._args.pathMapping);
+                    const filePath = convertDebuggerPathToClient(urlObject, this._args.localSourceRoot, this._args.serverSourceRoot, this._args.pathMappings);
                     // "Name" of the source and the actual file path
                     source = {name: path.basename(filePath), path: filePath};
                 }
@@ -569,7 +569,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             line++;
                         } else {
                             // XDebug paths are URIs, VS Code file paths
-                            const filePath = convertDebuggerPathToClient(urlObject, this._args.localSourceRoot, this._args.serverSourceRoot, this._args.pathMapping);
+                            const filePath = convertDebuggerPathToClient(urlObject, this._args.localSourceRoot, this._args.serverSourceRoot, this._args.pathMappings);
                             // "Name" of the source and the actual file path
                             source = {name: path.basename(filePath), path: filePath};
                         }

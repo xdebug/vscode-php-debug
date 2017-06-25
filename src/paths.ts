@@ -22,16 +22,23 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, localSource
     }
 
     if ( typeof pathMapping !== 'undefined' && pathMapping !== {} ) {
-        let mappedLocalSource: string;
+        let mappedServerSource: string;
 
-        for (mappedLocalSource of Object.keys(pathMapping) ) {
-            let mappedServerSource: string = pathMapping[mappedLocalSource];
+        for (mappedServerSource of Object.keys(pathMapping) ) {
+            let mappedLocalSource: string = pathMapping[mappedServerSource];
+
+            // normalize slashes for windows-to-unix
+            // I thought normalize did this automagically..
+            if ( process.platform !== "win32" ) {
+                mappedServerSource = mappedServerSource.replace(/\\/g, "/");
+            }
+
             let serverRelative: string = path.relative(mappedServerSource, serverPath);
 
             if ( serverRelative && serverRelative.length > 0 ) {
                 let relative: number = serverRelative.indexOf('..');
 
-                // if does not start with ..
+                // if path does not start with ..
                 if ( relative !== 0 ) {
                     serverSourceRoot = mappedServerSource;
                     localSourceRoot = mappedLocalSource;
@@ -60,14 +67,15 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, localSource
 
 /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
 export function convertClientPathToDebugger(localPath: string, localSourceRoot?: string, serverSourceRoot?: string, pathMapping?: { [index: string]: string; }): string {
+
     let localFileUri = fileUrl(localPath, {resolve: false});
     let serverFileUri: string;
 
     if ( typeof pathMapping !== 'undefined' && pathMapping !== {} ) {
-        let mappedLocalSource: string;
+        let mappedServerSource: string;
 
-        for (mappedLocalSource of Object.keys(pathMapping) ) {
-            let mappedServerSource: string = pathMapping[mappedLocalSource];
+        for (mappedServerSource of Object.keys(pathMapping) ) {
+            let mappedLocalSource: string = pathMapping[mappedServerSource];
 
             let localRelative: string = path.relative(mappedLocalSource, localPath);
 

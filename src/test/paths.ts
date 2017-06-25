@@ -9,33 +9,33 @@ describe('paths', () => {
         // local >> remote
         // unix to unix
         'unixToUnix': {
-            '/home/felix/mysite': '/var/www',
-            '/home/felix/mysource': '/app'
+            '/var/www': '/home/felix/mysite',
+            '/app': '/home/felix/mysource'
         },
         // unix to windows
         'unixLocalToWindowsServer': {
-            '/home/felix/mysite': 'C:\\Program Files\\Apache\\2.4\\htdocs',
-            '/home/felix/mysource': 'C:\\Program Files\\MySource'
+            'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
+            'C:\\Program Files\\MySource': '/home/felix/mysource'
         },
         // windows to unix
         'windowsServerToUnixLocal': {
-            '/home/felix/mysite': 'C:\\Program Files\\Apache\\2.4\\htdocs',
-            '/home/felix/mysource': 'C:\\Program Files\\MySource'
+            'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
+            'C:\\Program Files\\MySource': '/home/felix/mysource'
         },
         // windows to unix
         'windowsLocalToUnixServer': {
-            'C:\\Users\\felix\\mysite': '/var/www',
-            'C:\\Users\\felix\\mysource': '/app'
+            '/var/www': 'C:\\Users\\felix\\mysite',
+            '/app': 'C:\\Users\\felix\\mysource'
         },
         // unix to windows
         'unixServerToWindowsLocal': {
-            'C:\\Users\\felix\\mysite': '/var/www',
-            'C:\\Users\\felix\\mysource': '/app'
+            '/var/www': 'C:\\Users\\felix\\mysite',
+            '/app': 'C:\\Users\\felix\\mysource'
         },
         // windows to windows
         'windowsToWindows': {
-            'C:\\Users\\felix\\mysite': 'C:\\Program Files\\Apache\\2.4\\htdocs',
-            'C:\\Users\\felix\\mysource': 'C:\\Program Files\\MySource'
+            'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
+            'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource'
         },
         // local test paths
         'local': {
@@ -136,7 +136,7 @@ describe('paths', () => {
             });
 
             // windows to unix
-            it('should convert a windows path to a unix URI', () => {
+            (process.platform === 'win32' ? it : it.skip)('should convert a windows path to a unix URI', () => {
                 // site
                 assert.equal( convertClientPathToDebugger(sources.windows.site, undef, undef, pathMapping.windowsLocalToUnixServer), results.unix.site );
                 // source
