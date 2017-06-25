@@ -210,6 +210,8 @@ describe('PHP Debug Adapter', () => {
                 ]);
             });
 
+            it('should support stopping only on an error');
+
             it('should support stopping only on an exception', async () => {
                 await Promise.all([
                     client.launch({program}),
@@ -406,7 +408,13 @@ describe('PHP Debug Adapter', () => {
 
         beforeEach(async () => {
             await Promise.all([
-                client.launch({program}),
+                client.launch({
+                    program,
+                    xdebugSettings: {
+                        max_data: 10000,
+                        max_children: 100
+                    }
+                }),
                 client.waitForEvent('initialized')
             ]);
             await client.setBreakpointsRequest({source: {path: program}, breakpoints: [{line: 17}]});

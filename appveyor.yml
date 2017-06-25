@@ -8,12 +8,8 @@ cache:
 
 environment:
   matrix:
-    - {PHP_VERSION: '7.0.12', VC_VERSION: '14', XDEBUG_VERSION: '2.4.1'}
-    - {PHP_VERSION: '5.6.27', VC_VERSION: '11', XDEBUG_VERSION: '2.4.1'}
-    - {PHP_VERSION: '5.6.27', VC_VERSION: '11', XDEBUG_VERSION: '2.3.3'}
-    - {PHP_VERSION: '5.4.45', VC_VERSION:  '9', XDEBUG_VERSION: '2.4.1'}
-    - {PHP_VERSION: '5.4.45', VC_VERSION:  '9', XDEBUG_VERSION: '2.3.3'}
-    - {PHP_VERSION: '5.4.45', VC_VERSION:  '9', XDEBUG_VERSION: '2.2.3'}  # XDebug version on Vagrant
+    - {PHP_VERSION: '7.0.20', VC_VERSION: '14', XDEBUG_VERSION: '2.5.5'}
+    - {PHP_VERSION: '5.6.30', VC_VERSION: '11', XDEBUG_VERSION: '2.5.5'}
 
 install:
   - ps: . .\appveyor-install.ps1
@@ -23,4 +19,11 @@ build_script:
 
 test_script:
   - npm run lint --silent
-  - npm test --silent
+  - npm run cover --silent
+
+after_test:
+  - ps: |
+      node_modules\.bin\nyc report --reporter=lcov
+      $env:PATH = 'C:\msys64\usr\bin;' + $env:PATH
+      Invoke-WebRequest -Uri 'https://codecov.io/bash' -OutFile codecov.sh
+      bash codecov.sh -f "coverage\lcov.info"
