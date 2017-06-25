@@ -30,8 +30,8 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, localSource
 
             // normalize slashes for windows-to-unix
             // I thought normalize did this automagically..
-            if ( process.platform !== "win32" ) {
-                mappedServerSource = mappedServerSource.replace(/\\/g, "/");
+            if ( process.platform !== 'win32' ) {
+                mappedServerSource = mappedServerSource.replace(/\\/g, '/');
             }
 
             let serverRelative: string = path.relative(mappedServerSource, serverPath);
