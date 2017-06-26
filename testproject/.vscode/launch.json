@@ -9,10 +9,6 @@
       "port": 9000,
       "log": true,
 
-      // for single root
-      // "localSourceRoot": "${workspaceRoot}",
-      // "serverSourceRoot": "/var/www/html",
-
       // for individual path mappings
       "pathMappings": {
         "/var/www/html/main": "${workspaceRoot}/main",
@@ -26,10 +22,6 @@
       "program": "${file}",
       "cwd": "${workspaceRoot}",
       "externalConsole": false,
-
-      // for single root
-      // "localSourceRoot": "${workspaceRoot}",
-      // "serverSourceRoot": "/var/www/html",
 
       // for individual path mappings
       "pathMappings": {
