@@ -26,54 +26,54 @@ describe('paths', () => {
             // unix to unix
             it('should convert a unix path to a unix URI', () => {
                 // site
-                assert.equal( convertClientPathToDebugger('/home/felix/mysite/site.php', {
+                assert.equal(convertClientPathToDebugger('/home/felix/mysite/site.php', {
                     '/var/www': '/home/felix/mysite',
                     '/app': '/home/felix/mysource'
-                }), 'file:///var/www/site.php' );
+                }), 'file:///var/www/site.php');
                 // source
-                assert.equal( convertClientPathToDebugger('/home/felix/mysource/source.php', {
+                assert.equal(convertClientPathToDebugger('/home/felix/mysource/source.php', {
                     '/var/www': '/home/felix/mysite',
                     '/app': '/home/felix/mysource'
-                }), 'file:///app/source.php' );
+                }), 'file:///app/source.php');
             });
             // unix to windows
             (process.platform === 'win32' ? it : it.skip)('should convert a unix path to a windows URI', () => {
                 // site
-                assert.equal( convertClientPathToDebugger('/home/felix/mysite/site.php', {
+                assert.equal(convertClientPathToDebugger('/home/felix/mysite/site.php', {
                     'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                     'C:\\Program Files\\MySource': '/home/felix/mysource'
-                }), 'file:///C:/Program%20Files/Apache/2.4/htdocs/site.php' );
+                }), 'file:///C:/Program%20Files/Apache/2.4/htdocs/site.php');
                 // source
-                assert.equal( convertClientPathToDebugger('/home/felix/mysource/source.php', {
+                assert.equal(convertClientPathToDebugger('/home/felix/mysource/source.php', {
                     'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                     'C:\\Program Files\\MySource': '/home/felix/mysource'
-                }), 'file:///C:/Program%20Files/MySource/source.php' );
+                }), 'file:///C:/Program%20Files/MySource/source.php');
             });
             // windows to unix
             (process.platform === 'win32' ? it : it.skip)('should convert a windows path to a unix URI', () => {
                 // site
-                assert.equal( convertClientPathToDebugger('C:\\Users\\felix\\mysite\\site.php', {
+                assert.equal(convertClientPathToDebugger('C:\\Users\\felix\\mysite\\site.php', {
                     '/var/www': 'C:\\Users\\felix\\mysite',
                     '/app': 'C:\\Users\\felix\\mysource'
-                }), 'file:///var/www/site.php' );
+                }), 'file:///var/www/site.php');
                 // source
-                assert.equal( convertClientPathToDebugger('C:\\Users\\felix\\mysource\\source.php', {
+                assert.equal(convertClientPathToDebugger('C:\\Users\\felix\\mysource\\source.php', {
                     '/var/www': 'C:\\Users\\felix\\mysite',
                     '/app': 'C:\\Users\\felix\\mysource'
-                }), 'file:///app/source.php' );
+                }), 'file:///app/source.php');
             });
             // windows to windows
             (process.platform === 'win32' ? it : it.skip)('should convert a windows path to a windows URI', () => {
                 // site
-                assert.equal( convertClientPathToDebugger('C:\\Users\\felix\\mysite\\site.php', {
+                assert.equal(convertClientPathToDebugger('C:\\Users\\felix\\mysite\\site.php', {
                     'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
                     'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource'
-                }), 'file:///C:/Program%20Files/Apache/2.4/htdocs/site.php' );
+                }), 'file:///C:/Program%20Files/Apache/2.4/htdocs/site.php');
                 // source
-                assert.equal( convertClientPathToDebugger('C:\\Users\\felix\\mysource\\source.php', {
+                assert.equal(convertClientPathToDebugger('C:\\Users\\felix\\mysource\\source.php', {
                     'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
                     'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource'
-                }), 'file:///C:/Program%20Files/MySource/source.php' );
+                }), 'file:///C:/Program%20Files/MySource/source.php');
             });
         });
     });
@@ -96,54 +96,54 @@ describe('paths', () => {
             // unix to unix
             (process.platform !== 'win32' ? it : it.skip)('should map unix uris to unix paths', () => {
                 // site
-                assert.equal( convertDebuggerPathToClient('file:///var/www/site.php', {
+                assert.equal(convertDebuggerPathToClient('file:///var/www/site.php', {
                     '/var/www': '/home/felix/mysite',
                     '/app': '/home/felix/mysource'
-                }), '/home/felix/mysite/site.php' );
+                }), '/home/felix/mysite/site.php');
                 // source
-                assert.equal( convertDebuggerPathToClient('file:///app/source.php', {
+                assert.equal(convertDebuggerPathToClient('file:///app/source.php', {
                     '/var/www': '/home/felix/mysite',
                     '/app': '/home/felix/mysource'
-                }), '/home/felix/mysource/source.php' );
+                }), '/home/felix/mysource/source.php');
             });
             // unix to windows
             (process.platform === 'win32' ? it : it.skip)('should map unix uris to windows paths', () => {
                 // site
-                assert.equal( convertDebuggerPathToClient('file:///var/www/site.php', {
+                assert.equal(convertDebuggerPathToClient('file:///var/www/site.php', {
                     '/var/www': 'C:\\Users\\felix\\mysite',
                     '/app': 'C:\\Users\\felix\\mysource'
-                }), 'C:\\Users\\felix\\mysite\\site.php' );
+                }), 'C:\\Users\\felix\\mysite\\site.php');
                 // source
-                assert.equal( convertDebuggerPathToClient('file:///app/source.php', {
+                assert.equal(convertDebuggerPathToClient('file:///app/source.php', {
                     '/var/www': 'C:\\Users\\felix\\mysite',
                     '/app': 'C:\\Users\\felix\\mysource'
-                }), 'C:\\Users\\felix\\mysource\\source.php' );
+                }), 'C:\\Users\\felix\\mysource\\source.php');
             });
             // windows to unix
             (process.platform !== 'win32' ? it : it.skip)('should map windows uris to unix paths', () => {
                 // site
-                assert.equal( convertDebuggerPathToClient('file:///C:/Program%20Files/Apache/2.4/htdocs/site.php', {
+                assert.equal(convertDebuggerPathToClient('file:///C:/Program%20Files/Apache/2.4/htdocs/site.php', {
                     'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                     'C:\\Program Files\\MySource': '/home/felix/mysource'
-                }), '/home/felix/mysite/site.php' );
+                }), '/home/felix/mysite/site.php');
                 // source
-                assert.equal( convertDebuggerPathToClient('file:///C:/Program%20Files/MySource/source.php', {
+                assert.equal(convertDebuggerPathToClient('file:///C:/Program%20Files/MySource/source.php', {
                     'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                     'C:\\Program Files\\MySource': '/home/felix/mysource'
-                }), '/home/felix/mysource/source.php' );
+                }), '/home/felix/mysource/source.php');
             });
             // windows to windows
             (process.platform === 'win32' ? it : it.skip)('should map windows uris to windows paths', () => {
                 // site
-                assert.equal( convertDebuggerPathToClient('file:///C:/Program%20Files/Apache/2.4/htdocs/site.php', {
+                assert.equal(convertDebuggerPathToClient('file:///C:/Program%20Files/Apache/2.4/htdocs/site.php', {
                     'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
                     'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource'
-                }), 'C:\\Users\\felix\\mysite\\site.php' );
+                }), 'C:\\Users\\felix\\mysite\\site.php');
                 // source
-                assert.equal( convertDebuggerPathToClient('file:///C:/Program%20Files/MySource/source.php', {
+                assert.equal(convertDebuggerPathToClient('file:///C:/Program%20Files/MySource/source.php', {
                     'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
                     'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource'
-                }), 'C:\\Users\\felix\\mysource\\source.php' );
+                }), 'C:\\Users\\felix\\mysource\\source.php');
             });
         });
     });

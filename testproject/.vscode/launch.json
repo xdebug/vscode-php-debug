@@ -11,8 +11,7 @@
 
       // for individual path mappings
       "pathMappings": {
-        "/var/www/html/main": "${workspaceRoot}/main",
-        "/var/www/html/secondary": "${workspaceRoot}/secondary"
+        "/var/www/html": "${workspaceRoot}"
       }
     },
     {
@@ -25,8 +24,7 @@
 
       // for individual path mappings
       "pathMappings": {
-        "/var/www/html/main": "${workspaceRoot}/main",
-        "/var/www/html/secondary": "${workspaceRoot}/secondary"
+        "/var/www/html": "${workspaceRoot}"
       }
     }
   ]
