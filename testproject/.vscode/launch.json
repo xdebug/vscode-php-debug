@@ -8,8 +8,6 @@
       "request": "launch",
       "port": 9000,
       "log": true,
-
-      // for individual path mappings
       "pathMappings": {
         "/var/www/html": "${workspaceRoot}"
       }
@@ -21,8 +19,6 @@
       "program": "${file}",
       "cwd": "${workspaceRoot}",
       "externalConsole": false,
-
-      // for individual path mappings
       "pathMappings": {
         "/var/www/html": "${workspaceRoot}"
       }
