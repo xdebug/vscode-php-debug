@@ -7,10 +7,7 @@
       "type": "php",
       "request": "launch",
       "port": 9000,
-      "log": true,
-      "pathMappings": {
-        "/var/www/html": "${workspaceRoot}"
-      }
+      "log": true
     },
     {
       "name": "Launch",
@@ -18,10 +15,7 @@
       "type": "php",
       "program": "${file}",
       "cwd": "${workspaceRoot}",
-      "externalConsole": false,
-      "pathMappings": {
-        "/var/www/html": "${workspaceRoot}"
-      }
+      "externalConsole": false
     }
   ]
 }

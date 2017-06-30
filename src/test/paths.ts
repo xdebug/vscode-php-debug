@@ -37,7 +37,7 @@ describe('paths', () => {
                 }), 'file:///app/source.php');
             });
             // unix to windows
-            (process.platform === 'win32' ? it : it.skip)('should convert a unix path to a windows URI', () => {
+            it('should convert a unix path to a windows URI', () => {
                 // site
                 assert.equal(convertClientPathToDebugger('/home/felix/mysite/site.php', {
                     'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',

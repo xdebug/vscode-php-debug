@@ -7,8 +7,8 @@ import {decode} from 'urlencode';
 
 /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
 export function convertDebuggerPathToClient(fileUri: string|url.Url, pathMapping?: { [index: string]: string; }): string {
-    let localSourceRoot: string = '';
-    let serverSourceRoot: string = '';
+    let localSourceRoot = '';
+    let serverSourceRoot = '';
     if (typeof fileUri === 'string') {
         fileUri = url.parse(fileUri);
     }
@@ -19,23 +19,20 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, pathMapping
     if (serverIsWindows) {
         serverPath = serverPath.substr(1);
     }
-    if (typeof pathMapping !== 'undefined') {
-        for (let mappedServerSource of Object.keys(pathMapping) ) {
-            let mappedLocalSource: string = pathMapping[mappedServerSource];
+    if (pathMapping) {
+        for (const mappedServerPath of Object.keys(pathMapping) ) {
+            const mappedLocalSource = pathMapping[mappedServerPath];
             // normalize slashes for windows-to-unix
-            if (process.platform !== 'win32') {
-                mappedServerSource = mappedServerSource.replace(/\\/g, '/');
-            }
-            let serverRelative: string = path.relative(mappedServerSource, serverPath);
-            if (serverRelative.length > 0 && serverRelative.indexOf('..') !== 0) {
-                serverSourceRoot = mappedServerSource;
+            const serverRelative = (serverIsWindows ? path.win32 : path.posix).relative(mappedServerPath, serverPath);
+            if (serverRelative.indexOf('..') !== 0) {
+                serverSourceRoot = mappedServerPath;
                 localSourceRoot = mappedLocalSource;
                 break;
             }
         }
     }
     let localPath: string;
-    if (serverSourceRoot !== '' && localSourceRoot !== '') {
+    if (serverSourceRoot && localSourceRoot) {
         // get the part of the path that is relative to the source root
         const pathRelativeToSourceRoot = (serverIsWindows ? path.win32 : path.posix).relative(serverSourceRoot, serverPath);
         // resolve from the local source root
@@ -48,23 +45,22 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, pathMapping
 
 /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
 export function convertClientPathToDebugger(localPath: string, pathMapping?: { [index: string]: string; }): string {
-    let localSourceRoot: string = '';
-    let serverSourceRoot: string = '';
+    let localSourceRoot = '';
+    let serverSourceRoot = '';
     let localFileUri = fileUrl(localPath, {resolve: false});
     let serverFileUri: string;
-    if ( typeof pathMapping !== 'undefined' ) {
-        let mappedServerSource: string;
-        for (mappedServerSource of Object.keys(pathMapping) ) {
-            let mappedLocalSource: string = pathMapping[mappedServerSource];
-            let localRelative: string = path.relative(mappedLocalSource, localPath);
-            if (localRelative.length > 0 && localRelative.indexOf('..') !== 0) {
-                serverSourceRoot = mappedServerSource;
+    if (pathMapping) {
+        for (const mappedServerPath of Object.keys(pathMapping) ) {
+            const mappedLocalSource = pathMapping[mappedServerPath];
+            const localRelative = path.relative(mappedLocalSource, localPath);
+            if (localRelative.indexOf('..') !== 0) {
+                serverSourceRoot = mappedServerPath;
                 localSourceRoot = mappedLocalSource;
                 break;
             }
         }
     }
-    if (serverSourceRoot !== '' && localSourceRoot !== '') {
+    if (serverSourceRoot && localSourceRoot) {
         let localSourceRootUrl = fileUrl(localSourceRoot, {resolve: false});
         if (!localSourceRootUrl.endsWith('/')) {
             localSourceRootUrl += '/';

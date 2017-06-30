@@ -182,9 +182,9 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected async launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
-        if ( args.hasOwnProperty('localSourceRoot') && typeof args.localSourceRoot !== 'undefined' && args.hasOwnProperty('serverSourceRoot') && typeof args.serverSourceRoot !== 'undefined') {
+        if (args.localSourceRoot && args.serverSourceRoot) {
             let pathMappings: {[index: string]: string} = {};
-            if ( args.hasOwnProperty('pathMappings') && typeof args.pathMappings !== 'undefined') {
+            if (args.pathMappings) {
                 pathMappings = args.pathMappings;
             }
             pathMappings[args.serverSourceRoot] = args.localSourceRoot;

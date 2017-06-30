@@ -143,16 +143,16 @@
               },
               "serverSourceRoot": {
                 "type": "string",
-                "description": "The source root when debugging a remote host"
+                "description": "Deprecated: The source root when debugging a remote host"
               },
               "localSourceRoot": {
                 "type": "string",
-                "description": "The source root on this machine that is the equivalent to the serverSourceRoot on the server."
+                "description": "Deprecated: The source root on this machine that is the equivalent to the serverSourceRoot on the server."
               },
               "pathMappings": {
                 "type": "object",
                 "default": {},
-                "description": "A mapping of multiple localSourceRoots on this machine to remote serverSourceRoots on the server."
+                "description": "A mapping of server paths to local paths."
               },
               "log": {
                 "type": "boolean",
