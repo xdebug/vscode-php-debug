@@ -10,6 +10,7 @@ import * as util from 'util';
 import * as fs from 'fs';
 import {Terminal} from './terminal';
 import {isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient} from './paths';
+import minimatch = require('minimatch');
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -59,6 +60,8 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     localSourceRoot?: string;
     /** If true, will log all communication between VS Code and the adapter to the console */
     log?: boolean;
+    /** Array of glob patterns that errors should be ignored from */
+    ignore?: string[];
     /** XDebug configuration */
     xdebugSettings?: { [featureName: string]: string | number; };
 
@@ -286,7 +289,7 @@ class PhpDebugSession extends vscode.DebugSession {
      * Checks the status of a StatusResponse and notifies VS Code accordingly
      * @param {xdebug.StatusResponse} response
      */
-    private async _checkStatus(response: xdebug.StatusResponse) {
+    private async _checkStatus(response: xdebug.StatusResponse): Promise<void> {
         const connection = response.connection;
         this._statuses.set(connection, response);
         if (response.status === 'stopping') {
@@ -301,6 +304,12 @@ class PhpDebugSession extends vscode.DebugSession {
             let stoppedEventReason: 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry';
             let exceptionText: string | undefined;
             if (response.exception) {
+                // If one of the ignore patterns matches, ignore this exception
+                if (this._args.ignore && this._args.ignore.some(glob => minimatch(convertDebuggerPathToClient(response.fileUri).replace(/\\/g, '/'), glob))) {
+                    const response = await connection.sendRunCommand();
+                    await this._checkStatus(response);
+                    return;
+                }
                 stoppedEventReason = 'exception';
                 exceptionText = response.exception.name + ': ' + response.exception.message; // this seems to be ignored currently by VS Code
             } else if (this._args.stopOnEntry) {
