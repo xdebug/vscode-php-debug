@@ -17,3 +17,4 @@ travis-php.ini
 ISSUE_TEMPLATE.md
 *.vsix
 *.log
+package-lock.json

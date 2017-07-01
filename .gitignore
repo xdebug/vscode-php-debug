@@ -4,3 +4,4 @@ out/
 typings/
 coverage/
 .nyc_output/
+package-lock.json
