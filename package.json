@@ -54,6 +54,7 @@
     "tslint": "^5.4.3",
     "typescript": "^2.1.4",
     "typings": "^2.0.0",
+    "vsce": "^1.28.0",
     "vscode-debugadapter-testsupport": "^1.11.0"
   },
   "scripts": {

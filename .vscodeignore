@@ -15,3 +15,5 @@ appveyor-install.ps1
 .travis.yml
 travis-php.ini
 ISSUE_TEMPLATE.md
+*.vsix
+*.log
