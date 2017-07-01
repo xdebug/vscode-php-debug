@@ -32,7 +32,8 @@ after_script:
 # If build on a tag, publish a new release and upload vsix to the GitHub release
 before_deploy:
   - vsce package
-  - vsce publish -p $VSCE_TOKEN
+  # This is run for all jobs, but will fail if one of the other jobs already published the version, so ignore the error
+  - vsce publish -p $VSCE_TOKEN || true
 
 deploy:
   provider: releases
