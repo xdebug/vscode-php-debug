@@ -166,12 +166,23 @@ describe('PHP Debug Adapter', () => {
 
             const program = path.join(TEST_PROJECT, 'error.php');
 
-            beforeEach(() => Promise.all([
-                client.launch({program}),
-                client.waitForEvent('initialized')
-            ]));
+            it('should not break on anything if the file matches the ignore pattern', async () => {
+                await Promise.all([
+                    client.launch({program, ignore: ['**/*.*']}),
+                    client.waitForEvent('initialized')
+                ]);
+                await client.setExceptionBreakpointsRequest({filters: ['*']});
+                await Promise.all([
+                    client.configurationDoneRequest(),
+                    client.waitForEvent('terminated')
+                ]);
+            });
 
             it('should support stopping only on a notice', async () => {
+                await Promise.all([
+                    client.launch({program}),
+                    client.waitForEvent('initialized')
+                ]);
                 await client.setExceptionBreakpointsRequest({filters: ['Notice']});
                 const [, {threadId}] = await Promise.all([
                     client.configurationDoneRequest(),
@@ -184,6 +195,10 @@ describe('PHP Debug Adapter', () => {
             });
 
             it('should support stopping only on a warning', async () => {
+                await Promise.all([
+                    client.launch({program}),
+                    client.waitForEvent('initialized')
+                ]);
                 await client.setExceptionBreakpointsRequest({filters: ['Warning']});
                 const [{threadId}] = await Promise.all([
                     assertStoppedLocation('exception', program, 9),
@@ -198,6 +213,10 @@ describe('PHP Debug Adapter', () => {
             it('should support stopping only on an error');
 
             it('should support stopping only on an exception', async () => {
+                await Promise.all([
+                    client.launch({program}),
+                    client.waitForEvent('initialized')
+                ]);
                 await client.setExceptionBreakpointsRequest({filters: ['Exception']});
                 const [, {threadId}] = await Promise.all([
                     client.configurationDoneRequest(),
@@ -213,6 +232,10 @@ describe('PHP Debug Adapter', () => {
             if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
 
                 it('should support stopping on everything', async () => {
+                    await Promise.all([
+                        client.launch({program}),
+                        client.waitForEvent('initialized')
+                    ]);
                     await client.setExceptionBreakpointsRequest({filters: ['*']});
                     // Notice
                     const [, {threadId}] = await Promise.all([
@@ -243,6 +266,10 @@ describe('PHP Debug Adapter', () => {
 
             it.skip('should report the error in a virtual error scope', async () => {
 
+                await Promise.all([
+                    client.launch({program}),
+                    client.waitForEvent('initialized')
+                ]);
                 await client.setExceptionBreakpointsRequest({filters: ['Notice', 'Warning', 'Exception']});
                 const [{body: {threadId}}] = await Promise.all([
                     client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>,

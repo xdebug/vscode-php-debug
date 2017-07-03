@@ -8,7 +8,7 @@ import {DOMParser} from 'xmldom';
 export const ENCODING = 'iso-8859-1';
 
 /** The two states the connection switches between */
-enum ParsingState {DataLength, Response};
+enum ParsingState {DataLength, Response}
 
 /** Wraps the NodeJS Socket and calls handleResponse() whenever a full response arrives */
 export class DbgpConnection extends EventEmitter {

@@ -583,7 +583,7 @@ export class Connection extends DbgpConnection {
             } else {
                 const transactionId = parseInt(response.documentElement.getAttribute('transaction_id')!);
                 if (this._pendingCommands.has(transactionId)) {
-                    const command = this._pendingCommands.get(transactionId);
+                    const command = this._pendingCommands.get(transactionId)!;
                     this._pendingCommands.delete(transactionId);
                     command.resolveFn(response);
                 }
