@@ -7,8 +7,8 @@ import {decode} from 'urlencode';
 
 /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
 export function convertDebuggerPathToClient(fileUri: string|url.Url, pathMapping?: { [index: string]: string; }): string {
-    let localSourceRoot = '';
-    let serverSourceRoot = '';
+    let localSourceRoot: string | undefined;
+    let serverSourceRoot: string | undefined;
     if (typeof fileUri === 'string') {
         fileUri = url.parse(fileUri);
     }
@@ -45,8 +45,8 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, pathMapping
 
 /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
 export function convertClientPathToDebugger(localPath: string, pathMapping?: { [index: string]: string; }): string {
-    let localSourceRoot = '';
-    let serverSourceRoot = '';
+    let localSourceRoot: string | undefined;
+    let serverSourceRoot: string | undefined;
     let localFileUri = fileUrl(localPath, {resolve: false});
     let serverFileUri: string;
     if (pathMapping) {

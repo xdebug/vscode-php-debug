@@ -143,11 +143,13 @@
               },
               "serverSourceRoot": {
                 "type": "string",
-                "description": "Deprecated: The source root when debugging a remote host"
+                "description": "Deprecated: The source root when debugging a remote host",
+                "deprecationMessage": "Property serverSourceRoot is deprecated, please use pathMappings to define a server root."
               },
               "localSourceRoot": {
                 "type": "string",
-                "description": "Deprecated: The source root on this machine that is the equivalent to the serverSourceRoot on the server."
+                "description": "Deprecated: The source root on this machine that is the equivalent to the serverSourceRoot on the server.",
+                "deprecationMessage": "Property localSourceRoot is deprecated, please use pathMappings to define a local root."
               },
               "pathMappings": {
                 "type": "object",
