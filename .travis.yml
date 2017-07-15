@@ -29,4 +29,22 @@ after_success:
 after_script:
  - cat /tmp/xdebug.log
 
+# If build on a tag, publish a new release and upload vsix to the GitHub release
+before_deploy:
+  - vsce package
+  # This is run for all jobs, but will fail if one of the other jobs already published the version, so ignore the error
+  - vsce publish -p $VSCE_TOKEN || true
+
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key:
+    secure: BMNVRtE1lKcXDTgonnf2wPRJq6Psn5xSg1Va4eb000SpaK1YTMonmm0b6WJYbD1mL8uUE+C2TLWL7MaXisJvedS/93/WuCpMwEdCGLsH+V7AKNUf85wtN12eRSUG+87MRKypgO+elkP9N+sKnrmjrjhIKrB+ZZSiNkGnMgd8OYbzbKzLP4vBF665OAMR0qo1gaEvMCY693phfblqI9+mRIeZ2SLSBSSIL1vmMwc7HaVjZxI12hX6cQrjRN9rdCkKKAQEOmPl/KuGvDjHrhncwQERh3xZwzFOALC9Fl43Muv79fhVxE0/dY2qT7z1VV2MZbgB7zbVdRDXolkxYb8nzBHZB6T5OZv+yy4Z9ZXm+uJn2dl9IPzkQ+iB1LMRQpafDSZkZtLd/97vN5smbZlebK99zWx96Z42EXvOix34/x1rtyu1gpXCQdjmoP+NX9Yt6ZXali0ZTQXE4JpPydXeu/QyDY0KBp2KfFJXot+UeO0cKsIc9AV6NmLSarkPcsJSc7MmXrVVkkQfVLwskR2Aq9ORB3pETcnEpLbTwDHiyG+AfmXj5mULHVZmrvRnhxIG5W91Et4Ycjwl85MXRe/bk63A5kx3I27Yz7pnwt4HI2FPAKh0M4bHBob6ZuNGLisUyWEmiOSF1FgS6R8m5gbdmvuB7ZVAPyD3z9EBSRtnwOE=
+  file: php-debug-*.vsix
+  file_glob: true
+  on:
+    repo: felixfbecker/vscode-php-debug
+    tags: true
+
 sudo: false
+

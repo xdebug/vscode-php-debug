@@ -1,7 +1,7 @@
 {
   "name": "php-debug",
   "displayName": "PHP Debug",
-  "version": "1.10.1",
+  "version": "1.11.1",
   "publisher": "felixfbecker",
   "license": "MIT",
   "description": "Debug support for PHP with XDebug",
@@ -18,7 +18,7 @@
     "vscode": "^1.6.0",
     "node": ">=6.0.0"
   },
-  "icon": "images/logo.svg",
+  "icon": "images/logo.png",
   "galleryBanner": {
     "color": "#6682BA",
     "theme": "dark"
@@ -36,7 +36,8 @@
   "dependencies": {
     "file-url": "^2.0.0",
     "iconv-lite": "^0.4.15",
-    "moment": "2.17.1",
+    "minimatch": "^3.0.3",
+    "moment": "^2.17.1",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
     "vscode-debugadapter": "^1.11.0",
@@ -53,6 +54,7 @@
     "tslint": "^5.4.3",
     "typescript": "^2.1.4",
     "typings": "^2.0.0",
+    "vsce": "^1.28.0",
     "vscode-debugadapter-testsupport": "^1.11.0"
   },
   "scripts": {
@@ -155,6 +157,14 @@
                 "type": "object",
                 "default": {},
                 "description": "A mapping of server paths to local paths."
+              },
+              "ignore": {
+                "type": "array",
+                "items": "string",
+                "description": "Array of glob patterns that errors should be ignored from",
+                "default": [
+                  "**/vendor/**/*.php"
+                ]
               },
               "log": {
                 "type": "boolean",

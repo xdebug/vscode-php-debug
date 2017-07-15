@@ -2,6 +2,7 @@
   "name": "php-debug",
   "version": false,
   "dependencies": {
+    "minimatch": "registry:npm/minimatch#3.0.0+20160723033700",
     "semver": "registry:npm/semver#5.0.0+20160723033700"
   },
   "globalDependencies": {
