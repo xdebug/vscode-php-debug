@@ -191,7 +191,7 @@
         "configurationSnippets": [
           {
             "label": "PHP: Listen for XDebug",
-            "description": "Start PHP Plugin listening for XDebug",
+            "description": "Listen for incoming XDebug connections",
             "body": {
               "name": "Listen for XDebug",
               "type": "php",
@@ -201,7 +201,7 @@
           },
           {
             "label": "PHP: Launch currently open script",
-            "description": "Start PHP Plugin for currently open script",
+            "description": "Debug the currently open PHP script in CLI mode",
             "body": {
               "name": "Launch currently open script",
               "type": "php",
