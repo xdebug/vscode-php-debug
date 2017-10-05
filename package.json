@@ -188,20 +188,28 @@
             }
           }
         },
-        "initialConfigurations": [
+        "configurationSnippets": [
           {
-            "name": "Listen for XDebug",
-            "type": "php",
-            "request": "launch",
-            "port": 9000
+            "label": "PHP: Listen for XDebug",
+            "description": "Start PHP Plugin listening for XDebug",
+            "body": {
+              "name": "Listen for XDebug",
+              "type": "php",
+              "request": "launch",
+              "port": 9000
+            }
           },
           {
-            "name": "Launch currently open script",
-            "type": "php",
-            "request": "launch",
-            "program": "${file}",
-            "cwd": "${fileDirname}",
-            "port": 9000
+            "label": "PHP: Launch currently open script",
+            "description": "Start PHP Plugin for currently open script",
+            "body": {
+              "name": "Launch currently open script",
+              "type": "php",
+              "request": "launch",
+              "program": "${file}",
+              "cwd": "${fileDirname}",
+              "port": 9000
+            }
           }
         ]
       }
