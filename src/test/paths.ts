@@ -47,6 +47,14 @@ describe('paths', () => {
                     'file:///var/www/test.php'
                 );
             });
+            it('should convert a windows path with inconsistent casing to a unix URI', () => {
+                const localSourceRoot = 'C:\\Users\\felix\\myproject';
+                const serverSourceRoot = '/var/www';
+                assert.equal(
+                    convertClientPathToDebugger('c:\\Users\\felix\\myproject\\test.php', localSourceRoot, serverSourceRoot),
+                    'file:///var/www/test.php'
+                );
+            });
             it('should convert a windows path to a windows URI', () => {
                 const localSourceRoot = 'C:\\Users\\felix\\myproject';
                 const serverSourceRoot = 'C:\\Program Files\\Apache\\2.4\\htdocs';

@@ -31,6 +31,12 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, localSource
 
 /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
 export function convertClientPathToDebugger(localPath: string, localSourceRoot?: string, serverSourceRoot?: string): string {
+    if (localSourceRoot) {
+        localSourceRoot = localSourceRoot.replace(/^[a-zA-Z]:\\/, match => match.toLowerCase());
+    }
+    if (serverSourceRoot) {
+        serverSourceRoot = serverSourceRoot.replace(/^[a-zA-Z]:\\/, match => match.toLowerCase());
+    }
     let localFileUri = fileUrl(localPath, {resolve: false});
     let serverFileUri: string;
     if (serverSourceRoot && localSourceRoot) {
