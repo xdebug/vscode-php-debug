@@ -1,7 +1,7 @@
 PHP Debug Adapter for Visual Studio Code
 ========================================
 
-[![Latest Release](https://vsmarketplacebadge.apphb.com/version-short/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![Installs](https://vsmarketplacebadge.apphb.com/installs/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![Rating](https://vsmarketplacebadge.apphb.com/rating-short/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![Build Status](https://travis-ci.org/felixfbecker/vscode-php-debug.svg?branch=master)](https://travis-ci.org/felixfbecker/vscode-php-debug) [![Build Status Windows](https://ci.appveyor.com/api/projects/status/hda6n2umfdt6eyms/branch/master?svg=true)](https://ci.appveyor.com/project/felixfbecker/vscode-php-debug/branch/master) [![Coverage](https://codecov.io/gh/felixfbecker/vscode-php-debug/branch/master/graph/badge.svg)](https://codecov.io/gh/felixfbecker/vscode-php-debug) [![Dependency Status](https://gemnasium.com/felixfbecker/vscode-php-debug.svg)](https://gemnasium.com/felixfbecker/vscode-php-debug) [![Gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![vs marketplace](https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![downloads](https://img.shields.io/vscode-marketplace/d/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![rating](https://img.shields.io/vscode-marketplace/r/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![Build Status](https://travis-ci.org/felixfbecker/vscode-php-debug.svg?branch=master)](https://travis-ci.org/felixfbecker/vscode-php-debug) [![appveyor build](https://ci.appveyor.com/api/projects/status/hda6n2umfdt6eyms/branch/master?svg=true)](https://ci.appveyor.com/project/felixfbecker/vscode-php-debug/branch/master) [![codecov](https://codecov.io/gh/felixfbecker/vscode-php-debug/branch/master/graph/badge.svg)](https://codecov.io/gh/felixfbecker/vscode-php-debug) [![dependencies](https://gemnasium.com/felixfbecker/vscode-php-debug.svg)](https://gemnasium.com/felixfbecker/vscode-php-debug) [![chat: on gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ![Demo GIF](images/demo.gif)
 
@@ -12,12 +12,12 @@ Install the extension: Press `F1`, type `ext install php-debug`.
 
 This extension is a debug adapter between VS Code and [XDebug](https://xdebug.org/) by Derick Rethan. XDebug is a PHP extension (a `.so` file on Linux and a `.dll` on Windows) that needs to be installed on your server.
 
- 1. [Install XDebug](https://xdebug.org/docs/install)  
-  ***I highly recommend you make a simple `test.php` file, put a `phpinfo();` statement in there, then copy the output and paste it into the [XDebug installation wizard](https://xdebug.org/wizard.php). It will analyze it and give you tailored installation instructions for your environment.***  
+ 1. [Install XDebug](https://xdebug.org/docs/install)
+  ***I highly recommend you make a simple `test.php` file, put a `phpinfo();` statement in there, then copy the output and paste it into the [XDebug installation wizard](https://xdebug.org/wizard.php). It will analyze it and give you tailored installation instructions for your environment.***
   In short:
    - On Windows: [Download](https://xdebug.org/download.php) the appropiate precompiled DLL for your PHP version, architecture (64/32 Bit), thread safety (TS/NTS) and Visual Studio compiler version and place it in your PHP extension folder.
    - On Linux: Either download the source code as a tarball or [clone it with git](https://xdebug.org/docs/install#source), then [compile it](https://xdebug.org/docs/install#compile).
- 2. [Configure PHP to use XDebug](https://xdebug.org/docs/install#configure-php) by adding `zend_extension=path/to/xdebug` to your php.ini.  
+ 2. [Configure PHP to use XDebug](https://xdebug.org/docs/install#configure-php) by adding `zend_extension=path/to/xdebug` to your php.ini.
   The path of your php.ini is shown in your `phpinfo()` output under "Loaded Configuration File".
  3. Enable remote debugging in your php.ini:
 
@@ -32,9 +32,9 @@ This extension is a debug adapter between VS Code and [XDebug](https://xdebug.or
 
 ### VS Code Configuration
 In your project, go to the debugger and hit the little gear icon and choose _PHP_. A new launch configuration will be created for you with two configurations:
- - **Listen for XDebug**  
+ - **Listen for XDebug**
    This setting will simply start listening on the specified port (by default 9000) for XDebug. If you configured XDebug like recommended above, everytime you make a request with a browser to your webserver or launch a CLI script XDebug will connect and you can stop on breakpoints, exceptions etc.
- - **Launch currently open script**  
+ - **Launch currently open script**
    This setting is an example of CLI debugging. It will launch the currently opened script as a CLI, show all stdout/stderr output in the debug console and end the debug session once the script exits.
 
 #### Supported launch.json settings:
