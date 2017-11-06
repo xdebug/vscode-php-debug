@@ -19,7 +19,7 @@ install:
  - npm install
 
 script:
- - npm run compile --silent
+ - npm run build --silent
  - npm run lint --silent
  - npm run cover --silent
 
