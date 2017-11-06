@@ -7,6 +7,8 @@ cache:
   - '%APPDATA%\npm-cache'
 
 environment:
+  NODE_VERSION: '7.9.0'
+  NPM_VERSION: '^5.0.0'
   matrix:
     - {PHP_VERSION: '7.0.20', VC_VERSION: '14', XDEBUG_VERSION: '2.5.5'}
     - {PHP_VERSION: '5.6.30', VC_VERSION: '11', XDEBUG_VERSION: '2.5.5'}
@@ -15,7 +17,7 @@ install:
   - ps: . .\appveyor-install.ps1
 
 build_script:
-  - npm run compile --silent
+  - npm run build --silent
 
 test_script:
   - npm run lint --silent
