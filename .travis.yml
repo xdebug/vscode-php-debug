@@ -3,7 +3,6 @@ language: php
 php:
   - '5.6'
   - '7.0'
-
 env:
   global:
     - NODE_VERSION=7.9.0
@@ -24,7 +23,6 @@ before_install:
   - nvm install $NODE_VERSION
   - nvm use $NODE_VERSION
   - npm install -g npm@$NPM_VERSION --depth 0
-  - npm config -g set progress false
 
 install:
   - npm install
@@ -39,6 +37,23 @@ after_success:
 
 jobs:
   include:
+    - stage: test
+      os: osx
+      osx_image: xcode9.1
+      language: generic
+      before_install:
+        # Fix ruby error https://github.com/Homebrew/brew/issues/3299
+        - brew update
+        - brew tap homebrew/homebrew-php
+        - brew install php71
+        - brew install homebrew/php/php71-xdebug
+        - mkdir -p /usr/local/etc/php/7.1/conf.d
+        - cp travis-php.ini /usr/local/etc/php/7.1/conf.d/
+        - git clone --depth 1 https://github.com/creationix/nvm.git ./.nvm
+        - source ./.nvm/nvm.sh
+        - nvm install $NODE_VERSION
+        - nvm use $NODE_VERSION
+        - npm install -g npm@$NPM_VERSION --depth 0
     - stage: release
       language: node_js
       node_js: '8'
