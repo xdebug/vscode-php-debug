@@ -2,7 +2,6 @@
 src/**/*.*
 out/test/**/*.*
 **/*.js.map
-typings/**/*.*
 testproject/**/*.*
 .gitignore
 .editorconfig
