@@ -603,7 +603,7 @@ export class Connection extends DbgpConnection {
     /**
      * Pushes a new command to the queue that will be executed after all the previous commands have finished and we received a response.
      * If the queue is empty AND there are no pending transactions (meaning we already received a response and XDebug is waiting for
-     * commands) the command will be executed emidiatly.
+     * commands) the command will be executed immediately.
      */
     private _enqueueCommand(name: string, args?: string, data?: string): Promise<XMLDocument> {
         return new Promise((resolveFn, rejectFn) => {

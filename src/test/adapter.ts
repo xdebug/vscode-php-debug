@@ -340,9 +340,9 @@ describe('PHP Debug Adapter', () => {
                 const fatalErrorScope = await getErrorScope();
                 assert.propertyVal(fatalErrorScope, 'name', 'Fatal error');
                 assert.propertyVal(fatalErrorScope, 'type', 'Fatal error');
-                assert.match(fatalErrorScope.message, /^"Uncaught Exception/i);
-                assert.match(fatalErrorScope.message, /this is an exception/);
-                assert.match(fatalErrorScope.message, /"$/);
+                assert.match(fatalErrorScope.message!, /^"Uncaught Exception/i);
+                assert.match(fatalErrorScope.message!, /this is an exception/);
+                assert.match(fatalErrorScope.message!, /"$/);
             });
         });
 
@@ -363,7 +363,7 @@ describe('PHP Debug Adapter', () => {
                     assertStoppedLocation('breakpoint', program, 10)
                 ]);
                 const result = (await client.evaluateRequest({context: 'watch', frameId: frame.id, expression: '$anInt'})).body.result;
-                assert.equal(result, 123);
+                assert.equal(result, '123');
             });
 
             it('should not stop on a conditional breakpoint when condition is false', async () => {
