@@ -1,4 +1,6 @@
+.nyc_output/**
 .vscode/**
+coverage/**
 images/**
 out/test/**
 src/**
