@@ -2,6 +2,7 @@
 .vscode/**
 coverage/**
 images/**
+!images/logo.png
 out/test/**
 src/**
 testproject/**
