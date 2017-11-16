@@ -16,11 +16,6 @@
     "strictNullChecks": true,
     "noImplicitReturns": true,
     "allowUnreachableCode": false,
-    "noUnusedLocals": true,
-    "typeRoots": [
-      "typings/globals",
-      "typings/modules",
-      "node_modules/@types"
-    ]
+    "noUnusedLocals": true
   }
 }

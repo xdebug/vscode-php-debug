@@ -564,7 +564,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     source = {name: path.basename(filePath), path: filePath};
                 }
                 this._errorStackFrames.set(id, status);
-                response.body = {stackFrames: [{id, name, source, line: status.line, column: 1}]};
+                response.body = {stackFrames: [{id, name, source, line, column: 1}]};
             } else {
                 response.body = {
                     stackFrames: stack.map((stackFrame): VSCodeDebugProtocol.StackFrame => {
