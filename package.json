@@ -45,26 +45,36 @@
     "xmldom": "^0.1.22"
   },
   "devDependencies": {
+    "@types/chai": "^4.0.4",
+    "@types/chai-as-promised": "^7.1.0",
+    "@types/file-url": "^2.0.0",
+    "@types/minimatch": "^3.0.1",
+    "@types/mocha": "^2.2.44",
     "@types/node": "7.0.32",
+    "@types/semver": "^5.4.0",
+    "@types/xmldom": "^0.1.29",
     "chai": "^4.0.2",
     "chai-as-promised": "^7.0.0",
-    "mocha": "^3.0.1",
+    "mocha": "^4.0.1",
     "nyc": "^11.0.2",
     "semver": "^5.3.0",
     "tslint": "^5.4.3",
     "typescript": "^2.1.4",
-    "typings": "^2.0.0",
     "vsce": "^1.28.0",
     "vscode-debugadapter-testsupport": "^1.11.0"
   },
+  "greenkeeper": {
+    "ignore": [
+      "@types/node"
+    ]
+  },
   "scripts": {
-    "compile": "tsc -p .",
+    "build": "tsc -p .",
     "watch": "tsc -w -p .",
     "start": "code testproject --extensionDevelopmentPath=.",
     "test": "mocha out/test --timeout 20000 --slow 1000 --retries 4",
     "cover": "nyc --all mocha out/test --timeout 20000 --slow 1000 --retries 4",
-    "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "postinstall": "typings install"
+    "lint": "tslint -c tslint.json 'src/**/*.ts'"
   },
   "nyc": {
     "include": [
