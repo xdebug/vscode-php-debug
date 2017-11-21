@@ -1,7 +1,7 @@
 {
   "name": "php-debug",
   "displayName": "PHP Debug",
-  "version": "1.11.1",
+  "version": "0.0.0-development",
   "publisher": "felixfbecker",
   "license": "MIT",
   "description": "Debug support for PHP with XDebug",
@@ -55,13 +55,20 @@
     "@types/xmldom": "^0.1.29",
     "chai": "^4.0.2",
     "chai-as-promised": "^7.0.0",
+    "husky": "^0.14.3",
+    "last-release-git": "0.0.3",
     "mocha": "^4.0.1",
     "nyc": "^11.0.2",
+    "semantic-release": "^8.2.0",
     "semver": "^5.3.0",
     "tslint": "^5.4.3",
     "typescript": "^2.1.4",
+    "validate-commit-msg": "^2.14.0",
     "vsce": "^1.28.0",
     "vscode-debugadapter-testsupport": "^1.11.0"
+  },
+  "release": {
+    "getLastRelease": "last-release-git"
   },
   "greenkeeper": {
     "ignore": [
@@ -74,7 +81,9 @@
     "start": "code testproject --extensionDevelopmentPath=.",
     "test": "mocha out/test --timeout 20000 --slow 1000 --retries 4",
     "cover": "nyc --all mocha out/test --timeout 20000 --slow 1000 --retries 4",
-    "lint": "tslint -c tslint.json 'src/**/*.ts'"
+    "lint": "tslint -c tslint.json 'src/**/*.ts'",
+    "semantic-release": "semantic-release pre && vsce publish -p $VSCE_TOKEN && semantic-release post",
+    "commitmsg": "validate-commit-msg"
   },
   "nyc": {
     "include": [
