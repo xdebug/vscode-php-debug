@@ -85,7 +85,7 @@
     "cover": "nyc --all mocha out/test --timeout 20000 --slow 1000 --retries 4",
     "lint": "npm run tslint && npm run prettier",
     "tslint": "tslint -c tslint.json 'src/**/*.ts'",
-    "prettier": "prettier '**/{*.{json,ts},.prettierrc}' --write --list-different",
+    "prettier": "prettier \"**/{*.json,*.ts,.prettierrc}\" --write --list-different",
     "semantic-release": "semantic-release pre && vsce publish -p $VSCE_TOKEN && semantic-release post",
     "commitmsg": "validate-commit-msg"
   },
