@@ -6,7 +6,9 @@ import * as path from 'path';
 import {decode} from 'urlencode';
 
 /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
-export function convertDebuggerPathToClient(fileUri: string|url.Url, localSourceRoot?: string, serverSourceRoot?: string): string {
+export function convertDebuggerPathToClient(fileUri: string|url.Url, pathMapping?: { [index: string]: string; }): string {
+    let localSourceRoot: string | undefined;
+    let serverSourceRoot: string | undefined;
     if (typeof fileUri === 'string') {
         fileUri = url.parse(fileUri);
     }
@@ -16,6 +18,18 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, localSource
     const serverIsWindows = /^\/[a-zA-Z]:\//.test(serverPath);
     if (serverIsWindows) {
         serverPath = serverPath.substr(1);
+    }
+    if (pathMapping) {
+        for (const mappedServerPath of Object.keys(pathMapping) ) {
+            const mappedLocalSource = pathMapping[mappedServerPath];
+            // normalize slashes for windows-to-unix
+            const serverRelative = (serverIsWindows ? path.win32 : path.posix).relative(mappedServerPath, serverPath);
+            if (serverRelative.indexOf('..') !== 0) {
+                serverSourceRoot = mappedServerPath;
+                localSourceRoot = mappedLocalSource;
+                break;
+            }
+        }
     }
     let localPath: string;
     if (serverSourceRoot && localSourceRoot) {
@@ -30,9 +44,22 @@ export function convertDebuggerPathToClient(fileUri: string|url.Url, localSource
 }
 
 /** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
-export function convertClientPathToDebugger(localPath: string, localSourceRoot?: string, serverSourceRoot?: string): string {
+export function convertClientPathToDebugger(localPath: string, pathMapping?: { [index: string]: string; }): string {
+    let localSourceRoot: string | undefined;
+    let serverSourceRoot: string | undefined;
     let localFileUri = fileUrl(localPath, {resolve: false});
     let serverFileUri: string;
+    if (pathMapping) {
+        for (const mappedServerPath of Object.keys(pathMapping) ) {
+            const mappedLocalSource = pathMapping[mappedServerPath];
+            const localRelative = path.relative(mappedLocalSource, localPath);
+            if (localRelative.indexOf('..') !== 0) {
+                serverSourceRoot = mappedServerPath;
+                localSourceRoot = mappedLocalSource;
+                break;
+            }
+        }
+    }
     if (serverSourceRoot && localSourceRoot) {
         let localSourceRootUrl = fileUrl(localSourceRoot, {resolve: false});
         if (!localSourceRootUrl.endsWith('/')) {
