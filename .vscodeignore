@@ -9,6 +9,8 @@ testproject/**
 .editorconfig
 .gitignore
 .npmrc
+.prettierignore
+.prettierrc
 .travis.yml
 *.log
 *.vsix
