@@ -87,8 +87,8 @@
     "lint": "npm run tslint && npm run prettier",
     "tslint": "tslint -c tslint.json 'src/**/*.ts'",
     "prettier": "prettier \"**/{*.json,*.ts,.prettierrc}\" --write --list-different",
-    "semantic-release": "semantic-release pre && vsce publish -p $VSCE_TOKEN && semantic-release post && npm run upload-vsix",
-    "upload-vsix": "github-release upload -o felixfbecker -r vscode-php-debug -t $(git tag -l v* --points-at HEAD) '*.vsix'",
+    "semantic-release": "semantic-release pre && vsce publish -p $VSCE_TOKEN && semantic-release post && npm run release-vsix",
+    "release-vsix": "vsce package && github-release upload -o felixfbecker -r vscode-php-debug -t $(git tag -l v* --points-at HEAD) '*.vsix'",
     "commitmsg": "validate-commit-msg"
   },
   "nyc": {
