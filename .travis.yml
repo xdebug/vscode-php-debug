@@ -42,6 +42,7 @@ jobs:
     - stage: release
       language: node_js
       node_js: '8'
+      before_install: skip
       install:
         - git config --replace-all remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
         - git fetch --tags
