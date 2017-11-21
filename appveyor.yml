@@ -1,5 +1,8 @@
 version: '{build}'
 
+skip_branch_with_pr: true
+skip_tags: true
+
 platform:
   - x64
 
