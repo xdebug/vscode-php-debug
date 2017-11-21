@@ -4,6 +4,7 @@ skip_branch_with_pr: true
 skip_tags: true
 clone_depth: 1
 
+image: Visual Studio 2017
 platform:
   - x64
 
