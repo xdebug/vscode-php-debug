@@ -30,9 +30,9 @@ install:
   - npm install
 
 script:
-  - npm run build --silent
-  - npm run lint --silent
-  - npm run cover --silent
+  - npm run build
+  - npm run lint
+  - npm run cover
 
 after_success:
   - 'nyc report --reporter=lcov > coverage.lcov && bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info'
@@ -47,7 +47,8 @@ jobs:
         - git config --replace-all remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
         - git fetch --tags
         - npm install
-      script: skip
+      script:
+        - npm run build
       after_success:
         - npm run semantic-release
 
