@@ -65,6 +65,7 @@ jobs:
       script:
         - npm run build
         - npm run semantic-release
+      after_success: skip
 
 stages:
   - test
