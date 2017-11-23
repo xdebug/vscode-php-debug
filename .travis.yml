@@ -34,7 +34,8 @@ script:
   - npm run cover
 
 after_success:
-  - 'nyc report --reporter=lcov > coverage.lcov && bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info'
+  - nyc report --reporter=json
+  - bash <(curl -s https://codecov.io/bash)
 
 jobs:
   include:
@@ -60,8 +61,6 @@ jobs:
       node_js: '8'
       before_install: skip
       install:
-        - git config --replace-all remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
-        - git fetch --tags
         - npm install
       script:
         - npm run build
