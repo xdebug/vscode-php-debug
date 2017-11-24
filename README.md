@@ -85,8 +85,8 @@ To make VS Code map the files on the server to the right files on your local mac
 ```json
 // server -> local
 "pathMappings": {
-  "/var/www/html": "{workspaceRoot}/www",
-  "/app": "{workspaceRoot}/app"
+  "/var/www/html": "${workspaceRoot}/www",
+  "/app": "${workspaceRoot}/app"
 }
 ```
 Please also note that setting any of the CLI debugging options will not work with remote host debugging, because the script is always launched locally. If you want to debug a CLI script on a remote host, you need to launch it manually from the command line.
