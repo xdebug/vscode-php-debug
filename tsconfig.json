@@ -1,8 +1,5 @@
 {
-  "exclude": [
-    "node_modules",
-    "out"
-  ],
+  "exclude": ["node_modules", "out"],
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
@@ -14,6 +11,8 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "strictNullChecks": true,
-    "noImplicitReturns": true
+    "noImplicitReturns": true,
+    "allowUnreachableCode": false,
+    "noUnusedLocals": true
   }
 }

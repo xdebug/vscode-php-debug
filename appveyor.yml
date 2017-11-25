@@ -1,5 +1,10 @@
 version: '{build}'
 
+skip_branch_with_pr: true
+skip_tags: true
+clone_depth: 1
+
+image: Visual Studio 2017
 platform:
   - x64
 
@@ -7,20 +12,25 @@ cache:
   - '%APPDATA%\npm-cache'
 
 environment:
+  NODE_VERSION: '7.9.0'
+  NPM_VERSION: '^5.0.0'
   matrix:
-    - {PHP_VERSION: '7.0.13', VC_VERSION: '14', XDEBUG_VERSION: '2.4.1'}
-    - {PHP_VERSION: '5.6.28', VC_VERSION: '11', XDEBUG_VERSION: '2.4.1'}
-    - {PHP_VERSION: '5.6.28', VC_VERSION: '11', XDEBUG_VERSION: '2.3.3'}
-    - {PHP_VERSION: '5.4.45', VC_VERSION:  '9', XDEBUG_VERSION: '2.4.1'}
-    - {PHP_VERSION: '5.4.45', VC_VERSION:  '9', XDEBUG_VERSION: '2.3.3'}
-    - {PHP_VERSION: '5.4.45', VC_VERSION:  '9', XDEBUG_VERSION: '2.2.3'}  # XDebug version on Vagrant
+    - {PHP_VERSION: '7.0.20', VC_VERSION: '14', XDEBUG_VERSION: '2.5.5'}
+    - {PHP_VERSION: '5.6.30', VC_VERSION: '11', XDEBUG_VERSION: '2.5.5'}
 
 install:
   - ps: . .\appveyor-install.ps1
 
 build_script:
-  - npm run compile --silent
+  - npm run build --silent
 
 test_script:
   - npm run lint --silent
-  - npm test --silent
+  - npm run cover --silent
+
+after_test:
+  - ps: |
+      node_modules\.bin\nyc report --reporter=lcov
+      $env:PATH = 'C:\msys64\usr\bin;' + $env:PATH
+      Invoke-WebRequest -Uri 'https://codecov.io/bash' -OutFile codecov.sh
+      bash codecov.sh -f "coverage\lcov.info"

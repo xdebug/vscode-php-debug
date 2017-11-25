@@ -1,42 +1,78 @@
 language: php
 
 php:
- - '5.4'
- - '5.6'
- - '7.0'
-
+  - '5.6'
+  - '7.0'
 env:
+  global:
+    - NODE_VERSION=7.9.0
+    - NPM_VERSION=^5.0.0
+    - BUILD_LEADER_ID=4
+    - GITHUB_TOKEN=$GH_TOKEN
   matrix:
-    - XDEBUG_VERSION=2.4.1
-    - XDEBUG_VERSION=2.3.3
-    - XDEBUG_VERSION=2.2.3 # XDebug version on Vagrant
-
-matrix:
-  exclude:
-    - env: XDEBUG_VERSION=2.3.3
-      php: '7.0'
-    - env: XDEBUG_VERSION=2.2.3
-      php: '7.0'
-
-before_install:
- - pecl install xdebug-$XDEBUG_VERSION
- - phpenv config-add travis-php.ini
- - nvm install 6.5.0
- - nvm use 6.5.0
- - npm config -g set progress false
-
-install:
- - npm install
-
-script:
- - npm run compile --silent
- - npm run lint --silent
- - npm run cover --silent
-
-after_success:
- - 'nyc report --reporter=lcov > coverage.lcov && codecov'
-
-after_script:
- - cat /tmp/xdebug.log
+    - XDEBUG_VERSION=2.5.5
 
 sudo: false
+
+cache:
+  directories:
+    - $HOME/.npm
+
+before_install:
+  - pecl install xdebug-$XDEBUG_VERSION
+  - phpenv config-add travis-php.ini
+  - nvm install $NODE_VERSION
+  - nvm use $NODE_VERSION
+  - npm install -g npm@$NPM_VERSION --depth 0
+
+install:
+  - npm install
+
+script:
+  - npm run build
+  - npm run lint
+  - npm run cover
+
+after_success:
+  - nyc report --reporter=json
+  - bash <(curl -s https://codecov.io/bash)
+
+jobs:
+  include:
+    - stage: test
+      os: osx
+      osx_image: xcode9.1
+      language: generic
+      before_install:
+        # Fix ruby error https://github.com/Homebrew/brew/issues/3299
+        - brew update
+        - brew tap homebrew/homebrew-php
+        - brew install php71
+        - brew install homebrew/php/php71-xdebug
+        - mkdir -p /usr/local/etc/php/7.1/conf.d
+        - cp travis-php.ini /usr/local/etc/php/7.1/conf.d/
+        - git clone --depth 1 https://github.com/creationix/nvm.git ./.nvm
+        - source ./.nvm/nvm.sh
+        - nvm install $NODE_VERSION
+        - nvm use $NODE_VERSION
+        - npm install -g npm@$NPM_VERSION --depth 0
+    - stage: release
+      language: node_js
+      node_js: '8'
+      before_install: skip
+      install:
+        - npm install
+      script:
+        - npm run build
+        - npm run semantic-release
+      after_success: skip
+
+stages:
+  - test
+  - name: release
+    if: branch = master AND type = push AND fork = false
+
+branches:
+  except:
+    - /^v\d+\.\d+\.\d+$/
+
