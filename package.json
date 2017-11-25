@@ -45,7 +45,7 @@
     "xmldom": "^0.1.22"
   },
   "devDependencies": {
-    "@semantic-release/github": "^1.0.0",
+    "@semantic-release/github": "^2.0.0",
     "@types/chai": "^4.0.4",
     "@types/chai-as-promised": "^7.1.0",
     "@types/file-url": "^2.0.0",
