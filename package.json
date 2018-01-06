@@ -1,18 +1,19 @@
 {
-  "name": "php-debug",
-  "displayName": "PHP Debug",
+  "name": "ahk-debug",
+  "displayName": "AHK Debug",
   "version": "0.0.0-development",
-  "publisher": "felixfbecker",
+  "publisher": "pg024427",
   "license": "MIT",
-  "description": "Debug support for PHP with XDebug",
+  "description": "Debug support for AHK",
   "keywords": [
-    "php",
+    "ahk",
     "debug",
-    "xdebug"
+    "xdebug",
+    "dbgp" 
   ],
   "author": {
-    "name": "Felix Becker",
-    "email": "felix.b@outlook.com"
+    "name": "Patrick Gross",
+    "email": "patrick.gross@cerner.com"
   },
   "engines": {
     "vscode": "^1.6.0",
@@ -28,16 +29,17 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/felixfbecker/vscode-php-debug.git"
+    "url": "https://github.com/pgross41/vscode-ahk-debug"
   },
   "bugs": {
-    "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
+    "url": "https://github.com/pgross41/vscode-ahk-debug/issues"
   },
   "dependencies": {
     "file-url": "^2.0.0",
     "iconv-lite": "^0.4.15",
     "minimatch": "^3.0.3",
     "moment": "^2.17.1",
+    "typings": "^2.1.1",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
     "vscode-debugadapter": "^1.11.0",
@@ -79,11 +81,11 @@
     "publish": [
       {
         "path": "semantic-release-vsce",
-        "packageVsix": "php-debug.vsix"
+        "packageVsix": "ahk-debug.vsix"
       },
       {
         "path": "@semantic-release/github",
-        "assets": "php-debug.vsix"
+        "assets": "ahk-debug.vsix"
       }
     ]
   },
@@ -115,11 +117,11 @@
   "contributes": {
     "debuggers": [
       {
-        "type": "php",
-        "label": "PHP",
+        "type": "ahk",
+        "label": "AHK",
         "enableBreakpointsFor": {
           "languageIds": [
-            "php"
+            "ahk"
           ]
         },
         "program": "./out/phpDebug.js",
@@ -235,18 +237,18 @@
         },
         "initialConfigurations": [
           {
-            "name": "Listen for XDebug",
+            "name": "Listen for AHK Debug (XDebug port 9900)",
             "type": "php",
             "request": "launch",
-            "port": 9000
+            "port": 9900
           },
           {
-            "name": "Launch currently open script",
-            "type": "php",
+            "name": "Launch AHK with debugging",
+            "type": "ahk",
             "request": "launch",
             "program": "${file}",
             "cwd": "${fileDirname}",
-            "port": 9000
+            "port": 9900
           }
         ]
       }

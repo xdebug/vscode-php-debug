@@ -1,5 +1,6 @@
 {
-  "version": "0.1.0",
+  "version": "2.0.0",
+  "type": "shell",
   "command": "npm",
   "args": ["run", "--silent"],
   "options": {
@@ -7,22 +8,21 @@
       "VSCODE_DEBUG_PORT": "4711"
     }
   },
-  "isShellCommand": true,
-  "showOutput": "silent",
+  // "showOutput": "silent",
   "tasks": [
     {
-      "taskName": "compile",
-      "isBuildCommand": true,
+      "label": "compile",
+      "group": "build",
       "problemMatcher": "$tsc"
     },
     {
-      "taskName": "watch",
-      "isWatching": true,
+      "label": "watch",
+      "isBackground": true,
       "problemMatcher": "$tsc-watch"
     },
     {
-      "taskName": "test",
-      "isTestCommand": true
+      "label": "test",
+      "group": "test"
     }
   ]
 }
