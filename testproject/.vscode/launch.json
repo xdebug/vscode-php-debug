@@ -10,7 +10,7 @@
       "log": true
     },
     {
-      "name": "Launch PHP",
+      "name": "Launch",
       "debugServer": 4711, // Uncomment for debugging the adapter
       "request": "launch",
       "type": "php",
