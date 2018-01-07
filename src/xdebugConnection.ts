@@ -29,7 +29,9 @@ export class InitPacket {
         this.language = documentElement.getAttribute('language')!
         this.protocolVersion = documentElement.getAttribute('protocol_version')!
         this.ideKey = documentElement.getAttribute('idekey')!
-        this.engineVersion = documentElement.getElementsByTagName('engine')[0].getAttribute('version')!
+        if(documentElement.getElementsByTagName('engine').length > 0){
+            this.engineVersion = documentElement.getElementsByTagName('engine')[0].getAttribute('version')!
+        }
         this.connection = connection
     }
 }
