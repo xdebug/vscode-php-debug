@@ -60,7 +60,7 @@
     "mocha": "^4.0.1",
     "nyc": "^11.0.2",
     "prettier": "1.9.2",
-    "semantic-release": "^11.0.0",
+    "semantic-release": "^12.2.2",
     "semantic-release-vsce": "^1.0.0",
     "semver": "^5.3.0",
     "tslint": "^5.4.3",
