@@ -61,7 +61,7 @@
     "nyc": "^11.0.2",
     "prettier": "1.9.2",
     "semantic-release": "^12.2.2",
-    "semantic-release-vsce": "^1.0.0",
+    "semantic-release-vsce": "^2.0.0",
     "semver": "^5.3.0",
     "tslint": "^5.4.3",
     "tslint-config-prettier": "^1.6.0",
