@@ -1,7 +1,8 @@
 PHP Debug Adapter for Visual Studio Code
 ========================================
 
-[![vs marketplace](https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![downloads](https://img.shields.io/vscode-marketplace/d/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![rating](https://img.shields.io/vscode-marketplace/r/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![Build Status](https://travis-ci.org/felixfbecker/vscode-php-debug.svg?branch=master)](https://travis-ci.org/felixfbecker/vscode-php-debug) [![appveyor build](https://ci.appveyor.com/api/projects/status/hda6n2umfdt6eyms/branch/master?svg=true)](https://ci.appveyor.com/project/felixfbecker/vscode-php-debug/branch/master) [![codecov](https://codecov.io/gh/felixfbecker/vscode-php-debug/branch/master/graph/badge.svg)](https://codecov.io/gh/felixfbecker/vscode-php-debug) [![dependencies](https://gemnasium.com/felixfbecker/vscode-php-debug.svg)](https://gemnasium.com/felixfbecker/vscode-php-debug) [![chat: on gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![vs marketplace](https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![downloads](https://img.shields.io/vscode-marketplace/d/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![rating](https://img.shields.io/vscode-marketplace/r/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![windows build](https://img.shields.io/appveyor/ci/felixfbecker/vscode-php-debug/master.svg?label=windows+build)](https://ci.appveyor.com/project/felixfbecker/vscode-php-debug)
+[![macos/linux build](https://img.shields.io/travis/felixfbecker/vscode-php-debug/master.svg?label=macos/linux+build)](https://travis-ci.org/felixfbecker/vscode-php-debug) [![codecov](https://codecov.io/gh/felixfbecker/vscode-php-debug/branch/master/graph/badge.svg)](https://codecov.io/gh/felixfbecker/vscode-php-debug) [![dependencies](https://gemnasium.com/felixfbecker/vscode-php-debug.svg)](https://gemnasium.com/felixfbecker/vscode-php-debug) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier) [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release) [![chat: on gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ![Demo GIF](images/demo.gif)
 
@@ -41,8 +42,7 @@ In your project, go to the debugger and hit the little gear icon and choose _PHP
  - `request`: Always `"launch"`
  - `port`: The port on which to listen for XDebug (default: `9000`)
  - `stopOnEntry`: Wether to break at the beginning of the script (default: `false`)
- - `localSourceRoot`: The path to the folder that is being served by your webserver and maps to `serverSourceRoot` (for example `"${workspaceRoot}/public"`)
- - `serverSourceRoot`: The path on the remote host where your webroot is located (for example `"/var/www"`)
+ - `pathMappings`: A list of server paths mapping to the local source paths on your machine, see "Remote Host Debugging" below
  - `log`: Wether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
  - `ignore`: An optional array of glob patterns that errors should be ignored from (for example `**/vendor/**/*.php`)
  - `xdebugSettings`: Allows you to override XDebug's remote debugging settings to fine tuning XDebug to your needs. For example, you can play with `max_children` and `max_depth` to change the max number of array and object children that are retrieved and the max depth in structures like arrays and objects. This can speed up the debugger on slow machines.
@@ -81,10 +81,13 @@ Remote Host Debugging
 ---------------------
 To debug a running application on a remote host, you need to tell XDebug to connect to a different IP than `localhost`. This can either be done by setting [`xdebug.remote_host`](https://xdebug.org/docs/remote#remote_host) to your IP or by setting [`xdebug.remote_connect_back = 1`](https://xdebug.org/docs/remote#remote_connect_back) to make XDebug always connect back to the machine who did the web request. The latter is the only setting that supports multiple users debugging the same server and "just works" for web projects. Again, please see the [XDebug documentation](https://xdebug.org/docs/remote#communcation) on the subject for more information.
 
-To make VS Code map the files on the server to the right files on your local machine, you have to set the `localSourceRoot` and `serverSourceRoot` settings in your launch.json. Example:
+To make VS Code map the files on the server to the right files on your local machine, you have to set the `pathMappings` settings in your launch.json. Example:
 ```json
-"serverSourceRoot": "/var/www/myproject",
-"localSourceRoot": "${workspaceRoot}/public"
+// server -> local
+"pathMappings": {
+  "/var/www/html": "${workspaceRoot}/www",
+  "/app": "${workspaceRoot}/app"
+}
 ```
 Please also note that setting any of the CLI debugging options will not work with remote host debugging, because the script is always launched locally. If you want to debug a CLI script on a remote host, you need to launch it manually from the command line.
 

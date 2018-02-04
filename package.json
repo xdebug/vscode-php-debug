@@ -1,7 +1,7 @@
 {
   "name": "php-debug",
   "displayName": "PHP Debug",
-  "version": "1.11.1",
+  "version": "0.0.0-development",
   "publisher": "felixfbecker",
   "license": "MIT",
   "description": "Debug support for PHP with XDebug",
@@ -45,7 +45,8 @@
     "xmldom": "^0.1.22"
   },
   "devDependencies": {
-    "@types/chai": "^4.0.4",
+    "@semantic-release/github": "^2.0.0",
+    "@types/chai": "4.0.6",
     "@types/chai-as-promised": "^7.1.0",
     "@types/file-url": "^2.0.0",
     "@types/minimatch": "^3.0.1",
@@ -55,13 +56,36 @@
     "@types/xmldom": "^0.1.29",
     "chai": "^4.0.2",
     "chai-as-promised": "^7.0.0",
+    "husky": "^0.14.3",
     "mocha": "^4.0.1",
     "nyc": "^11.0.2",
+    "prettier": "1.9.2",
+    "semantic-release": "^12.2.2",
+    "semantic-release-vsce": "^1.0.0",
     "semver": "^5.3.0",
     "tslint": "^5.4.3",
+    "tslint-config-prettier": "^1.6.0",
     "typescript": "^2.1.4",
+    "validate-commit-msg": "^2.14.0",
     "vsce": "^1.28.0",
     "vscode-debugadapter-testsupport": "^1.11.0"
+  },
+  "release": {
+    "verifyConditions": [
+      "semantic-release-vsce",
+      "@semantic-release/github"
+    ],
+    "getLastRelease": "semantic-release-vsce",
+    "publish": [
+      {
+        "path": "semantic-release-vsce",
+        "packageVsix": "php-debug.vsix"
+      },
+      {
+        "path": "@semantic-release/github",
+        "assets": "php-debug.vsix"
+      }
+    ]
   },
   "greenkeeper": {
     "ignore": [
@@ -74,7 +98,11 @@
     "start": "code testproject --extensionDevelopmentPath=.",
     "test": "mocha out/test --timeout 20000 --slow 1000 --retries 4",
     "cover": "nyc --all mocha out/test --timeout 20000 --slow 1000 --retries 4",
-    "lint": "tslint -c tslint.json 'src/**/*.ts'"
+    "lint": "npm run tslint && npm run prettier",
+    "tslint": "tslint -c tslint.json 'src/**/*.ts'",
+    "prettier": "prettier \"**/{*.json,*.ts,.prettierrc}\" --write --list-different",
+    "semantic-release": "semantic-release",
+    "commitmsg": "validate-commit-msg"
   },
   "nyc": {
     "include": [
@@ -155,11 +183,18 @@
               },
               "serverSourceRoot": {
                 "type": "string",
-                "description": "The source root when debugging a remote host"
+                "description": "Deprecated: The source root when debugging a remote host",
+                "deprecationMessage": "Property serverSourceRoot is deprecated, please use pathMappings to define a server root."
               },
               "localSourceRoot": {
                 "type": "string",
-                "description": "The source root on this machine that is the equivalent to the serverSourceRoot on the server."
+                "description": "Deprecated: The source root on this machine that is the equivalent to the serverSourceRoot on the server.",
+                "deprecationMessage": "Property localSourceRoot is deprecated, please use pathMappings to define a local root."
+              },
+              "pathMappings": {
+                "type": "object",
+                "default": {},
+                "description": "A mapping of server paths to local paths."
               },
               "ignore": {
                 "type": "array",
