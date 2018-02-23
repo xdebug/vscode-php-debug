@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 # Install PHP
 $client = New-Object System.Net.WebClient
+$client.Headers.Add('User-Agent', "AppVeyor CI PowerShell $($PSVersionTable.PSVersion) $([Environment]::OSVersion.VersionString)")
 $phpUrl = "http://windows.php.net/downloads/releases/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip"
 $target = Join-Path $PWD 'php.zip'
 Write-Output "Downloading $phpUrl"
