@@ -53,7 +53,9 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
     let localFileUri = fileUrl(localPath, { resolve: false })
+    let localFileUriLower = fileUrl(localPath.replace(/[a-zA-Z]:\\/, (match: any) => match.toLowerCase()), { resolve: false })
     let serverFileUri: string
+    let uriWasLowerCased = false;
     if (pathMapping) {
         for (const mappedServerPath of Object.keys(pathMapping)) {
             const mappedLocalSource = pathMapping[mappedServerPath]
@@ -65,6 +67,18 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
             }
         }
     }
+    if (localSourceRoot) {
+        localSourceRoot = localSourceRoot.replace(/^[A-Z]:\\/, match => {
+            uriWasLowerCased = true;
+            return match.toLowerCase()
+        });
+    }
+    if (serverSourceRoot) {
+        serverSourceRoot = serverSourceRoot.replace(/^[A-Z]:\\/, match => {
+            uriWasLowerCased = true;
+            return match.toLowerCase();
+        });
+    }
     if (serverSourceRoot && localSourceRoot) {
         let localSourceRootUrl = fileUrl(localSourceRoot, { resolve: false })
         if (!localSourceRootUrl.endsWith('/')) {
@@ -75,12 +89,20 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
             serverSourceRootUrl += '/'
         }
         // get the part of the path that is relative to the source root
-        const urlRelativeToSourceRoot = urlRelative(localSourceRootUrl, localFileUri)
+        const urlRelativeToSourceRoot = urlRelative(localSourceRootUrl, localFileUriLower)
         // resolve from the server source root
         serverFileUri = url.resolve(serverSourceRootUrl, urlRelativeToSourceRoot)
+
+        // we lowercased the Url, maybe we should undo that
+        if (uriWasLowerCased) {
+            serverFileUri = serverFileUri.replace(/\/\/\/[a-z]:/, match => {
+                return match.toUpperCase();
+            });
+        }
     } else {
         serverFileUri = localFileUri
     }
+
     return serverFileUri
 }
 
