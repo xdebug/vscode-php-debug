@@ -1,7 +1,8 @@
 PHP Debug Adapter for Visual Studio Code
 ========================================
 
-[![Latest Release](https://vsmarketplacebadge.apphb.com/version-short/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![Installs](https://vsmarketplacebadge.apphb.com/installs/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![Rating](https://vsmarketplacebadge.apphb.com/rating-short/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![Build Status](https://travis-ci.org/felixfbecker/vscode-php-debug.svg?branch=master)](https://travis-ci.org/felixfbecker/vscode-php-debug) [![Build Status Windows](https://ci.appveyor.com/api/projects/status/hda6n2umfdt6eyms/branch/master?svg=true)](https://ci.appveyor.com/project/felixfbecker/vscode-php-debug/branch/master) [![Coverage](https://codecov.io/gh/felixfbecker/vscode-php-debug/branch/master/graph/badge.svg)](https://codecov.io/gh/felixfbecker/vscode-php-debug) [![Dependency Status](https://gemnasium.com/felixfbecker/vscode-php-debug.svg)](https://gemnasium.com/felixfbecker/vscode-php-debug) [![Gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![vs marketplace](https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![downloads](https://img.shields.io/vscode-marketplace/d/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![rating](https://img.shields.io/vscode-marketplace/r/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![windows build](https://img.shields.io/appveyor/ci/felixfbecker/vscode-php-debug/master.svg?label=windows+build)](https://ci.appveyor.com/project/felixfbecker/vscode-php-debug)
+[![macos/linux build](https://img.shields.io/travis/felixfbecker/vscode-php-debug/master.svg?label=macos/linux+build)](https://travis-ci.org/felixfbecker/vscode-php-debug) [![codecov](https://codecov.io/gh/felixfbecker/vscode-php-debug/branch/master/graph/badge.svg)](https://codecov.io/gh/felixfbecker/vscode-php-debug) [![dependencies](https://gemnasium.com/felixfbecker/vscode-php-debug.svg)](https://gemnasium.com/felixfbecker/vscode-php-debug) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier) [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release) [![chat: on gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ![Demo GIF](images/demo.gif)
 
@@ -12,12 +13,12 @@ Install the extension: Press `F1`, type `ext install php-debug`.
 
 This extension is a debug adapter between VS Code and [XDebug](https://xdebug.org/) by Derick Rethan. XDebug is a PHP extension (a `.so` file on Linux and a `.dll` on Windows) that needs to be installed on your server.
 
- 1. [Install XDebug](https://xdebug.org/docs/install)  
-  ***I highly recommend you make a simple `test.php` file, put a `phpinfo();` statement in there, then copy the output and paste it into the [XDebug installation wizard](https://xdebug.org/wizard.php). It will analyze it and give you tailored installation instructions for your environment.***  
+ 1. [Install XDebug](https://xdebug.org/docs/install)
+  ***I highly recommend you make a simple `test.php` file, put a `phpinfo();` statement in there, then copy the output and paste it into the [XDebug installation wizard](https://xdebug.org/wizard.php). It will analyze it and give you tailored installation instructions for your environment.***
   In short:
    - On Windows: [Download](https://xdebug.org/download.php) the appropiate precompiled DLL for your PHP version, architecture (64/32 Bit), thread safety (TS/NTS) and Visual Studio compiler version and place it in your PHP extension folder.
    - On Linux: Either download the source code as a tarball or [clone it with git](https://xdebug.org/docs/install#source), then [compile it](https://xdebug.org/docs/install#compile).
- 2. [Configure PHP to use XDebug](https://xdebug.org/docs/install#configure-php) by adding `zend_extension=path/to/xdebug` to your php.ini.  
+ 2. [Configure PHP to use XDebug](https://xdebug.org/docs/install#configure-php) by adding `zend_extension=path/to/xdebug` to your php.ini.
   The path of your php.ini is shown in your `phpinfo()` output under "Loaded Configuration File".
  3. Enable remote debugging in your php.ini:
 
@@ -32,17 +33,16 @@ This extension is a debug adapter between VS Code and [XDebug](https://xdebug.or
 
 ### VS Code Configuration
 In your project, go to the debugger and hit the little gear icon and choose _PHP_. A new launch configuration will be created for you with two configurations:
- - **Listen for XDebug**  
+ - **Listen for XDebug**
    This setting will simply start listening on the specified port (by default 9000) for XDebug. If you configured XDebug like recommended above, everytime you make a request with a browser to your webserver or launch a CLI script XDebug will connect and you can stop on breakpoints, exceptions etc.
- - **Launch currently open script**  
+ - **Launch currently open script**
    This setting is an example of CLI debugging. It will launch the currently opened script as a CLI, show all stdout/stderr output in the debug console and end the debug session once the script exits.
 
 #### Supported launch.json settings:
  - `request`: Always `"launch"`
  - `port`: The port on which to listen for XDebug (default: `9000`)
  - `stopOnEntry`: Wether to break at the beginning of the script (default: `false`)
- - `localSourceRoot`: The path to the folder that is being served by your webserver and maps to `serverSourceRoot` (for example `"${workspaceRoot}/public"`)
- - `serverSourceRoot`: The path on the remote host where your webroot is located (for example `"/var/www"`)
+ - `pathMappings`: A list of server paths mapping to the local source paths on your machine, see "Remote Host Debugging" below
  - `log`: Wether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
  - `ignore`: An optional array of glob patterns that errors should be ignored from (for example `**/vendor/**/*.php`)
  - `xdebugSettings`: Allows you to override XDebug's remote debugging settings to fine tuning XDebug to your needs. For example, you can play with `max_children` and `max_depth` to change the max number of array and object children that are retrieved and the max depth in structures like arrays and objects. This can speed up the debugger on slow machines.
@@ -81,10 +81,13 @@ Remote Host Debugging
 ---------------------
 To debug a running application on a remote host, you need to tell XDebug to connect to a different IP than `localhost`. This can either be done by setting [`xdebug.remote_host`](https://xdebug.org/docs/remote#remote_host) to your IP or by setting [`xdebug.remote_connect_back = 1`](https://xdebug.org/docs/remote#remote_connect_back) to make XDebug always connect back to the machine who did the web request. The latter is the only setting that supports multiple users debugging the same server and "just works" for web projects. Again, please see the [XDebug documentation](https://xdebug.org/docs/remote#communcation) on the subject for more information.
 
-To make VS Code map the files on the server to the right files on your local machine, you have to set the `localSourceRoot` and `serverSourceRoot` settings in your launch.json. Example:
+To make VS Code map the files on the server to the right files on your local machine, you have to set the `pathMappings` settings in your launch.json. Example:
 ```json
-"serverSourceRoot": "/var/www/myproject",
-"localSourceRoot": "${workspaceRoot}/public"
+// server -> local
+"pathMappings": {
+  "/var/www/html": "${workspaceRoot}/www",
+  "/app": "${workspaceRoot}/app"
+}
 ```
 Please also note that setting any of the CLI debugging options will not work with remote host debugging, because the script is always launched locally. If you want to debug a CLI script on a remote host, you need to launch it manually from the command line.
 
