@@ -1,19 +1,19 @@
 
 # Install PHP
-$target = Join-Path $PWD 'php.zip'
-function Download-PHP ([string] $phpUrl) {
+function Download-File ([string] $Url, [string] $Target) {
     $client = New-Object System.Net.WebClient
     $client.Headers.Add('User-Agent', "AppVeyor CI PowerShell $($PSVersionTable.PSVersion) $([Environment]::OSVersion.VersionString)")
-    Write-Output "Downloading $phpUrl"
-    $client.DownloadFile($phpUrl, $target)
+    Write-Output "Downloading $Url"
+    $client.DownloadFile($Url, $Target)
 }
+$phpTarget = Join-Path $PWD 'php.zip'
 try {
-    Download-PHP "http://windows.php.net/downloads/releases/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip"
+    Download-File "http://windows.php.net/downloads/releases/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip" $phpTarget
 }
 catch [System.Net.WebException] {
     if ($_.Exception.Response.StatusCode.Value__ -eq 404) {
         # Older releases get moved to archives/
-        Download-PHP "http://windows.php.net/downloads/releases/archives/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip"
+        Download-File "http://windows.php.net/downloads/releases/archives/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip" $phpTarget
         Write-Warning "PHP $env:PHP_VERSION is outdated and was moved to archives"
     }
     else {
@@ -33,7 +33,7 @@ $phpMinorVersion = $env:PHP_VERSION -replace '\.\d+$'
 $xdebugUrl = "https://xdebug.org/files/php_xdebug-$env:XDEBUG_VERSION-$phpMinorVersion-vc$env:VC_VERSION-nts.dll"
 Write-Output "Downloading $xdebugUrl"
 $xdebugPath = Join-Path $PWD 'php\ext\xdebug.dll'
-$client.DownloadFile($xdebugUrl, $xdebugPath)
+Download-File $xdebugUrl $xdebugPath
 Add-Content .\php\php.ini @"
 extension_dir=ext
 zend_extension=$xdebugPath
