@@ -1,4 +1,3 @@
-$ErrorActionPreference = 'Stop'
 
 # Install PHP
 $client = New-Object System.Net.WebClient
