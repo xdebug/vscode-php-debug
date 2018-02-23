@@ -238,7 +238,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendEvent(new vscode.TerminatedEvent())
                 })
                 script.on('error', (error: Error) => {
-                    this.sendEvent(new vscode.OutputEvent(error.message))
+                    this.sendEvent(new vscode.OutputEvent(error.message + '\n'))
                 })
                 this._phpProcess = script
             }
@@ -262,7 +262,11 @@ class PhpDebugSession extends vscode.DebugSession {
                                     this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ' closed\n'))
                                 }
                                 if (error) {
-                                    this.sendEvent(new vscode.OutputEvent(error.message))
+                                    this.sendEvent(
+                                        new vscode.OutputEvent(
+                                            'connection ' + connection.id + ': ' + error.message + '\n'
+                                        )
+                                    )
                                 }
                                 this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
                                 connection.close()
@@ -271,29 +275,40 @@ class PhpDebugSession extends vscode.DebugSession {
                             }
                         }
                         connection.on('warning', (warning: string) => {
-                            this.sendEvent(new vscode.OutputEvent(warning))
+                            this.sendEvent(new vscode.OutputEvent(warning + '\n'))
                         })
                         connection.on('error', disposeConnection)
                         connection.on('close', disposeConnection)
                         await connection.waitForInitPacket()
-                        this.sendEvent(new vscode.ThreadEvent('started', connection.id))
 
                         // override features from launch.json
-                        const xdebugSettings = args.xdebugSettings || {}
-                        await Promise.all(
-                            Object.keys(xdebugSettings).map(setting =>
-                                connection.sendFeatureSetCommand(setting, xdebugSettings[setting])
+                        try {
+                            const xdebugSettings = args.xdebugSettings || {}
+                            await Promise.all(
+                                Object.keys(xdebugSettings).map(setting =>
+                                    connection.sendFeatureSetCommand(setting, xdebugSettings[setting])
+                                )
                             )
-                        )
+                        } catch (error) {
+                            this.sendEvent(
+                                new vscode.OutputEvent(
+                                    'Failed to set Xdebug settings: ' +
+                                        (error instanceof Error ? error.message : error) +
+                                        '\n'
+                                )
+                            )
+                        }
+
+                        this.sendEvent(new vscode.ThreadEvent('started', connection.id))
 
                         // request breakpoints from VS Code
                         await this.sendEvent(new vscode.InitializedEvent())
                     } catch (error) {
-                        this.sendEvent(new vscode.OutputEvent(error instanceof Error ? error.message : error))
+                        this.sendEvent(new vscode.OutputEvent((error instanceof Error ? error.message : error) + '\n'))
                     }
                 })
                 server.on('error', (error: Error) => {
-                    this.sendEvent(new vscode.OutputEvent(error.message))
+                    this.sendEvent(new vscode.OutputEvent(error.message + '\n'))
                     this.shutdown()
                 })
                 server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve()))
