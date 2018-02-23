@@ -22,6 +22,7 @@ catch [System.Net.WebException] {
 }
 7z e php.zip -ophp
 if ($LASTEXITCODE -ne 0) {
+    Get-Content php.zip
     throw "7zip exited with $LASTEXITCODE"
 }
 Rename-Item .\php\php.ini-development php.ini
