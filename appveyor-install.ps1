@@ -1,19 +1,19 @@
 
 # Install PHP
-$client = New-Object System.Net.WebClient
-$client.Headers.Add('User-Agent', "AppVeyor CI PowerShell $($PSVersionTable.PSVersion) $([Environment]::OSVersion.VersionString)")
-$phpUrl = "http://windows.php.net/downloads/releases/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip"
 $target = Join-Path $PWD 'php.zip'
-Write-Output "Downloading $phpUrl"
-try {
+function Download-PHP ([string] $phpUrl) {
+    $client = New-Object System.Net.WebClient
+    $client.Headers.Add('User-Agent', "AppVeyor CI PowerShell $($PSVersionTable.PSVersion) $([Environment]::OSVersion.VersionString)")
+    Write-Output "Downloading $phpUrl"
     $client.DownloadFile($phpUrl, $target)
+}
+try {
+    Download-PHP "http://windows.php.net/downloads/releases/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip"
 }
 catch [System.Net.WebException] {
     if ($_.Exception.Response.StatusCode.Value__ -eq 404) {
         # Older releases get moved to archives/
-        $phpUrl = "http://windows.php.net/downloads/releases/archives/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip"
-        Write-Output "Downloading $phpUrl"
-        $client.DownloadFile($phpUrl, $target)
+        Download-PHP "http://windows.php.net/downloads/releases/archives/php-$env:PHP_VERSION-nts-Win32-VC$env:VC_VERSION-x86.zip"
         Write-Warning "PHP $env:PHP_VERSION is outdated and was moved to archives"
     }
     else {
