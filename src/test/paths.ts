@@ -94,16 +94,19 @@ describe('paths', () => {
                     'file:///app/source.php'
                 )
             })
-            ;(process.platform === 'win32' ? it : it.skip)('should convert a windows path with inconsistent casing to a unix URI', () => {
-                const localSourceRoot = 'C:\\Users\\felix\\myproject';
-                const serverSourceRoot = '/var/www';
-                assert.equal(
-                    convertClientPathToDebugger('c:\\Users\\felix\\myproject\\test.php', {
-                        [serverSourceRoot]: localSourceRoot,
-                    }),
-                    'file:///var/www/test.php'
-                );
-            })
+            ;(process.platform === 'win32' ? it : it.skip)(
+                'should convert a windows path with inconsistent casing to a unix URI',
+                () => {
+                    const localSourceRoot = 'C:\\Users\\felix\\myproject'
+                    const serverSourceRoot = '/var/www'
+                    assert.equal(
+                        convertClientPathToDebugger('c:\\Users\\felix\\myproject\\test.php', {
+                            [serverSourceRoot]: localSourceRoot,
+                        }),
+                        'file:///var/www/test.php'
+                    )
+                }
+            )
             // windows to windows
             ;(process.platform === 'win32' ? it : it.skip)('should convert a windows path to a windows URI', () => {
                 // site

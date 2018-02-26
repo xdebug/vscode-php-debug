@@ -53,9 +53,11 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
     let localFileUri = fileUrl(localPath, { resolve: false })
-    let localFileUriLower = fileUrl(localPath.replace(/[a-zA-Z]:\\/, (match: any) => match.toLowerCase()), { resolve: false })
+    let localFileUriLower = fileUrl(localPath.replace(/[a-zA-Z]:\\/, (match: any) => match.toLowerCase()), {
+        resolve: false,
+    })
     let serverFileUri: string
-    let uriWasLowerCased = false;
+    let uriWasLowerCased = false
     if (pathMapping) {
         for (const mappedServerPath of Object.keys(pathMapping)) {
             const mappedLocalSource = pathMapping[mappedServerPath]
@@ -69,15 +71,15 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
     }
     if (localSourceRoot) {
         localSourceRoot = localSourceRoot.replace(/^[A-Z]:\\/, match => {
-            uriWasLowerCased = true;
+            uriWasLowerCased = true
             return match.toLowerCase()
-        });
+        })
     }
     if (serverSourceRoot) {
         serverSourceRoot = serverSourceRoot.replace(/^[A-Z]:\\/, match => {
-            uriWasLowerCased = true;
-            return match.toLowerCase();
-        });
+            uriWasLowerCased = true
+            return match.toLowerCase()
+        })
     }
     if (serverSourceRoot && localSourceRoot) {
         let localSourceRootUrl = fileUrl(localSourceRoot, { resolve: false })
@@ -96,8 +98,8 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
         // we lowercased the Url, maybe we should undo that
         if (uriWasLowerCased) {
             serverFileUri = serverFileUri.replace(/\/\/\/[a-z]:/, match => {
-                return match.toUpperCase();
-            });
+                return match.toUpperCase()
+            })
         }
     } else {
         serverFileUri = localFileUri
