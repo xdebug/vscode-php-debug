@@ -31,7 +31,6 @@ $env:PATH += ';' + (Join-Path $PWD 'php')
 # Install XDebug
 $phpMinorVersion = $env:PHP_VERSION -replace '\.\d+$'
 $xdebugUrl = "https://xdebug.org/files/php_xdebug-$env:XDEBUG_VERSION-$phpMinorVersion-vc$env:VC_VERSION-nts.dll"
-Write-Output "Downloading $xdebugUrl"
 $xdebugPath = Join-Path $PWD 'php\ext\xdebug.dll'
 Download-File $xdebugUrl $xdebugPath
 Add-Content .\php\php.ini @"
