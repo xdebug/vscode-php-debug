@@ -290,12 +290,8 @@ class PhpDebugSession extends vscode.DebugSession {
                                 )
                             )
                         } catch (error) {
-                            this.sendEvent(
-                                new vscode.OutputEvent(
-                                    'Failed to set Xdebug settings: ' +
-                                        (error instanceof Error ? error.message : error) +
-                                        '\n'
-                                )
+                            throw new Error(
+                                'Error applying xdebugSettings: ' + (error instanceof Error ? error.message : error)
                             )
                         }
 
@@ -304,12 +300,15 @@ class PhpDebugSession extends vscode.DebugSession {
                         // request breakpoints from VS Code
                         await this.sendEvent(new vscode.InitializedEvent())
                     } catch (error) {
-                        this.sendEvent(new vscode.OutputEvent((error instanceof Error ? error.message : error) + '\n'))
+                        this.sendEvent(
+                            new vscode.OutputEvent((error instanceof Error ? error.message : error) + '\n', 'stderr')
+                        )
+                        this.shutdown()
                     }
                 })
                 server.on('error', (error: Error) => {
-                    this.sendEvent(new vscode.OutputEvent(error.message + '\n'))
-                    this.shutdown()
+                    this.sendEvent(new vscode.OutputEvent('ERROR: ' + error.message + '\n', 'stderr'))
+                    this.sendErrorResponse(response, <Error>error)
                 })
                 server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve()))
             })
