@@ -49,4 +49,4 @@ npm config -g set unicode=false
 
 # Install dependencies
 Write-Output 'Installing dependencies'
-npm install
+npm ci
