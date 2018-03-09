@@ -64,7 +64,7 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                         'C:\\Program Files\\MySource': '/home/felix/mysource',
                     }),
-                    'file:///C:/Program%20Files/Apache/2.4/htdocs/site.php'
+                    'file:///c:/Program%20Files/Apache/2.4/htdocs/site.php'
                 )
                 // source
                 assert.equal(
@@ -72,7 +72,7 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                         'C:\\Program Files\\MySource': '/home/felix/mysource',
                     }),
-                    'file:///C:/Program%20Files/MySource/source.php'
+                    'file:///c:/Program%20Files/MySource/source.php'
                 )
             })
             // windows to unix
@@ -115,7 +115,7 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
                         'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource',
                     }),
-                    'file:///C:/Program%20Files/Apache/2.4/htdocs/site.php'
+                    'file:///c:/Program%20Files/Apache/2.4/htdocs/site.php'
                 )
                 // source
                 assert.equal(
@@ -123,7 +123,7 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
                         'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource',
                     }),
-                    'file:///C:/Program%20Files/MySource/source.php'
+                    'file:///c:/Program%20Files/MySource/source.php'
                 )
             })
         })
