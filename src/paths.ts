@@ -52,8 +52,7 @@ export function convertDebuggerPathToClient(
 export function convertClientPathToDebugger(localPath: string, pathMapping?: { [index: string]: string }): string {
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
-    let localFileUri = fileUrl(localPath, { resolve: false })
-    let localFileUriLower = fileUrl(localPath.replace(/[A-Z]:\\/, match => match.toLowerCase()), {
+    let localFileUri = fileUrl(localPath.replace(/[A-Z]:\\/, match => match.toLowerCase()), {
         resolve: false,
     })
     let serverFileUri: string
@@ -88,7 +87,7 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
             serverSourceRootUrl += '/'
         }
         // get the part of the path that is relative to the source root
-        const urlRelativeToSourceRoot = urlRelative(localSourceRootUrl, localFileUriLower)
+        const urlRelativeToSourceRoot = urlRelative(localSourceRootUrl, localFileUri)
         // resolve from the server source root
         serverFileUri = url.resolve(serverSourceRootUrl, urlRelativeToSourceRoot)
     } else {

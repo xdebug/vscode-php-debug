@@ -29,7 +29,7 @@ describe('paths', () => {
             it('should convert a windows path to a URI', () => {
                 assert.equal(
                     convertClientPathToDebugger('C:\\Users\\felix\\test.php'),
-                    'file:///C:/Users/felix/test.php'
+                    'file:///c:/Users/felix/test.php'
                 )
             })
             it('should convert a unix path to a URI', () => {
