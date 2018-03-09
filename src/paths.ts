@@ -94,7 +94,6 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
     } else {
         serverFileUri = localFileUri
     }
-
     return serverFileUri
 }
 
