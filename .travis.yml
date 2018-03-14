@@ -61,6 +61,7 @@ jobs:
       node_js: '8'
       before_install: skip
       install:
+        - npm install -g npm@$NPM_VERSION
         - npm ci
       script:
         - npm run build
