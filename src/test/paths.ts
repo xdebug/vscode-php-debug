@@ -29,7 +29,7 @@ describe('paths', () => {
             it('should convert a windows path to a URI', () => {
                 assert.equal(
                     convertClientPathToDebugger('C:\\Users\\felix\\test.php'),
-                    'file:///C:/Users/felix/test.php'
+                    'file:///c:/Users/felix/test.php'
                 )
             })
             it('should convert a unix path to a URI', () => {
@@ -64,7 +64,7 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                         'C:\\Program Files\\MySource': '/home/felix/mysource',
                     }),
-                    'file:///C:/Program%20Files/Apache/2.4/htdocs/site.php'
+                    'file:///c:/Program%20Files/Apache/2.4/htdocs/site.php'
                 )
                 // source
                 assert.equal(
@@ -72,7 +72,7 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                         'C:\\Program Files\\MySource': '/home/felix/mysource',
                     }),
-                    'file:///C:/Program%20Files/MySource/source.php'
+                    'file:///c:/Program%20Files/MySource/source.php'
                 )
             })
             // windows to unix
@@ -94,6 +94,19 @@ describe('paths', () => {
                     'file:///app/source.php'
                 )
             })
+            ;(process.platform === 'win32' ? it : it.skip)(
+                'should convert a windows path with inconsistent casing to a unix URI',
+                () => {
+                    const localSourceRoot = 'C:\\Users\\felix\\myproject'
+                    const serverSourceRoot = '/var/www'
+                    assert.equal(
+                        convertClientPathToDebugger('c:\\Users\\felix\\myproject\\test.php', {
+                            [serverSourceRoot]: localSourceRoot,
+                        }),
+                        'file:///var/www/test.php'
+                    )
+                }
+            )
             // windows to windows
             ;(process.platform === 'win32' ? it : it.skip)('should convert a windows path to a windows URI', () => {
                 // site
@@ -102,7 +115,7 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
                         'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource',
                     }),
-                    'file:///C:/Program%20Files/Apache/2.4/htdocs/site.php'
+                    'file:///c:/Program%20Files/Apache/2.4/htdocs/site.php'
                 )
                 // source
                 assert.equal(
@@ -110,7 +123,7 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
                         'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource',
                     }),
-                    'file:///C:/Program%20Files/MySource/source.php'
+                    'file:///c:/Program%20Files/MySource/source.php'
                 )
             })
         })
