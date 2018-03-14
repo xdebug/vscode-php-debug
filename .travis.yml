@@ -6,7 +6,7 @@ php:
 env:
   global:
     - NODE_VERSION=7.9.0
-    - NPM_VERSION=^5.0.0
+    - NPM_VERSION=^5.7.1
     - BUILD_LEADER_ID=4
     - GITHUB_TOKEN=$GH_TOKEN
   matrix:
@@ -26,7 +26,7 @@ before_install:
   - npm install -g npm@$NPM_VERSION --depth 0
 
 install:
-  - npm install
+  - npm ci
 
 script:
   - npm run build
@@ -61,7 +61,7 @@ jobs:
       node_js: '8'
       before_install: skip
       install:
-        - npm install
+        - npm ci
       script:
         - npm run build
         - npm run semantic-release
