@@ -52,7 +52,8 @@ export function convertDebuggerPathToClient(
 export function convertClientPathToDebugger(localPath: string, pathMapping?: { [index: string]: string }): string {
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
-    let localFileUri = fileUrl(localPath, { resolve: false })
+    // XDebug always lowercases Windows drive letters in file URIs
+    let localFileUri = fileUrl(localPath.replace(/^[A-Z]:\\/, match => match.toLowerCase()), { resolve: false })
     let serverFileUri: string
     if (pathMapping) {
         for (const mappedServerPath of Object.keys(pathMapping)) {
@@ -64,6 +65,12 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
                 break
             }
         }
+    }
+    if (localSourceRoot) {
+        localSourceRoot = localSourceRoot.replace(/^[A-Z]:\\/, match => match.toLowerCase())
+    }
+    if (serverSourceRoot) {
+        serverSourceRoot = serverSourceRoot.replace(/^[A-Z]:\\/, match => match.toLowerCase())
     }
     if (serverSourceRoot && localSourceRoot) {
         let localSourceRootUrl = fileUrl(localSourceRoot, { resolve: false })

@@ -1,2 +1,5 @@
-package.json
+.nyc_output/
+coverage/
 out/
+package-lock.json
+package.json
