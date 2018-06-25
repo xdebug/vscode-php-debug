@@ -78,24 +78,36 @@ configurations:
 - `port`: The port on which to listen for XDebug (default: `9000`)
 - `stopOnEntry`: Wether to break at the beginning of the script (default: `false`)
 - `pathMappings`: A list of server paths mapping to the local source paths on
-    your machine, see "Remote Host Debugging" below
+  your machine, see "Remote Host Debugging" below
 - `log`: Wether to log all communication between VS Code and the adapter to the
-    debug console. See _Troubleshooting_ further down.
+  debug console. See _Troubleshooting_ further down.
 - `ignore`: An optional array of glob patterns that errors should be ignored
-    from (for example `**/vendor/**/*.php`)
+  from (for example `**/vendor/**/*.php`)
+- `proxy`: All the settings for the proxy
+  - `allowMultipleSessions`: If the proxy should expect multiple
+    sessions/connections or not (default: `true`)
+  - `enable`: To enable this configuration or not (default: `false`)
+  - `host`: The IP address of the proxy. Supports host name, IP address,
+    or Unix domain socket. Ignored if xdebug.remote_connect_back is enabled.
+  - `key`: A unique key that allows the proxy to match requests to your
+    editor (default: `vsc`)
+  - `port`: The port where the adapter will register with the the proxy
+    (default: `9001`),
+  - `timeout`: The number of milliseconds to wait before giving up on the
+    connection(default: `3000`)
 - `xdebugSettings`: Allows you to override XDebug's remote debugging settings to
-    fine tuning XDebug to your needs. For example, you can play with
-    `max_children` and `max_depth` to change the max number of array and object
-    children that are retrieved and the max depth in structures like arrays and
-    objects. This can speed up the debugger on slow machines. For a full list of
-    feature names that can be set please refer to the [XDebug documentation][dbgp].
-    - `max_children`: max number of array or object children to initially retrieve
-    - `max_data`: max amount of variable data to initially retrieve.
-    - `max_depth`: maximum depth that the debugger engine may return when
-      sending arrays, hashs or object structures to the IDE.
-    - `show_hidden`: This feature can get set by the IDE if it wants to have
-      more detailed internal information on properties (eg. private members of
-      classes, etc.) Zero means that hidden members are not shown to the IDE.
+  fine tuning XDebug to your needs. For example, you can play with
+  `max_children` and `max_depth` to change the max number of array and object
+  children that are retrieved and the max depth in structures like arrays and
+  objects. This can speed up the debugger on slow machines. For a full list of
+  feature names that can be set please refer to the [XDebug documentation][dbgp].
+  - `max_children`: max number of array or object children to initially retrieve
+  - `max_data`: max amount of variable data to initially retrieve.
+  - `max_depth`: maximum depth that the debugger engine may return when
+    sending arrays, hashs or object structures to the IDE.
+  - `show_hidden`: This feature can get set by the IDE if it wants to have
+    more detailed internal information on properties (eg. private members of
+    classes, etc.) Zero means that hidden members are not shown to the IDE.
 
 Options specific to CLI debugging:
 
@@ -124,6 +136,7 @@ Options specific to CLI debugging:
 - Watches
 - Run as CLI
 - Run without debugging
+- Multi-user debugging
 
 ## Remote Host Debugging
 
@@ -163,6 +176,8 @@ from the command line.
 - In your php.ini, set [`xdebug.remote_log = /path/to/logfile`][rlog]
   (make sure your webserver has write permissions to the file)
 - Set `"log": true` in your launch.json
+- For proxy related issues, you can test locally by download one from
+  [here][proxydl].
 
 ## Contributing
 
@@ -199,10 +214,28 @@ npm test
 npm test -- -g 'test name'
 ```
 
+The extension is written in TypeScript and compiled using a Gulpfile that first
+transpiles to ES6 and then uses Babel to specifically target VS Code's Node
+version.
+
+```sh
+# Run the compile task
+npm run compile
+# or
+gulp compile
+
+# Enable incremental compilation
+npm run watch
+# or
+gulp watch
+```
+
 You can test proxy configurations by running a local proxy. You can download one
 of your choosing from [here][proxydl]. Follow the instructions to properly run
 the proxy.
+
 > ### Note
+>
 > The proxy is developed by ActiveState for their Komodo IDE. The link above is
 > for documentation written in v5.2 of the IDE. It is mostly relevant to the
 > current-most version of the debuggers (v2.4 for python). Xdebug documentation
