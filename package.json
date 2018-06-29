@@ -35,9 +35,9 @@
   },
   "dependencies": {
     "file-url": "^2.0.0",
-    "iconv-lite": "^0.4.15",
+    "iconv-lite": "^0.4.24",
     "minimatch": "^3.0.3",
-    "moment": "^2.17.1",
+    "moment": "^2.22.2",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
     "vscode-debugadapter": "^1.11.0",
@@ -53,21 +53,21 @@
     "@types/node": "7.0.32",
     "@types/semver": "^5.4.0",
     "@types/xmldom": "^0.1.29",
-    "chai": "^4.0.2",
+    "chai": "^4.2.0",
     "chai-as-promised": "^7.0.0",
     "husky": "^0.14.3",
-    "mocha": "^5.0.0",
-    "nyc": "^11.0.2",
+    "mocha": "^5.2.0",
+    "nyc": "^11.9.0",
     "prettier": "1.14.2",
-    "semantic-release": "^15.9.8",
+    "semantic-release": "^15.9.17",
     "semantic-release-vsce": "^2.1.2",
-    "semver": "^5.3.0",
-    "tslint": "^5.4.3",
-    "tslint-config-prettier": "^1.6.0",
-    "typescript": "^2.1.4",
+    "semver": "^5.6.0",
+    "tslint": "^5.11.0",
+    "tslint-config-prettier": "^1.15.0",
+    "typescript": "^2.9.2",
     "validate-commit-msg": "^2.14.0",
-    "vsce": "^1.28.0",
-    "vscode-debugadapter-testsupport": "^1.11.0"
+    "vsce": "^1.51.1",
+    "vscode-debugadapter-testsupport": "^1.32.0"
   },
   "release": {
     "verifyConditions": [
@@ -211,6 +211,39 @@
               "log": {
                 "type": "boolean",
                 "description": "If true, will log all communication between VS Code and the adapter"
+              },
+              "proxy": {
+                "type": "object",
+                "properties": {
+                  "allowMultipleSessions": {
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "If the proxy should expect multiple sessions/connections or not. 1 ",
+                    "default": 1
+                  },
+                  "enable": {
+                    "type": "boolean",
+                    "description": "Wheather to enable usage of a proxy",
+                    "default": false
+                  },
+                  "host": {
+                    "type": "string",
+                    "description": "Selects the host where the debug client is running, you can either use a host name, IP address, or 'unix:///path/to/sock' for a Unix domain socket. This setting is ignored if xdebug.remote_connect_back is enabled.",
+                    "default": "127.0.0.1"
+                  },
+                  "key": {
+                    "type": "string",
+                    "description": "A unique key that allows the proxy to match requests to your editor",
+                    "default": "vsc"
+                  },
+                  "port": {
+                    "type": "number",
+                    "description": "The port where the adapter will register with the the proxy.",
+                    "default": 9001
+                  }
+                }
               },
               "xdebugSettings": {
                 "type": "object",
