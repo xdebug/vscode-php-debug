@@ -11,6 +11,21 @@
     },
     {
       //"debugServer": 4711, // Uncomment for debugging the adapter
+      "name": "Listen for DbgpProxy",
+      "type": "php",
+      "request": "launch",
+      "port": 9000,
+      "log": true,
+      "proxy": {
+        "allowMultipleSessions": true,
+        "enabled": true,
+        "host": "127.0.0.1",
+        "key": "vsc_test",
+        "port": 9001
+      }
+    },
+    {
+      //"debugServer": 4711, // Uncomment for debugging the adapter
       "name": "Launch",
       "request": "launch",
       "type": "php",
