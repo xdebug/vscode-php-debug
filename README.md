@@ -57,9 +57,8 @@ Windows) that needs to be installed on your server.
 
 ### VS Code Configuration
 
-In your project, go to the debugger and hit the little gear icon and choose
-_PHP_. A new launch configuration will be created for you with two
-configurations:
+In your project, go to the debugger and hit the gear icon and choose _PHP_. A
+new launch configuration will be created for you with two configurations:
 
 - **Listen for XDebug**
   This setting will simply start listening on the specified port for XDebug
@@ -161,10 +160,11 @@ Example:
 }
 ```
 
-Please also note that setting any of the CLI debugging options will not work
-with remote host debugging, because the script is always launched locally. If
-you want to debug a CLI script on a remote host, you need to launch it manually
-from the command line.
+> ### Note
+>
+> Setting any of the CLI debugging options will not work with remote host
+> debugging as the script is always launched locally. To debug a CLI script on a
+> remote host, you'll need to launch it manually from the command line.
 
 ## Troubleshooting
 
@@ -181,14 +181,31 @@ from the command line.
 
 ## Contributing
 
-To hack on this adapter, clone the repository and open it in VS Code. You need
-NodeJS and typings installed (`npm install -g typings`). Install dependencies by
-running `npm install` and `typings install`.
+To begin hacking this adapter ...
 
-You can debug the extension (run it in "server mode") by selecting the "Debug
-adapter" launch configuration and hitting `F5`. Then, open a terminal inside the
-project, and open the included testproject with VS Code while specifying the
-current directory as `extensionDevelopmentPath`:
+```sh
+# clone the repository
+git clone git@github.com:felixfbecker/vscode-php-debug.git /path/to/folder
+
+# open it in VS Code
+code /path/to/folder
+
+# Install NodeJS
+# ¯\_(ツ)_/¯
+
+# Install typings
+npm install -g typings
+
+# Install dependencies
+npm install
+
+# Compile Typescript to Javascript
+npm run build
+# or
+# from VS Code with 'Ctrl+Shift+B'
+```
+
+To debug the extension (run it in "server mode") ...
 
 ```sh
 # launch the 'Debug Adapter'
@@ -196,6 +213,8 @@ current directory as `extensionDevelopmentPath`:
 
 # Open the test project and specify the current directory for the option below
 code testproject --extensionDevelopmentPath=.
+# or
+npm run start
 ```
 
 Open `.vscode/launch.json` and uncomment the `debugServer` configuration line.
@@ -243,8 +262,14 @@ the proxy.
 > being the only language to support all breakpoint types. This can be found
 > under **Breakpoint Properties**.
 
-Tests are written with Mocha and can be run with `npm test`. The tests are run
-in CI on Linux and Windows against PHP 5.4, 5.6, 7.0 and XDebug 2.3, 2.4.
+```sh
+# Example - python proxy
+# Environment Variables are used.
+export PYTHONPATH=/path/to/pydbgpproxy/pythonlib;$PYTHONPATH
+# i = ide, d = debugger
+# defaults: -i 127.0.0.1:9001 -d 127.0.0.1:9000
+/path/to/pydbgpproxy
+```
 
 [//]: # 'These are reference links. They get stripped out when rendered.'
 [vsm]: https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace
