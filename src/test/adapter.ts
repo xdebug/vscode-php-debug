@@ -224,7 +224,11 @@ describe('PHP Debug Adapter', () => {
             it.skip('should report the error in a virtual error scope', async () => {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
                 await client.setExceptionBreakpointsRequest({ filters: ['Notice', 'Warning', 'Exception'] })
-                const [{ body: { threadId } }] = await Promise.all([
+                const [
+                    {
+                        body: { threadId },
+                    },
+                ] = await Promise.all([
                     client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>,
                     client.configurationDoneRequest(),
                 ])

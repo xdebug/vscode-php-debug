@@ -6,12 +6,18 @@
   "bracketSpacing": true,
   "singleQuote": true,
   "printWidth": 120,
+  "proseWrap": "preserve",
   "overrides": [
     {
-      "files": "{*.js?(on),.prettierrc}",
+      "files": "{*.js?(on),.prettierrc,*.md}",
       "options": {
-        "parser": "json",
         "tabWidth": 2
+      }
+    },
+    {
+      "files": ".prettierrc",
+      "options": {
+        "parser": "json"
       }
     }
   ]
