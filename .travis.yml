@@ -6,7 +6,7 @@ php:
 env:
   global:
     - NODE_VERSION=7.9.0
-    - NPM_VERSION=^5.7.1
+    - NPM_VERSION=^6.2.0
     - BUILD_LEADER_ID=4
     - GITHUB_TOKEN=$GH_TOKEN
   matrix:
