@@ -51,8 +51,8 @@ jobs:
         - pecl install xdebug-$XDEBUG_VERSION
         - mkdir -p /usr/local/etc/php/7.0/conf.d
         - cp travis-php.ini /usr/local/etc/php/7.0/conf.d/
-        - git clone --depth 1 https://github.com/creationix/nvm.git ./.nvm
-        - source ./.nvm/nvm.sh
+        - git clone --depth 1 https://github.com/creationix/nvm.git ~/.nvm
+        - source ~/.nvm/nvm.sh
         - nvm install $NODE_VERSION
         - nvm use $NODE_VERSION
         - npm install -g npm@$NPM_VERSION --depth 0
