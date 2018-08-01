@@ -50,6 +50,8 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
  * This interface should always match the schema found in the mock-debug extension manifest.
  */
 interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArguments {
+    /** The address to bind to for listening for XDebug connections (default: all IPv6 connections if available, else all IPv4 connections) */
+    bind?: string
     /** The port where the adapter should listen for XDebug connections (default: 9000) */
     port?: number
     /** Automatically stop target after launch. If not specified, target does not stop. */
@@ -310,7 +312,11 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendEvent(new vscode.OutputEvent('ERROR: ' + error.message + '\n', 'stderr'))
                     this.sendErrorResponse(response, <Error>error)
                 })
-                server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve()))
+                server.listen(
+                    args.port || 9000,
+                    args.bind,
+                    (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve())
+                )
             })
         try {
             if (!args.noDebug) {
