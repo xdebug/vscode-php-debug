@@ -9,7 +9,7 @@
   "proseWrap": "preserve",
   "overrides": [
     {
-      "files": "{*.js?(on),.prettierrc,*.md}",
+      "files": "{*.js?(on),*.yml,.*.yml,.prettierrc,*.md}",
       "options": {
         "tabWidth": 2
       }
