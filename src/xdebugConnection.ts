@@ -649,8 +649,8 @@ export class Connection extends DbgpConnection {
         }
         commandString += '\0'
         const data = iconv.encode(commandString, ENCODING)
-        await this.write(data)
         this._pendingCommands.set(transactionId, command)
+        await this.write(data)
     }
 
     public close() {
@@ -752,21 +752,25 @@ export class Connection extends DbgpConnection {
 
     /** sends a run command */
     public async sendRunCommand(): Promise<StatusResponse> {
+        this.emit('continue-event');
         return new StatusResponse(await this._enqueueCommand('run'), this)
     }
 
     /** sends a step_into command */
     public async sendStepIntoCommand(): Promise<StatusResponse> {
+        this.emit('continue-event');
         return new StatusResponse(await this._enqueueCommand('step_into'), this)
     }
 
     /** sends a step_over command */
     public async sendStepOverCommand(): Promise<StatusResponse> {
+        this.emit('continue-event');
         return new StatusResponse(await this._enqueueCommand('step_over'), this)
     }
 
     /** sends a step_out command */
     public async sendStepOutCommand(): Promise<StatusResponse> {
+        this.emit('continue-event');
         return new StatusResponse(await this._enqueueCommand('step_out'), this)
     }
 
