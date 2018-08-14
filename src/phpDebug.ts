@@ -274,11 +274,15 @@ class PhpDebugSession extends vscode.DebugSession {
                                 this._waitingConnections.delete(connection)
                             }
                         }
+                        const continueConnection = () => {
+                            this.sendEvent(new vscode.ContinuedEvent(connection.id));
+                        }
                         connection.on('warning', (warning: string) => {
                             this.sendEvent(new vscode.OutputEvent(warning + '\n'))
                         })
                         connection.on('error', disposeConnection)
                         connection.on('close', disposeConnection)
+                        connection.on('continue-event', continueConnection);
                         await connection.waitForInitPacket()
 
                         // override features from launch.json
@@ -437,7 +441,9 @@ class PhpDebugSession extends vscode.DebugSession {
     ) {
         try {
             const fileUri = convertClientPathToDebugger(args.source.path!, this._args.pathMappings)
-            const connections = Array.from(this._connections.values())
+            // If there is a waiting connection, only use use that as it is likely being called to init
+            // the breakpoints on the new connection
+            const connections = Array.from(this._waitingConnections.size ? this._waitingConnections.values() : this._connections.values())
             let xdebugBreakpoints: Array<xdebug.ConditionalBreakpoint | xdebug.LineBreakpoint>
             response.body = { breakpoints: [] }
             // this is returned to VS Code
@@ -510,7 +516,9 @@ class PhpDebugSession extends vscode.DebugSession {
         args: VSCodeDebugProtocol.SetExceptionBreakpointsArguments
     ) {
         try {
-            const connections = Array.from(this._connections.values())
+            // If there is a waiting connection, only use use that as it is likely being called to init
+            // the breakpoints on the new connection
+            const connections = Array.from(this._waitingConnections.size ? this._waitingConnections.values() : this._connections.values())
             await Promise.all(
                 connections.map(async connection => {
                     // get all breakpoints
@@ -541,7 +549,9 @@ class PhpDebugSession extends vscode.DebugSession {
         args: VSCodeDebugProtocol.SetFunctionBreakpointsArguments
     ) {
         try {
-            const connections = Array.from(this._connections.values())
+            // If there is a waiting connection, only use use that as it is likely being called to init
+            // the breakpoints on the new connection
+            const connections = Array.from(this._waitingConnections.size ? this._waitingConnections.values() : this._connections.values())
             // this is returned to VS Code
             let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[]
             if (connections.length === 0) {
