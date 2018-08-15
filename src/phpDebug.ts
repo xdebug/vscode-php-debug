@@ -279,6 +279,10 @@ class PhpDebugSession extends vscode.DebugSession {
                         })
                         connection.on('error', disposeConnection)
                         connection.on('close', disposeConnection)
+                        connection.on('before-execute-command', () => {
+                            // It is about to start executing PHP code
+                            this.sendEvent(new vscode.ContinuedEvent(connection.id));
+                        });
                         await connection.waitForInitPacket()
 
                         // override features from launch.json
@@ -438,6 +442,7 @@ class PhpDebugSession extends vscode.DebugSession {
         try {
             const fileUri = convertClientPathToDebugger(args.source.path!, this._args.pathMappings)
             const connections = Array.from(this._connections.values())
+            const hasWaitingConnections = this._waitingConnections.size > 0
             let xdebugBreakpoints: Array<xdebug.ConditionalBreakpoint | xdebug.LineBreakpoint>
             response.body = { breakpoints: [] }
             // this is returned to VS Code
@@ -458,6 +463,12 @@ class PhpDebugSession extends vscode.DebugSession {
                 // for all connections
                 await Promise.all(
                     connections.map(async (connection, connectionIndex) => {
+                        if (hasWaitingConnections && connection.isPendingExecuteCommand()) {
+                            // skip this if there is a connection that is being initialized, and this
+                            // connection is in middle of running PHP code. This avoids a deadlock that
+                            // can happen if the PHP code initializes a new connection that uses xdebug
+                            return;
+                        }
                         // clear breakpoints for this file
                         // in the future when VS Code returns the breakpoint IDs it would be better to calculate the diff
                         const { breakpoints } = await connection.sendBreakpointListCommand()
@@ -511,8 +522,15 @@ class PhpDebugSession extends vscode.DebugSession {
     ) {
         try {
             const connections = Array.from(this._connections.values())
+            const hasWaitingConnections = this._waitingConnections.size > 0
             await Promise.all(
                 connections.map(async connection => {
+                    if (hasWaitingConnections && connection.isPendingExecuteCommand()) {
+                        // skip this if there is a connection that is being initialized, and this
+                        // connection is in middle of running PHP code. This avoids a deadlock that
+                        // can happen if the PHP code initializes a new connection that uses xdebug
+                        return;
+                    }
                     // get all breakpoints
                     const { breakpoints } = await connection.sendBreakpointListCommand()
                     // remove all exception breakpoints
@@ -542,6 +560,7 @@ class PhpDebugSession extends vscode.DebugSession {
     ) {
         try {
             const connections = Array.from(this._connections.values())
+            const hasWaitingConnections = this._waitingConnections.size > 0
             // this is returned to VS Code
             let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[]
             if (connections.length === 0) {
@@ -552,6 +571,12 @@ class PhpDebugSession extends vscode.DebugSession {
                 // for all connections
                 await Promise.all(
                     connections.map(async (connection, connectionIndex) => {
+                        if (hasWaitingConnections && connection.isPendingExecuteCommand()) {
+                            // skip this if there is a connection that is being initialized, and this
+                            // connection is in middle of running PHP code. This avoids a deadlock that
+                            // can happen if the PHP code initializes a new connection that uses xdebug
+                            return;
+                        }
                         // clear breakpoints for this file
                         const { breakpoints } = await connection.sendBreakpointListCommand()
                         await Promise.all(
