@@ -607,7 +607,7 @@ export class Connection extends DbgpConnection {
                 if (this._pendingCommands.has(transactionId)) {
                     const command = this._pendingCommands.get(transactionId)!
                     this._pendingCommands.delete(transactionId)
-                    this._pendingExecuteCommand = false;
+                    this._pendingExecuteCommand = false
                     command.resolveFn(response)
                 }
                 if (this._commandQueue.length > 0) {
@@ -623,12 +623,12 @@ export class Connection extends DbgpConnection {
         return this._initPromise
     }
 
-    /** 
+    /**
      * Whether a command was started that executes PHP, which means the connection will be blocked from
      * running any additional commands until the execution gets to the next stopping point or exits.
      */
     public isPendingExecuteCommand(): boolean {
-        return this._pendingExecuteCommand;
+        return this._pendingExecuteCommand
     }
 
     /**
@@ -643,7 +643,7 @@ export class Connection extends DbgpConnection {
     }
 
     /**
-     * Pushes a new execute command (one that results in executing PHP code) to the queue that will be executed after all the previous 
+     * Pushes a new execute command (one that results in executing PHP code) to the queue that will be executed after all the previous
      * commands have finished and we received a response.
      * If the queue is empty AND there are no pending transactions (meaning we already received a response and XDebug is waiting for
      * commands) the command will be executed immediately.

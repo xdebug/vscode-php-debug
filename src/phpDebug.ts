@@ -281,8 +281,8 @@ class PhpDebugSession extends vscode.DebugSession {
                         connection.on('close', disposeConnection)
                         connection.on('before-execute-command', () => {
                             // It is about to start executing PHP code
-                            this.sendEvent(new vscode.ContinuedEvent(connection.id));
-                        });
+                            this.sendEvent(new vscode.ContinuedEvent(connection.id))
+                        })
                         await connection.waitForInitPacket()
 
                         // override features from launch.json
@@ -440,9 +440,7 @@ class PhpDebugSession extends vscode.DebugSession {
      * @param filterCallback Callback to use to filter only breakpoints that should be removed
      */
     private _removeBreakpoints(breakpoints: xdebug.Breakpoint[], filterCallback: any) {
-        return breakpoints
-            .filter(filterCallback)
-            .map(breakpoint => breakpoint.remove())
+        return breakpoints.filter(filterCallback).map(breakpoint => breakpoint.remove())
     }
 
     /** This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change. */
@@ -453,9 +451,8 @@ class PhpDebugSession extends vscode.DebugSession {
         try {
             const fileUri = convertClientPathToDebugger(args.source.path!, this._args.pathMappings)
             const connections = Array.from(this._connections.values())
-            const breakpointFilter = (breakpoint:xdebug.Breakpoint) =>
-                breakpoint instanceof xdebug.LineBreakpoint &&
-                isSameUri(fileUri, breakpoint.fileUri)
+            const breakpointFilter = (breakpoint: xdebug.Breakpoint) =>
+                breakpoint instanceof xdebug.LineBreakpoint && isSameUri(fileUri, breakpoint.fileUri)
             let xdebugBreakpoints: Array<xdebug.ConditionalBreakpoint | xdebug.LineBreakpoint>
             response.body = { breakpoints: [] }
             // this is returned to VS Code
@@ -479,24 +476,28 @@ class PhpDebugSession extends vscode.DebugSession {
                         // Note: this does not use await here on purpose, to avoid causing a deadlock if connection is
                         // currently in process of executing PHP code
                         const removeThenSet = () => {
-                            return connection.sendBreakpointListCommand()
-                                .then(({breakpoints}) => {
+                            return connection
+                                .sendBreakpointListCommand()
+                                .then(({ breakpoints }) => {
                                     return Promise.all(this._removeBreakpoints(breakpoints, breakpointFilter))
                                 })
                                 .then(() => {
-                                    return Promise.all(xdebugBreakpoints.map((breakpoint, index) => {
-                                        return connection.sendBreakpointSetCommand(breakpoint)
-                                            .then(() => {
-                                                vscodeBreakpoints[index] = { verified: true, line: breakpoint.line }
-                                            })
-                                            .catch((error) => {
-                                                vscodeBreakpoints[index] = {
-                                                    verified: false,
-                                                    line: breakpoint.line,
-                                                    message: (<Error>error).message,
-                                                }
-                                            })
-                                    }))
+                                    return Promise.all(
+                                        xdebugBreakpoints.map((breakpoint, index) => {
+                                            return connection
+                                                .sendBreakpointSetCommand(breakpoint)
+                                                .then(() => {
+                                                    vscodeBreakpoints[index] = { verified: true, line: breakpoint.line }
+                                                })
+                                                .catch(error => {
+                                                    vscodeBreakpoints[index] = {
+                                                        verified: false,
+                                                        line: breakpoint.line,
+                                                        message: (<Error>error).message,
+                                                    }
+                                                })
+                                        })
+                                    )
                                 })
                         }
                         if (connection.isPendingExecuteCommand()) {
@@ -524,14 +525,15 @@ class PhpDebugSession extends vscode.DebugSession {
     ) {
         try {
             const connections = Array.from(this._connections.values())
-            const breakpointFilter = (breakpoint:xdebug.Breakpoint) => breakpoint.type === 'exception'
+            const breakpointFilter = (breakpoint: xdebug.Breakpoint) => breakpoint.type === 'exception'
             await Promise.all(
                 connections.map(async connection => {
                     // Note: this does not use await here on purpose, to avoid causing a deadlock if connection is
                     // currently in process of executing PHP code
                     const removeThenSet = () => {
-                        return connection.sendBreakpointListCommand()
-                            .then(({breakpoints}) => {
+                        return connection
+                            .sendBreakpointListCommand()
+                            .then(({ breakpoints }) => {
                                 return Promise.all(this._removeBreakpoints(breakpoints, breakpointFilter))
                             })
                             .then(() => {
@@ -564,7 +566,7 @@ class PhpDebugSession extends vscode.DebugSession {
     ) {
         try {
             const connections = Array.from(this._connections.values())
-            const breakpointFilter = (breakpoint:xdebug.Breakpoint) => breakpoint.type === 'call'
+            const breakpointFilter = (breakpoint: xdebug.Breakpoint) => breakpoint.type === 'call'
             // this is returned to VS Code
             let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[]
             if (connections.length === 0) {
@@ -576,30 +578,36 @@ class PhpDebugSession extends vscode.DebugSession {
                 await Promise.all(
                     connections.map(async (connection, connectionIndex) => {
                         const removeThenSet = () => {
-                            return connection.sendBreakpointListCommand()
-                                .then(({breakpoints}) => {
+                            return connection
+                                .sendBreakpointListCommand()
+                                .then(({ breakpoints }) => {
                                     return Promise.all(this._removeBreakpoints(breakpoints, breakpointFilter))
                                 })
                                 .then(() => {
-                                    return Promise.all(args.breakpoints.map(async (functionBreakpoint, index) => {
-                                        try {
-                                            await connection.sendBreakpointSetCommand(
-                                                new xdebug.CallBreakpoint(functionBreakpoint.name, functionBreakpoint.condition)
-                                            )
-                                            // only capture each breakpoint once
-                                            if (connectionIndex === 0) {
-                                                vscodeBreakpoints[index] = { verified: true }
-                                            }
-                                        } catch (error) {
-                                            // only capture each breakpoint once
-                                            if (connectionIndex === 0) {
-                                                vscodeBreakpoints[index] = {
-                                                    verified: false,
-                                                    message: error instanceof Error ? error.message : error,
+                                    return Promise.all(
+                                        args.breakpoints.map(async (functionBreakpoint, index) => {
+                                            try {
+                                                await connection.sendBreakpointSetCommand(
+                                                    new xdebug.CallBreakpoint(
+                                                        functionBreakpoint.name,
+                                                        functionBreakpoint.condition
+                                                    )
+                                                )
+                                                // only capture each breakpoint once
+                                                if (connectionIndex === 0) {
+                                                    vscodeBreakpoints[index] = { verified: true }
+                                                }
+                                            } catch (error) {
+                                                // only capture each breakpoint once
+                                                if (connectionIndex === 0) {
+                                                    vscodeBreakpoints[index] = {
+                                                        verified: false,
+                                                        message: error instanceof Error ? error.message : error,
+                                                    }
                                                 }
                                             }
-                                        }
-                                    }))
+                                        })
+                                    )
                                 })
                         }
                         if (connection.isPendingExecuteCommand()) {
