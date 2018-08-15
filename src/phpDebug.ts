@@ -835,6 +835,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 variables = properties.map(property => {
                     const displayValue = formatPropertyValue(property)
                     let variablesReference: number
+                    let evaluateName: string
                     if (property.hasChildren || property.type === 'array' || property.type === 'object') {
                         // if the property has children, we have to send a variableReference back to VS Code
                         // so it can receive the child elements in another request.
@@ -848,11 +849,17 @@ class PhpDebugSession extends vscode.DebugSession {
                     } else {
                         variablesReference = 0
                     }
+                    if (property instanceof xdebug.Property) {
+                        evaluateName = property.fullName
+                    } else {
+                        evaluateName = property.name
+                    }
                     const variable: VSCodeDebugProtocol.Variable = {
                         name: property.name,
                         value: displayValue,
                         type: property.type,
                         variablesReference,
+                        evaluateName
                     }
                     return variable
                 })
