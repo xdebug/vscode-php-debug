@@ -546,7 +546,7 @@ interface Command {
     /** callback that gets called if an error happened while parsing the response */
     rejectFn: (error?: Error) => any
     /** whether command results in PHP code being executed or not */
-    isExecuteCommand?: boolean
+    isExecuteCommand: boolean
 }
 
 /**
@@ -679,7 +679,7 @@ export class Connection extends DbgpConnection {
         commandString += '\0'
         const data = iconv.encode(commandString, ENCODING)
         this._pendingCommands.set(transactionId, command)
-        this._pendingExecuteCommand = !!command.isExecuteCommand
+        this._pendingExecuteCommand = command.isExecuteCommand
         if (this._pendingExecuteCommand) {
             // Since PHP execution commands block anything on the connection until it is
             // done executing, emit that the connection is about to go into such a locked state
