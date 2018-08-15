@@ -859,7 +859,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         value: displayValue,
                         type: property.type,
                         variablesReference,
-                        evaluateName
+                        evaluateName,
                     }
                     return variable
                 })
