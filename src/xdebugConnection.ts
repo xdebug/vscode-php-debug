@@ -587,6 +587,7 @@ export class Connection extends DbgpConnection {
      */
     private _commandQueue: Command[] = []
 
+    /** Whether the connection is waiting for a response from an "execute command" (that results in executed PHP) */
     private _pendingExecuteCommand = false
 
     /** Constructs a new connection that uses the given socket to communicate with XDebug. */
