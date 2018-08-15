@@ -607,8 +607,8 @@ export class Connection extends DbgpConnection {
                 if (this._pendingCommands.has(transactionId)) {
                     const command = this._pendingCommands.get(transactionId)!
                     this._pendingCommands.delete(transactionId)
-                    command.resolveFn(response)
                     this._pendingExecuteCommand = false;
+                    command.resolveFn(response)
                 }
                 if (this._commandQueue.length > 0) {
                     const command = this._commandQueue.shift()!
