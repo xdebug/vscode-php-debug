@@ -593,17 +593,11 @@ class PhpDebugSession extends vscode.DebugSession {
                                                         functionBreakpoint.condition
                                                     )
                                                 )
-                                                // only capture each breakpoint once
-                                                if (connectionIndex === 0) {
-                                                    vscodeBreakpoints[index] = { verified: true }
-                                                }
+                                                vscodeBreakpoints[index] = { verified: true }
                                             } catch (error) {
-                                                // only capture each breakpoint once
-                                                if (connectionIndex === 0) {
-                                                    vscodeBreakpoints[index] = {
-                                                        verified: false,
-                                                        message: error instanceof Error ? error.message : error,
-                                                    }
+                                                vscodeBreakpoints[index] = {
+                                                    verified: false,
+                                                    message: error instanceof Error ? error.message : error,
                                                 }
                                             }
                                         })
