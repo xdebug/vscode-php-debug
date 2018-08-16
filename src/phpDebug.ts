@@ -475,9 +475,12 @@ class PhpDebugSession extends vscode.DebugSession {
                     connections.map(async (connection, connectionIndex) => {
                         // Note: this does not use await for sendBreakpointListCommand() on purpose, to avoid causing a deadlock if connection is
                         // currently in process of executing PHP code
-                        const removeThenSet = () => {
+                        const breakpointSetup = () => {
                             return connection.sendBreakpointListCommand().then(async ({ breakpoints }) => {
+                                // clear breakpoints for this file
+                                // in the future when VS Code returns the breakpoint IDs it would be better to calculate the diff
                                 await Promise.all(this._removeBreakpoints(breakpoints, breakpointFilter))
+                                // set new breakpoints
                                 return Promise.all(
                                     xdebugBreakpoints.map((breakpoint, index) => {
                                         return connection
@@ -499,9 +502,9 @@ class PhpDebugSession extends vscode.DebugSession {
                         if (connection.isPendingExecuteCommand()) {
                             // There is a pending execute command which could lock the connection up, so do not
                             // wait on the response before continuing or it can get into a deadlock
-                            removeThenSet()
+                            breakpointSetup()
                         } else {
-                            await removeThenSet()
+                            await breakpointSetup()
                         }
                     })
                 )
@@ -526,7 +529,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 connections.map(async connection => {
                     // Note: this does not use await for sendBreakpointListCommand() on purpose, to avoid causing a deadlock if connection is
                     // currently in process of executing PHP code
-                    const removeThenSet = () => {
+                    const breakpointSetup = () => {
                         return connection.sendBreakpointListCommand().then(async ({ breakpoints }) => {
                             await Promise.all(this._removeBreakpoints(breakpoints, breakpointFilter))
                             return Promise.all(
@@ -539,9 +542,9 @@ class PhpDebugSession extends vscode.DebugSession {
                     if (connection.isPendingExecuteCommand()) {
                         // There is a pending execute command which could lock the connection up, so do not
                         // wait on the response before continuing or it can get into a deadlock
-                        removeThenSet()
+                        breakpointSetup()
                     } else {
-                        await removeThenSet()
+                        await breakpointSetup()
                     }
                 })
             )
@@ -571,7 +574,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     connections.map(async (connection, connectionIndex) => {
                         // Note: this does not use await for sendBreakpointListCommand() on purpose, to avoid causing a deadlock if connection is
                         // currently in process of executing PHP code
-                        const removeThenSet = () => {
+                        const breakpointSetup = () => {
                             return connection.sendBreakpointListCommand().then(async ({ breakpoints }) => {
                                 await Promise.all(this._removeBreakpoints(breakpoints, breakpointFilter))
                                 return Promise.all(
@@ -597,9 +600,9 @@ class PhpDebugSession extends vscode.DebugSession {
                         if (connection.isPendingExecuteCommand()) {
                             // There is a pending execute command which could lock the connection up, so do not
                             // wait on the response before continuing or it can get into a deadlock
-                            removeThenSet()
+                            breakpointSetup()
                         } else {
-                            await removeThenSet()
+                            await breakpointSetup()
                         }
                     })
                 )
