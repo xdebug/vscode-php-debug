@@ -8,7 +8,6 @@ env:
     - NODE_VERSION=8.9.3
     - NPM_VERSION=^6.3.0
     - BUILD_LEADER_ID=4
-    - GITHUB_TOKEN=$GH_TOKEN
   matrix:
     - XDEBUG_VERSION=2.5.5
 
