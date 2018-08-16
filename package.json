@@ -74,11 +74,12 @@
       "semantic-release-vsce",
       "@semantic-release/github"
     ],
+    "prepare": {
+      "path": "semantic-release-vsce",
+      "packageVsix": "php-debug.vsix"
+    },
     "publish": [
-      {
-        "path": "semantic-release-vsce",
-        "packageVsix": "php-debug.vsix"
-      },
+      "semantic-release-vsce",
       {
         "path": "@semantic-release/github",
         "assets": "php-debug.vsix"
