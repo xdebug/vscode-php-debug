@@ -587,8 +587,14 @@ export class Connection extends DbgpConnection {
      */
     private _commandQueue: Command[] = []
 
-    /** Whether the connection is waiting for a response from an "execute command" (that results in executed PHP) */
     private _pendingExecuteCommand = false
+    /**
+     * Whether a command was started that executes PHP, which means the connection will be blocked from
+     * running any additional commands until the execution gets to the next stopping point or exits.
+     */
+    public get isPendingExecuteCommand(): boolean {
+        return this._pendingExecuteCommand
+    }
 
     /** Constructs a new connection that uses the given socket to communicate with XDebug. */
     constructor(socket: net.Socket) {
@@ -621,14 +627,6 @@ export class Connection extends DbgpConnection {
     /** Returns a promise that gets resolved once the init packet arrives */
     public waitForInitPacket(): Promise<InitPacket> {
         return this._initPromise
-    }
-
-    /**
-     * Whether a command was started that executes PHP, which means the connection will be blocked from
-     * running any additional commands until the execution gets to the next stopping point or exits.
-     */
-    public isPendingExecuteCommand(): boolean {
-        return this._pendingExecuteCommand
     }
 
     /**
