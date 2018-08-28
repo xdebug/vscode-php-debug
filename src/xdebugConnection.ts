@@ -545,6 +545,8 @@ interface Command {
     resolveFn: (response: XMLDocument) => any
     /** callback that gets called if an error happened while parsing the response */
     rejectFn: (error?: Error) => any
+    /** whether command results in PHP code being executed or not */
+    isExecuteCommand: boolean
 }
 
 /**
@@ -585,6 +587,15 @@ export class Connection extends DbgpConnection {
      */
     private _commandQueue: Command[] = []
 
+    private _pendingExecuteCommand = false
+    /**
+     * Whether a command was started that executes PHP, which means the connection will be blocked from
+     * running any additional commands until the execution gets to the next stopping point or exits.
+     */
+    public get isPendingExecuteCommand(): boolean {
+        return this._pendingExecuteCommand
+    }
+
     /** Constructs a new connection that uses the given socket to communicate with XDebug. */
     constructor(socket: net.Socket) {
         super(socket)
@@ -602,6 +613,7 @@ export class Connection extends DbgpConnection {
                 if (this._pendingCommands.has(transactionId)) {
                     const command = this._pendingCommands.get(transactionId)!
                     this._pendingCommands.delete(transactionId)
+                    this._pendingExecuteCommand = false
                     command.resolveFn(response)
                 }
                 if (this._commandQueue.length > 0) {
@@ -624,13 +636,29 @@ export class Connection extends DbgpConnection {
      */
     private _enqueueCommand(name: string, args?: string, data?: string): Promise<XMLDocument> {
         return new Promise((resolveFn, rejectFn) => {
-            const command = { name, args, data, resolveFn, rejectFn }
-            if (this._commandQueue.length === 0 && this._pendingCommands.size === 0) {
-                this._executeCommand(command)
-            } else {
-                this._commandQueue.push(command)
-            }
+            this._enqueue({ name, args, data, resolveFn, rejectFn, isExecuteCommand: false })
         })
+    }
+
+    /**
+     * Pushes a new execute command (one that results in executing PHP code) to the queue that will be executed after all the previous
+     * commands have finished and we received a response.
+     * If the queue is empty AND there are no pending transactions (meaning we already received a response and XDebug is waiting for
+     * commands) the command will be executed immediately.
+     */
+    private _enqueueExecuteCommand(name: string, args?: string, data?: string): Promise<XMLDocument> {
+        return new Promise((resolveFn, rejectFn) => {
+            this._enqueue({ name, args, data, resolveFn, rejectFn, isExecuteCommand: true })
+        })
+    }
+
+    /** Adds the given command to the queue, or executes immediately if no commands are currently being processed. */
+    private _enqueue(command: Command): void {
+        if (this._commandQueue.length === 0 && this._pendingCommands.size === 0) {
+            this._executeCommand(command)
+        } else {
+            this._commandQueue.push(command)
+        }
     }
 
     /**
@@ -649,8 +677,14 @@ export class Connection extends DbgpConnection {
         }
         commandString += '\0'
         const data = iconv.encode(commandString, ENCODING)
-        await this.write(data)
         this._pendingCommands.set(transactionId, command)
+        this._pendingExecuteCommand = command.isExecuteCommand
+        if (this._pendingExecuteCommand) {
+            // Since PHP execution commands block anything on the connection until it is
+            // done executing, emit that the connection is about to go into such a locked state
+            this.emit('before-execute-command')
+        }
+        await this.write(data)
     }
 
     public close() {
@@ -752,22 +786,22 @@ export class Connection extends DbgpConnection {
 
     /** sends a run command */
     public async sendRunCommand(): Promise<StatusResponse> {
-        return new StatusResponse(await this._enqueueCommand('run'), this)
+        return new StatusResponse(await this._enqueueExecuteCommand('run'), this)
     }
 
     /** sends a step_into command */
     public async sendStepIntoCommand(): Promise<StatusResponse> {
-        return new StatusResponse(await this._enqueueCommand('step_into'), this)
+        return new StatusResponse(await this._enqueueExecuteCommand('step_into'), this)
     }
 
     /** sends a step_over command */
     public async sendStepOverCommand(): Promise<StatusResponse> {
-        return new StatusResponse(await this._enqueueCommand('step_over'), this)
+        return new StatusResponse(await this._enqueueExecuteCommand('step_over'), this)
     }
 
     /** sends a step_out command */
     public async sendStepOutCommand(): Promise<StatusResponse> {
-        return new StatusResponse(await this._enqueueCommand('step_out'), this)
+        return new StatusResponse(await this._enqueueExecuteCommand('step_out'), this)
     }
 
     /** sends a stop command */
