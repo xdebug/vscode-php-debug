@@ -462,7 +462,8 @@ class PhpDebugSession extends vscode.DebugSession {
                 // for all connections
                 await Promise.all(
                     connections.map(async (connection, connectionIndex) => {
-                        const promise = connection.sendBreakpointListCommand().then(async ({ breakpoints }) => {
+                        const promise = (async () => {
+                            const { breakpoints } = await connection.sendBreakpointListCommand()
                             // clear breakpoints for this file
                             // in the future when VS Code returns the breakpoint IDs it would be better to calculate the diff
                             await Promise.all(
@@ -475,23 +476,21 @@ class PhpDebugSession extends vscode.DebugSession {
                                     .map(breakpoint => breakpoint.remove())
                             )
                             // set new breakpoints
-                            return Promise.all(
-                                xdebugBreakpoints.map((breakpoint, index) => {
-                                    return connection
-                                        .sendBreakpointSetCommand(breakpoint)
-                                        .then(() => {
-                                            vscodeBreakpoints[index] = { verified: true, line: breakpoint.line }
-                                        })
-                                        .catch(error => {
-                                            vscodeBreakpoints[index] = {
-                                                verified: false,
-                                                line: breakpoint.line,
-                                                message: (<Error>error).message,
-                                            }
-                                        })
+                            await Promise.all(
+                                xdebugBreakpoints.map(async (breakpoint, index) => {
+                                    try {
+                                        await connection.sendBreakpointSetCommand(breakpoint)
+                                        vscodeBreakpoints[index] = { verified: true, line: breakpoint.line }
+                                    } catch (error) {
+                                        vscodeBreakpoints[index] = {
+                                            verified: false,
+                                            line: breakpoint.line,
+                                            message: (<Error>error).message,
+                                        }
+                                    }
                                 })
                             )
-                        })
+                        })()
 
                         if (connection.isPendingExecuteCommand) {
                             // There is a pending execute command which could lock the connection up, so do not
@@ -520,7 +519,8 @@ class PhpDebugSession extends vscode.DebugSession {
             const connections = Array.from(this._connections.values())
             await Promise.all(
                 connections.map(async connection => {
-                    const promise = connection.sendBreakpointListCommand().then(async ({ breakpoints }) => {
+                    const promise = (async () => {
+                        const { breakpoints } = await connection.sendBreakpointListCommand()
                         await Promise.all(
                             breakpoints
                                 .filter(breakpoint => breakpoint.type === 'exception')
@@ -531,7 +531,7 @@ class PhpDebugSession extends vscode.DebugSession {
                                 connection.sendBreakpointSetCommand(new xdebug.ExceptionBreakpoint(filter))
                             )
                         )
-                    })
+                    })()
                     if (connection.isPendingExecuteCommand) {
                         // There is a pending execute command which could lock the connection up, so do not
                         // wait on the response before continuing or it can get into a deadlock
@@ -564,7 +564,8 @@ class PhpDebugSession extends vscode.DebugSession {
                 // for all connections
                 await Promise.all(
                     connections.map(async (connection, connectionIndex) => {
-                        const promise = connection.sendBreakpointListCommand().then(async ({ breakpoints }) => {
+                        const promise = (async () => {
+                            const { breakpoints } = await connection.sendBreakpointListCommand()
                             await Promise.all(
                                 breakpoints
                                     .filter(breakpoint => breakpoint.type === 'call')
@@ -588,7 +589,7 @@ class PhpDebugSession extends vscode.DebugSession {
                                     }
                                 })
                             )
-                        })
+                        })()
 
                         if (connection.isPendingExecuteCommand) {
                             // There is a pending execute command which could lock the connection up, so do not
