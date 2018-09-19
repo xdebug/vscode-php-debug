@@ -889,88 +889,52 @@ class PhpDebugSession extends vscode.DebugSession {
         response: VSCodeDebugProtocol.ContinueResponse,
         args: VSCodeDebugProtocol.ContinueArguments
     ) {
-        let xdebugResponse: xdebug.StatusResponse | undefined
-        try {
-            const connection = this._connections.get(args.threadId)
-            if (!connection) {
-                throw new Error('Unknown thread ID ' + args.threadId)
-            }
-            xdebugResponse = await connection.sendRunCommand()
-        } catch (error) {
-            this.sendErrorResponse(response, error)
-            if (xdebugResponse) {
-                this._checkStatus(xdebugResponse)
-            }
-            return
-        }
         response.body = {
             allThreadsContinued: false,
         }
-        this.sendResponse(response)
-        this._checkStatus(xdebugResponse)
-    }
-
-    protected async nextRequest(response: VSCodeDebugProtocol.NextResponse, args: VSCodeDebugProtocol.NextArguments) {
-        let xdebugResponse: xdebug.StatusResponse | undefined
-        try {
-            const connection = this._connections.get(args.threadId)
-            if (!connection) {
-                throw new Error('Unknown thread ID ' + args.threadId)
-            }
-            xdebugResponse = await connection.sendStepOverCommand()
-        } catch (error) {
-            this.sendErrorResponse(response, error)
-            if (xdebugResponse) {
-                this._checkStatus(xdebugResponse)
-            }
+        const connection = this._connections.get(args.threadId)
+        if (!connection) {
+            this.sendErrorResponse(response, new Error('Unkown thread ID ' + args.threadId))
             return
         }
         this.sendResponse(response)
-        this._checkStatus(xdebugResponse)
+        this._checkStatus(await connection.sendRunCommand())
+    }
+
+    protected async nextRequest(response: VSCodeDebugProtocol.NextResponse, args: VSCodeDebugProtocol.NextArguments) {
+        const connection = this._connections.get(args.threadId)
+        if (!connection) {
+            this.sendErrorResponse(response, new Error('Unkown thread ID ' + args.threadId))
+            return
+        }
+        this.sendResponse(response)
+        this._checkStatus(await connection.sendStepOverCommand())
     }
 
     protected async stepInRequest(
         response: VSCodeDebugProtocol.StepInResponse,
         args: VSCodeDebugProtocol.StepInArguments
     ) {
-        let xdebugResponse: xdebug.StatusResponse | undefined
-        try {
-            const connection = this._connections.get(args.threadId)
-            if (!connection) {
-                throw new Error('Unknown thread ID ' + args.threadId)
-            }
-            xdebugResponse = await connection.sendStepIntoCommand()
-        } catch (error) {
-            this.sendErrorResponse(response, error)
-            if (xdebugResponse) {
-                this._checkStatus(xdebugResponse)
-            }
+        const connection = this._connections.get(args.threadId)
+        if (!connection) {
+            this.sendErrorResponse(response, new Error('Unkown thread ID ' + args.threadId))
             return
         }
         this.sendResponse(response)
-        this._checkStatus(xdebugResponse)
+        this._checkStatus(await connection.sendStepIntoCommand())
     }
 
     protected async stepOutRequest(
         response: VSCodeDebugProtocol.StepOutResponse,
         args: VSCodeDebugProtocol.StepOutArguments
     ) {
-        let xdebugResponse: xdebug.StatusResponse | undefined
-        try {
-            const connection = this._connections.get(args.threadId)
-            if (!connection) {
-                throw new Error('Unknown thread ID ' + args.threadId)
-            }
-            xdebugResponse = await connection.sendStepOutCommand()
-        } catch (error) {
-            this.sendErrorResponse(response, error)
-            if (xdebugResponse) {
-                this._checkStatus(xdebugResponse)
-            }
+        const connection = this._connections.get(args.threadId)
+        if (!connection) {
+            this.sendErrorResponse(response, new Error('Unkown thread ID ' + args.threadId))
             return
         }
         this.sendResponse(response)
-        this._checkStatus(xdebugResponse)
+        this._checkStatus(await connection.sendStepOutCommand())
     }
 
     protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments) {
@@ -981,6 +945,7 @@ class PhpDebugSession extends vscode.DebugSession {
         response: VSCodeDebugProtocol.DisconnectResponse,
         args: VSCodeDebugProtocol.DisconnectArguments
     ) {
+        this.sendResponse(response)
         try {
             await Promise.all(
                 Array.from(this._connections).map(async ([id, connection]) => {
@@ -1004,7 +969,6 @@ class PhpDebugSession extends vscode.DebugSession {
             this.sendErrorResponse(response, error)
             return
         }
-        this.sendResponse(response)
         this.shutdown()
     }
 
