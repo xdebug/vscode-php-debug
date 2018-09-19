@@ -679,11 +679,6 @@ export class Connection extends DbgpConnection {
         const data = iconv.encode(commandString, ENCODING)
         this._pendingCommands.set(transactionId, command)
         this._pendingExecuteCommand = command.isExecuteCommand
-        if (this._pendingExecuteCommand) {
-            // Since PHP execution commands block anything on the connection until it is
-            // done executing, emit that the connection is about to go into such a locked state
-            this.emit('before-execute-command')
-        }
         await this.write(data)
     }
 

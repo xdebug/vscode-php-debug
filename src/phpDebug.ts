@@ -279,10 +279,6 @@ class PhpDebugSession extends vscode.DebugSession {
                         })
                         connection.on('error', disposeConnection)
                         connection.on('close', disposeConnection)
-                        connection.on('before-execute-command', () => {
-                            // It is about to start executing PHP code
-                            this.sendEvent(new vscode.ContinuedEvent(connection.id))
-                        })
                         await connection.waitForInitPacket()
 
                         // override features from launch.json
