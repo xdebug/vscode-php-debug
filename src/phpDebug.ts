@@ -945,7 +945,6 @@ class PhpDebugSession extends vscode.DebugSession {
         response: VSCodeDebugProtocol.DisconnectResponse,
         args: VSCodeDebugProtocol.DisconnectArguments
     ) {
-        this.sendResponse(response)
         try {
             await Promise.all(
                 Array.from(this._connections).map(async ([id, connection]) => {
@@ -969,6 +968,7 @@ class PhpDebugSession extends vscode.DebugSession {
             this.sendErrorResponse(response, error)
             return
         }
+        this.sendResponse(response)
         this.shutdown()
     }
 
