@@ -12,6 +12,8 @@ import { Terminal } from './terminal'
 import { isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
 import minimatch = require('minimatch')
 
+var appendQuery = require('append-query')
+
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
         moment.locale(JSON.parse(process.env['VSCODE_NLS_CONFIG']).locale)
@@ -66,6 +68,9 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     ignore?: string[]
     /** XDebug configuration */
     xdebugSettings?: { [featureName: string]: string | number }
+
+    /** Ability to open browser */
+    openUrl?: { [key: string]: string }
 
     // CLI options
 
@@ -272,6 +277,9 @@ class PhpDebugSession extends vscode.DebugSession {
                                 connection.close()
                                 this._connections.delete(connection.id)
                                 this._waitingConnections.delete(connection)
+                                if (args.openUrl && args.openUrl.cmd && args.openUrl.URI) {
+                                    childProcess.spawn(args.openUrl.cmd, [appendQuery(args.openUrl.URI, 'XDEBUG_SESSION_STOP=vscode')]);
+                                }
                             }
                         }
                         connection.on('warning', (warning: string) => {
@@ -311,6 +319,10 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendErrorResponse(response, <Error>error)
                 })
                 server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve()))
+                if (args.openUrl && args.openUrl.cmd && args.openUrl.URI) {
+                    //We just wana launch that and ignore everything!
+                    childProcess.spawn(args.openUrl.cmd, [appendQuery(args.openUrl.URI, 'XDEBUG_SESSION_START=vscode')]);
+                }
             })
         try {
             if (!args.noDebug) {

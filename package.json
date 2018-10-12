@@ -34,6 +34,7 @@
     "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
   },
   "dependencies": {
+    "append-query": "^2.0.1",
     "file-url": "^2.0.0",
     "iconv-lite": "^0.4.15",
     "minimatch": "^3.0.3",
@@ -179,6 +180,15 @@
                 "type": "number",
                 "description": "Port on which to listen for XDebug",
                 "default": 9000
+              },
+              "openUrl": {
+                "type": "object",
+                "description": "Allows you to open the browser with xdebug start query string",
+                "properties": {
+                  "cmd": "string",
+                  "URI": "string"
+                },
+                "default": {}
               },
               "serverSourceRoot": {
                 "type": "string",
