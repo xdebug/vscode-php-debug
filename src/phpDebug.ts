@@ -12,8 +12,6 @@ import { Terminal } from './terminal'
 import { isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
 import minimatch = require('minimatch')
 
-var appendQuery = require('append-query')
-
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
         moment.locale(JSON.parse(process.env['VSCODE_NLS_CONFIG']).locale)
@@ -278,7 +276,7 @@ class PhpDebugSession extends vscode.DebugSession {
                                 this._connections.delete(connection.id)
                                 this._waitingConnections.delete(connection)
                                 if (args.openUrl && args.openUrl.cmd && args.openUrl.URI) {
-                                    childProcess.spawn(args.openUrl.cmd, [appendQuery(args.openUrl.URI, 'XDEBUG_SESSION_STOP=vscode')]);
+                                    childProcess.spawn(args.openUrl.cmd, [args.openUrl.URI + '?XDEBUG_SESSION_STOP=vscode']);
                                 }
                             }
                         }
@@ -321,7 +319,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve()))
                 if (args.openUrl && args.openUrl.cmd && args.openUrl.URI) {
                     //We just wana launch that and ignore everything!
-                    childProcess.spawn(args.openUrl.cmd, [appendQuery(args.openUrl.URI, 'XDEBUG_SESSION_START=vscode')]);
+                    childProcess.spawn(args.openUrl.cmd, [args.openUrl.URI + '?XDEBUG_SESSION_START=vscode']);
                 }
             })
         try {
