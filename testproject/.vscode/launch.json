@@ -8,7 +8,10 @@
       "request": "launch",
       "port": 9000,
       "log": true
-      //"openUrl": {"cmd": "/usr/bin/xdg-open", "URI": "http://localhost/"},
+      //"openUrl": {
+      //  "cmd": "/usr/bin/xdg-open",
+      //  "URI": "http://localhost/"
+      //}
     },
     {
       //"debugServer": 4711, // Uncomment for debugging the adapter
