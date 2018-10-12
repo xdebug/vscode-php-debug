@@ -318,7 +318,6 @@ class PhpDebugSession extends vscode.DebugSession {
                 })
                 server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve()))
                 if (args.openUrl && args.openUrl.cmd && args.openUrl.URI) {
-                    //We just wana launch that and ignore everything!
                     childProcess.spawn(args.openUrl.cmd, [args.openUrl.URI + '?XDEBUG_SESSION_START=vscode']);
                 }
             })
