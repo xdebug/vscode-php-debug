@@ -275,11 +275,6 @@ class PhpDebugSession extends vscode.DebugSession {
                                 connection.close()
                                 this._connections.delete(connection.id)
                                 this._waitingConnections.delete(connection)
-                                if (args.openUrl && args.openUrl.cmd && args.openUrl.URI) {
-                                    childProcess.spawn(args.openUrl.cmd, [
-                                        args.openUrl.URI + '?XDEBUG_SESSION_STOP=vscode',
-                                    ])
-                                }
                             }
                         }
                         connection.on('warning', (warning: string) => {
@@ -1001,7 +996,12 @@ class PhpDebugSession extends vscode.DebugSession {
                     await connection.close()
                     this._connections.delete(id)
                     this._waitingConnections.delete(connection)
-                })
+                    if (this._args.openUrl && this._args.openUrl.cmd && this._args.openUrl.URI) {
+                        childProcess.spawn(this._args.openUrl.cmd, [
+                            this._args.openUrl.URI + '?XDEBUG_SESSION_STOP=vscode',
+                        ])
+                    }
+    })
             )
             // If listening for connections, close server
             if (this._server) {
