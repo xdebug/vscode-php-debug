@@ -276,7 +276,9 @@ class PhpDebugSession extends vscode.DebugSession {
                                 this._connections.delete(connection.id)
                                 this._waitingConnections.delete(connection)
                                 if (args.openUrl && args.openUrl.cmd && args.openUrl.URI) {
-                                    childProcess.spawn(args.openUrl.cmd, [args.openUrl.URI + '?XDEBUG_SESSION_STOP=vscode']);
+                                    childProcess.spawn(args.openUrl.cmd, [
+                                        args.openUrl.URI + '?XDEBUG_SESSION_STOP=vscode',
+                                    ])
                                 }
                             }
                         }
@@ -318,7 +320,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 })
                 server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve()))
                 if (args.openUrl && args.openUrl.cmd && args.openUrl.URI) {
-                    childProcess.spawn(args.openUrl.cmd, [args.openUrl.URI + '?XDEBUG_SESSION_START=vscode']);
+                    childProcess.spawn(args.openUrl.cmd, [args.openUrl.URI + '?XDEBUG_SESSION_START=vscode'])
                 }
             })
         try {
