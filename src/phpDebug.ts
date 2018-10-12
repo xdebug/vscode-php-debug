@@ -1001,7 +1001,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             this._args.openUrl.URI + '?XDEBUG_SESSION_STOP=vscode',
                         ])
                     }
-    })
+                })
             )
             // If listening for connections, close server
             if (this._server) {
