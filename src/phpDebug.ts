@@ -12,8 +12,8 @@ import { Terminal } from './terminal'
 import { isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
 import minimatch = require('minimatch')
 
-var open = require("open");
-var appendQuery = require("append-query");
+let open = require('open')
+let appendQuery = require('append-query')
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -319,7 +319,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve()))
                 if (args.openUrl) {
                     let proc = open(appendQuery(args.openUrl, 'XDEBUG_SESSION_START=vscode'))
-                    proc.stderr.on('data', (data) => {
+                    proc.stderr.on('data', (data: any) => {
                         this.sendEvent(new vscode.OutputEvent('openUrl: ' + util.inspect(data) + '\n'))
                     })
                 }
@@ -1006,7 +1006,7 @@ class PhpDebugSession extends vscode.DebugSession {
             )
             if (this._args.openUrl) {
                 let proc = open(appendQuery(this._args.openUrl, 'XDEBUG_SESSION_STOP=vscode'))
-                proc.stderr.on('data', (data) => {
+                proc.stderr.on('data', (data: any) => {
                     this.sendEvent(new vscode.OutputEvent('openUrl: ' + util.inspect(data) + '\n'))
                 })
             }
