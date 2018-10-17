@@ -12,6 +12,9 @@ import { Terminal } from './terminal'
 import { isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
 import minimatch = require('minimatch')
 
+var open = require("open");
+var appendQuery = require("append-query");
+
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
         moment.locale(JSON.parse(process.env['VSCODE_NLS_CONFIG']).locale)
@@ -68,7 +71,7 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     xdebugSettings?: { [featureName: string]: string | number }
 
     /** Ability to open browser */
-    openUrl?: { [key: string]: string }
+    openUrl?: string
 
     // CLI options
 
@@ -314,8 +317,11 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendErrorResponse(response, <Error>error)
                 })
                 server.listen(args.port || 9000, (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve()))
-                if (args.openUrl && args.openUrl.cmd && args.openUrl.URI) {
-                    childProcess.spawn(args.openUrl.cmd, [args.openUrl.URI + '?XDEBUG_SESSION_START=vscode'])
+                if (args.openUrl) {
+                    let proc = open(appendQuery(args.openUrl, 'XDEBUG_SESSION_START=vscode'))
+                    proc.stderr.on('data', (data) => {
+                        this.sendEvent(new vscode.OutputEvent('openUrl: ' + util.inspect(data) + '\n'))
+                    })
                 }
             })
         try {
@@ -996,13 +1002,14 @@ class PhpDebugSession extends vscode.DebugSession {
                     await connection.close()
                     this._connections.delete(id)
                     this._waitingConnections.delete(connection)
-                    if (this._args.openUrl && this._args.openUrl.cmd && this._args.openUrl.URI) {
-                        childProcess.spawn(this._args.openUrl.cmd, [
-                            this._args.openUrl.URI + '?XDEBUG_SESSION_STOP=vscode',
-                        ])
-                    }
                 })
             )
+            if (this._args.openUrl) {
+                let proc = open(appendQuery(this._args.openUrl, 'XDEBUG_SESSION_STOP=vscode'))
+                proc.stderr.on('data', (data) => {
+                    this.sendEvent(new vscode.OutputEvent('openUrl: ' + util.inspect(data) + '\n'))
+                })
+            }
             // If listening for connections, close server
             if (this._server) {
                 await new Promise(resolve => this._server.close(resolve))
