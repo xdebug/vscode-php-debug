@@ -41,7 +41,7 @@ In your project, go to the debugger and hit the little gear icon and choose _PHP
 #### Supported launch.json settings:
 
 - `request`: Always `"launch"`
-- `bind`: The address to bind to when listening for XDebug (default: all IPv6 connections if available, else all IPv4 connections)
+- `hostname`: The address to bind to when listening for XDebug (default: all IPv6 connections if available, else all IPv4 connections)
 - `port`: The port on which to listen for XDebug (default: `9000`)
 - `stopOnEntry`: Wether to break at the beginning of the script (default: `false`)
 - `pathMappings`: A list of server paths mapping to the local source paths on your machine, see "Remote Host Debugging" below

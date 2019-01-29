@@ -51,7 +51,7 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
  */
 interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArguments {
     /** The address to bind to for listening for XDebug connections (default: all IPv6 connections if available, else all IPv4 connections) */
-    bind?: string
+    hostname?: string
     /** The port where the adapter should listen for XDebug connections (default: 9000) */
     port?: number
     /** Automatically stop target after launch. If not specified, target does not stop. */
@@ -314,7 +314,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 })
                 server.listen(
                     args.port || 9000,
-                    args.bind,
+                    args.hostname,
                     (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve())
                 )
             })

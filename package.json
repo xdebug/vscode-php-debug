@@ -174,7 +174,7 @@
                 "description": "Environment variables passed to the program.",
                 "default": {}
               },
-              "bind": {
+              "hostname": {
                 "type": "string",
                 "description": "Address to bind to when listening for XDebug",
                 "default": "::"
