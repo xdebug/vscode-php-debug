@@ -240,7 +240,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendEvent(new vscode.TerminatedEvent())
                 })
                 script.on('error', (error: Error) => {
-                    this.sendEvent(new vscode.OutputEvent(error.message + '\n'))
+                    this.sendEvent(new vscode.OutputEvent(util.inspect(error) + '\n'))
                 })
                 this._phpProcess = script
             }
@@ -309,7 +309,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     }
                 })
                 server.on('error', (error: Error) => {
-                    this.sendEvent(new vscode.OutputEvent('ERROR: ' + error.message + '\n', 'stderr'))
+                    this.sendEvent(new vscode.OutputEvent(util.inspect(error) + '\n'))
                     this.sendErrorResponse(response, <Error>error)
                 })
                 server.listen(
@@ -464,41 +464,43 @@ class PhpDebugSession extends vscode.DebugSession {
                 // for all connections
                 await Promise.all(
                     connections.map(async (connection, connectionIndex) => {
-                        // clear breakpoints for this file
-                        // in the future when VS Code returns the breakpoint IDs it would be better to calculate the diff
-                        const { breakpoints } = await connection.sendBreakpointListCommand()
-                        await Promise.all(
-                            breakpoints
-                                // filter to only include line breakpoints for this file
-                                .filter(
-                                    breakpoint =>
-                                        breakpoint instanceof xdebug.LineBreakpoint &&
-                                        isSameUri(fileUri, breakpoint.fileUri)
-                                )
-                                // remove them
-                                .map(breakpoint => breakpoint.remove())
-                        )
-                        // set new breakpoints
-                        await Promise.all(
-                            xdebugBreakpoints.map(async (breakpoint, index) => {
-                                try {
-                                    await connection.sendBreakpointSetCommand(breakpoint)
-                                    // only capture each breakpoint once
-                                    if (connectionIndex === 0) {
+                        const promise = (async () => {
+                            const { breakpoints } = await connection.sendBreakpointListCommand()
+                            // clear breakpoints for this file
+                            // in the future when VS Code returns the breakpoint IDs it would be better to calculate the diff
+                            await Promise.all(
+                                breakpoints
+                                    .filter(
+                                        breakpoint =>
+                                            breakpoint instanceof xdebug.LineBreakpoint &&
+                                            isSameUri(fileUri, breakpoint.fileUri)
+                                    )
+                                    .map(breakpoint => breakpoint.remove())
+                            )
+                            // set new breakpoints
+                            await Promise.all(
+                                xdebugBreakpoints.map(async (breakpoint, index) => {
+                                    try {
+                                        await connection.sendBreakpointSetCommand(breakpoint)
                                         vscodeBreakpoints[index] = { verified: true, line: breakpoint.line }
-                                    }
-                                } catch (error) {
-                                    // only capture each breakpoint once
-                                    if (connectionIndex === 0) {
+                                    } catch (error) {
                                         vscodeBreakpoints[index] = {
                                             verified: false,
                                             line: breakpoint.line,
                                             message: (<Error>error).message,
                                         }
                                     }
-                                }
-                            })
-                        )
+                                })
+                            )
+                        })()
+
+                        if (connection.isPendingExecuteCommand) {
+                            // There is a pending execute command which could lock the connection up, so do not
+                            // wait on the response before continuing or it can get into a deadlock
+                            promise.catch(err => this.sendEvent(new vscode.OutputEvent(util.inspect(err) + '\n')))
+                        } else {
+                            await promise
+                        }
                     })
                 )
             }
@@ -519,20 +521,26 @@ class PhpDebugSession extends vscode.DebugSession {
             const connections = Array.from(this._connections.values())
             await Promise.all(
                 connections.map(async connection => {
-                    // get all breakpoints
-                    const { breakpoints } = await connection.sendBreakpointListCommand()
-                    // remove all exception breakpoints
-                    await Promise.all(
-                        breakpoints
-                            .filter(breakpoint => breakpoint.type === 'exception')
-                            .map(breakpoint => breakpoint.remove())
-                    )
-                    // set new exception breakpoints
-                    await Promise.all(
-                        args.filters.map(filter =>
-                            connection.sendBreakpointSetCommand(new xdebug.ExceptionBreakpoint(filter))
+                    const promise = (async () => {
+                        const { breakpoints } = await connection.sendBreakpointListCommand()
+                        await Promise.all(
+                            breakpoints
+                                .filter(breakpoint => breakpoint.type === 'exception')
+                                .map(breakpoint => breakpoint.remove())
                         )
-                    )
+                        await Promise.all(
+                            args.filters.map(filter =>
+                                connection.sendBreakpointSetCommand(new xdebug.ExceptionBreakpoint(filter))
+                            )
+                        )
+                    })()
+                    if (connection.isPendingExecuteCommand) {
+                        // There is a pending execute command which could lock the connection up, so do not
+                        // wait on the response before continuing or it can get into a deadlock
+                        promise.catch(err => this.sendEvent(new vscode.OutputEvent(util.inspect(err) + '\n')))
+                    } else {
+                        await promise
+                    }
                 })
             )
         } catch (error) {
@@ -558,35 +566,40 @@ class PhpDebugSession extends vscode.DebugSession {
                 // for all connections
                 await Promise.all(
                     connections.map(async (connection, connectionIndex) => {
-                        // clear breakpoints for this file
-                        const { breakpoints } = await connection.sendBreakpointListCommand()
-                        await Promise.all(
-                            breakpoints
-                                .filter(breakpoint => breakpoint.type === 'call')
-                                .map(breakpoint => breakpoint.remove())
-                        )
-                        // set new breakpoints
-                        await Promise.all(
-                            args.breakpoints.map(async (functionBreakpoint, index) => {
-                                try {
-                                    await connection.sendBreakpointSetCommand(
-                                        new xdebug.CallBreakpoint(functionBreakpoint.name, functionBreakpoint.condition)
-                                    )
-                                    // only capture each breakpoint once
-                                    if (connectionIndex === 0) {
+                        const promise = (async () => {
+                            const { breakpoints } = await connection.sendBreakpointListCommand()
+                            await Promise.all(
+                                breakpoints
+                                    .filter(breakpoint => breakpoint.type === 'call')
+                                    .map(breakpoint => breakpoint.remove())
+                            )
+                            await Promise.all(
+                                args.breakpoints.map(async (functionBreakpoint, index) => {
+                                    try {
+                                        await connection.sendBreakpointSetCommand(
+                                            new xdebug.CallBreakpoint(
+                                                functionBreakpoint.name,
+                                                functionBreakpoint.condition
+                                            )
+                                        )
                                         vscodeBreakpoints[index] = { verified: true }
-                                    }
-                                } catch (error) {
-                                    // only capture each breakpoint once
-                                    if (connectionIndex === 0) {
+                                    } catch (error) {
                                         vscodeBreakpoints[index] = {
                                             verified: false,
                                             message: error instanceof Error ? error.message : error,
                                         }
                                     }
-                                }
-                            })
-                        )
+                                })
+                            )
+                        })()
+
+                        if (connection.isPendingExecuteCommand) {
+                            // There is a pending execute command which could lock the connection up, so do not
+                            // wait on the response before continuing or it can get into a deadlock
+                            promise.catch(err => this.sendEvent(new vscode.OutputEvent(util.inspect(err) + '\n')))
+                        } else {
+                            await promise
+                        }
                     })
                 )
             }
@@ -841,6 +854,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 variables = properties.map(property => {
                     const displayValue = formatPropertyValue(property)
                     let variablesReference: number
+                    let evaluateName: string
                     if (property.hasChildren || property.type === 'array' || property.type === 'object') {
                         // if the property has children, we have to send a variableReference back to VS Code
                         // so it can receive the child elements in another request.
@@ -854,11 +868,17 @@ class PhpDebugSession extends vscode.DebugSession {
                     } else {
                         variablesReference = 0
                     }
+                    if (property instanceof xdebug.Property) {
+                        evaluateName = property.fullName
+                    } else {
+                        evaluateName = property.name
+                    }
                     const variable: VSCodeDebugProtocol.Variable = {
                         name: property.name,
                         value: displayValue,
                         type: property.type,
                         variablesReference,
+                        evaluateName,
                     }
                     return variable
                 })

@@ -5,10 +5,9 @@ php:
   - '7.0'
 env:
   global:
-    - NODE_VERSION=7.9.0
-    - NPM_VERSION=^6.2.0
+    - NODE_VERSION=8.9.3
+    - NPM_VERSION=^6.3.0
     - BUILD_LEADER_ID=4
-    - GITHUB_TOKEN=$GH_TOKEN
   matrix:
     - XDEBUG_VERSION=2.5.5
 
@@ -75,4 +74,3 @@ stages:
 branches:
   except:
     - /^v\d+\.\d+\.\d+$/
-
