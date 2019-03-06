@@ -175,6 +175,11 @@
                 "description": "Environment variables passed to the program.",
                 "default": {}
               },
+              "hostname": {
+                "type": "string",
+                "description": "Address to bind to when listening for XDebug",
+                "default": "::"
+              },
               "port": {
                 "type": "number",
                 "description": "Port on which to listen for XDebug",
