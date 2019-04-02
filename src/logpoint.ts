@@ -25,7 +25,7 @@ export class LogPointManager {
             return Promise.reject('Logpoint not found')
         }
         const expressionRegex = /\{(.*?)\}/gm
-        return await stringReplaceAsync(this._logpoints.get(fileUri)!.get(lineNumber), expressionRegex, function(_: string, group: string) {
+        return await stringReplaceAsync(this._logpoints.get(fileUri)!.get(lineNumber)!, expressionRegex, function(_: string, group: string) {
             return callback(group);
         });
     }
