@@ -17,16 +17,23 @@ export class LogPointManager {
     }
 
     public hasLogPoint(fileUri: string, lineNumber: number): boolean {
-        return this._logpoints.has(fileUri) && this._logpoints.get(fileUri)!.has(lineNumber);
+        return this._logpoints.has(fileUri) && this._logpoints.get(fileUri)!.has(lineNumber)
     }
 
-    public async resolveExpressions(fileUri: string, lineNumber: number, callback: (expr: string) => Promise<string>): Promise<string> {
-        if(!this.hasLogPoint(fileUri, lineNumber)) {
+    public async resolveExpressions(
+        fileUri: string,
+        lineNumber: number,
+        callback: (expr: string) => Promise<string>
+    ): Promise<string> {
+        if (!this.hasLogPoint(fileUri, lineNumber)) {
             return Promise.reject('Logpoint not found')
         }
         const expressionRegex = /\{(.*?)\}/gm
-        return await stringReplaceAsync(this._logpoints.get(fileUri)!.get(lineNumber)!, expressionRegex, function(_: string, group: string) {
-            return callback(group);
-        });
+        return await stringReplaceAsync(this._logpoints.get(fileUri)!.get(lineNumber)!, expressionRegex, function(
+            _: string,
+            group: string
+        ) {
+            return callback(group)
+        })
     }
 }

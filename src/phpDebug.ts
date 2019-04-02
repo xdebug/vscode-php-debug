@@ -10,7 +10,7 @@ import * as util from 'util'
 import * as fs from 'fs'
 import { Terminal } from './terminal'
 import { isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
-import {LogPointManager} from './logpoint'
+import { LogPointManager } from './logpoint'
 import minimatch = require('minimatch')
 
 if (process.env['VSCODE_NLS_CONFIG']) {
@@ -376,10 +376,14 @@ class PhpDebugSession extends vscode.DebugSession {
             } else if (this._args.stopOnEntry) {
                 stoppedEventReason = 'entry'
             } else if (this._logPointManager.hasLogPoint(response.fileUri, response.line)) {
-                const logMessage = await this._logPointManager.resolveExpressions(response.fileUri, response.line, async (expr: string): Promise<string> => {
-                    const evaluated = await connection.sendEvalCommand(expr);
-                    return formatPropertyValue(evaluated.result)
-                });
+                const logMessage = await this._logPointManager.resolveExpressions(
+                    response.fileUri,
+                    response.line,
+                    async (expr: string): Promise<string> => {
+                        const evaluated = await connection.sendEvalCommand(expr)
+                        return formatPropertyValue(evaluated.result)
+                    }
+                )
 
                 this.sendEvent(new vscode.OutputEvent(logMessage + '\n', 'console'))
 
