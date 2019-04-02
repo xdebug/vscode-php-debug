@@ -33,7 +33,7 @@ export class LogPointManager {
             _: string,
             group: string
         ) {
-            return callback(group)
+            return group.length === 0 ? Promise.resolve('') : callback(group)
         })
     }
 }
