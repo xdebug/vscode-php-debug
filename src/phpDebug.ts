@@ -106,9 +106,9 @@ class PhpDebugSession extends vscode.DebugSession {
     private _connections = new Map<number, xdebug.Connection>()
 
     /**
-     * A map containing all the logpoints configured in VSCode
-     * the key will be a pair of fileUri and line number
-     * the value will be the expression to be evaluated
+     * The manager for logpoints. Since xdebug does not support anything like logpoints,
+     * it has to be managed by the extension/debug server. It does that by a Map referencing
+     * the log messages per file. XDebug sees it as a regular breakpoint.
      */
     private _logPointManager = new LogPointManager()
 
