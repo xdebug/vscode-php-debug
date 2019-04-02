@@ -38,6 +38,7 @@
     "iconv-lite": "^0.4.15",
     "minimatch": "^3.0.3",
     "moment": "^2.17.1",
+    "string-replace-async": "^1.2.1",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
     "vscode-debugadapter": "^1.11.0",

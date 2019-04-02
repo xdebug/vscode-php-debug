@@ -10,6 +10,7 @@ import * as util from 'util'
 import * as fs from 'fs'
 import { Terminal } from './terminal'
 import { isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
+import {LogPointManager} from './logpoint'
 import minimatch = require('minimatch')
 
 if (process.env['VSCODE_NLS_CONFIG']) {
@@ -104,6 +105,13 @@ class PhpDebugSession extends vscode.DebugSession {
      */
     private _connections = new Map<number, xdebug.Connection>()
 
+    /**
+     * A map containing all the logpoints configured in VSCode
+     * the key will be a pair of fileUri and line number
+     * the value will be the expression to be evaluated
+     */
+    private _logPointManager = new LogPointManager()
+
     /** A set of connections which are not yet running and are waiting for configurationDoneRequest */
     private _waitingConnections = new Set<xdebug.Connection>()
 
@@ -156,6 +164,7 @@ class PhpDebugSession extends vscode.DebugSession {
             supportsEvaluateForHovers: false,
             supportsConditionalBreakpoints: true,
             supportsFunctionBreakpoints: true,
+            supportsLogPoints: true,
             exceptionBreakpointFilters: [
                 {
                     filter: 'Notice',
@@ -366,6 +375,17 @@ class PhpDebugSession extends vscode.DebugSession {
                 exceptionText = response.exception.name + ': ' + response.exception.message // this seems to be ignored currently by VS Code
             } else if (this._args.stopOnEntry) {
                 stoppedEventReason = 'entry'
+            } else if (this._logPointManager.hasLogPoint(response.fileUri, response.line)) {
+                const logMessage = await this._logPointManager.resolveExpressions(response.fileUri, response.line, async (expr: string): Promise<string> => {
+                    const evaluated = await connection.sendEvalCommand(expr);
+                    return formatPropertyValue(evaluated.result)
+                });
+
+                this.sendEvent(new vscode.OutputEvent(logMessage + '\n', 'console'))
+
+                const responseCommand = await connection.sendRunCommand()
+                await this._checkStatus(responseCommand)
+                return
             } else if (response.command.indexOf('step') === 0) {
                 stoppedEventReason = 'step'
             } else {
@@ -448,6 +468,7 @@ class PhpDebugSession extends vscode.DebugSession {
             response.body = { breakpoints: [] }
             // this is returned to VS Code
             let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[]
+            this._logPointManager.clearFromFile(fileUri)
             if (connections.length === 0) {
                 // if there are no connections yet, we cannot verify any breakpoint
                 vscodeBreakpoints = args.breakpoints!.map(breakpoint => ({ verified: false, line: breakpoint.line }))
@@ -458,6 +479,9 @@ class PhpDebugSession extends vscode.DebugSession {
                     if (breakpoint.condition) {
                         return new xdebug.ConditionalBreakpoint(breakpoint.condition, fileUri, breakpoint.line)
                     } else {
+                        if (breakpoint.logMessage !== undefined) {
+                            this._logPointManager.addLogPoint(fileUri, breakpoint.line, breakpoint.logMessage)
+                        }
                         return new xdebug.LineBreakpoint(fileUri, breakpoint.line)
                     }
                 })
