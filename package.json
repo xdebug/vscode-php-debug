@@ -45,6 +45,7 @@
     "minimatch": "^3.0.4",
     "moment": "^2.29.1",
     "relateurl": "^0.2.7",
+    "string-replace-async": "^1.2.1",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
     "vscode-debugadapter": "^1.47.0",
