@@ -2,7 +2,6 @@ import { LogPointManager } from '../logpoint'
 import * as assert from 'assert'
 
 describe('logpoint', () => {
-
     const FILE_URI1 = 'file://my/file1'
     const FILE_URI2 = 'file://my/file2'
     const FILE_URI3 = 'file://my/file3'
@@ -14,11 +13,13 @@ describe('logpoint', () => {
     const LOG_MESSAGE_REPEATED_VAR = 'This {$variable1} and {$variable1} should be equal'
     const LOG_MESSAGE_BADLY_FORMATED_VAR = 'Only {$variable1} should be resolved and not }$variable1 and $variable1{}'
 
-    const REPLACE_FUNCTION = (str: string): Promise<string> => { return Promise.resolve(`${str}_value`) }
+    const REPLACE_FUNCTION = (str: string): Promise<string> => {
+        return Promise.resolve(`${str}_value`)
+    }
 
     let logPointManager: LogPointManager
 
-    beforeEach('create new instance', () => logPointManager = new LogPointManager())
+    beforeEach('create new instance', () => (logPointManager = new LogPointManager()))
 
     describe('basic map management', () => {
         it('should contain added logpoints', () => {
