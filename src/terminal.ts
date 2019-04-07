@@ -46,7 +46,11 @@ export class Terminal {
 }
 
 interface ITerminalService {
-    launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string | undefined }): Promise<CP.ChildProcess>
+    launchInTerminal(
+        dir: string,
+        args: string[],
+        envVars: { [key: string]: string | undefined }
+    ): Promise<CP.ChildProcess>
     killTree(pid: number): Promise<any>
     isOnPath(program: string): boolean
 }
@@ -54,7 +58,11 @@ interface ITerminalService {
 class DefaultTerminalService implements ITerminalService {
     protected static TERMINAL_TITLE = 'VS Code Console'
 
-    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string | undefined }): Promise<CP.ChildProcess> {
+    public launchInTerminal(
+        dir: string,
+        args: string[],
+        envVars: { [key: string]: string | undefined }
+    ): Promise<CP.ChildProcess> {
         throw new Error('launchInTerminal not implemented')
     }
 
@@ -100,7 +108,11 @@ class DefaultTerminalService implements ITerminalService {
 class WindowsTerminalService extends DefaultTerminalService {
     private static CMD = 'cmd.exe'
 
-    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string | undefined }): Promise<CP.ChildProcess> {
+    public launchInTerminal(
+        dir: string,
+        args: string[],
+        envVars: { [key: string]: string | undefined }
+    ): Promise<CP.ChildProcess> {
         return new Promise<CP.ChildProcess>((resolve, reject) => {
             const title = `"${dir} - ${WindowsTerminalService.TERMINAL_TITLE}"`
             const command = `""${args.join('" "')}" & pause"` // use '|' to only pause on non-zero exit code
@@ -143,7 +155,11 @@ class LinuxTerminalService extends DefaultTerminalService {
     private static LINUX_TERM = '/usr/bin/gnome-terminal' // private const string LINUX_TERM = "/usr/bin/x-terminal-emulator";
     private static WAIT_MESSAGE = 'Press any key to continue...'
 
-    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string | undefined }): Promise<CP.ChildProcess> {
+    public launchInTerminal(
+        dir: string,
+        args: string[],
+        envVars: { [key: string]: string | undefined }
+    ): Promise<CP.ChildProcess> {
         return new Promise<CP.ChildProcess>((resolve, reject) => {
             if (!FS.existsSync(LinuxTerminalService.LINUX_TERM)) {
                 reject(
@@ -193,7 +209,11 @@ class LinuxTerminalService extends DefaultTerminalService {
 class MacTerminalService extends DefaultTerminalService {
     private static OSASCRIPT = '/usr/bin/osascript' // osascript is the AppleScript interpreter on OS X
 
-    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string | undefined }): Promise<CP.ChildProcess> {
+    public launchInTerminal(
+        dir: string,
+        args: string[],
+        envVars: { [key: string]: string | undefined }
+    ): Promise<CP.ChildProcess> {
         return new Promise<CP.ChildProcess>((resolve, reject) => {
             // first fix the PATH so that 'runtimePath' can be found if installed with 'brew'
             // Utilities.FixPathOnOSX();
