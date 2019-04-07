@@ -11,11 +11,14 @@ describe('PHP Debug Adapter', () => {
     const TEST_PROJECT = path.normalize(__dirname + '/../../testproject')
 
     let client: DebugClient
+    const debugPort = process.env['VSCODE_DEBUG_PORT'] ? parseInt(process.env['VSCODE_DEBUG_PORT']!) : undefined
+    // support for stopping on "*" was added in 2.3.0
+    const isXDebugNewerThan230 = !process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION']!, '2.3.0')
 
     beforeEach('start debug adapter', async () => {
         client = new DebugClient('node', path.normalize(__dirname + '/../phpDebug'), 'php')
         client.defaultTimeout = 10000
-        await client.start(process.env['VSCODE_DEBUG_PORT'] ? parseInt(process.env['VSCODE_DEBUG_PORT']!) : undefined)
+        await client.start(debugPort)
     })
 
     afterEach('stop debug adapter', () => client.stop())
@@ -193,7 +196,7 @@ describe('PHP Debug Adapter', () => {
             })
 
             // support for stopping on "*" was added in 2.3.0
-            if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION']!, '2.3.0')) {
+            if (isXDebugNewerThan230) {
                 it('should support stopping on everything', async () => {
                     await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
                     await client.setExceptionBreakpointsRequest({ filters: ['*'] })
@@ -266,7 +269,7 @@ describe('PHP Debug Adapter', () => {
                     type: 'Notice',
                     message: '"Undefined index: undefined_index"',
                 }
-                if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION']!, '2.3.0')) {
+                if (isXDebugNewerThan230) {
                     expectedErrorScope.code = '8'
                 }
                 assert.deepEqual(await getErrorScope(), expectedErrorScope)
@@ -276,7 +279,7 @@ describe('PHP Debug Adapter', () => {
                     type: 'Warning',
                     message: '"Illegal offset type"',
                 }
-                if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION']!, '2.3.0')) {
+                if (isXDebugNewerThan230) {
                     expectedErrorScope.code = '2'
                 }
                 assert.deepEqual(await getErrorScope(), expectedErrorScope)
@@ -380,7 +383,7 @@ describe('PHP Debug Adapter', () => {
             assert.isDefined(localScope, 'Locals')
             assert.isDefined(superglobalsScope, 'Superglobals')
             // support for user defined constants was added in 2.3.0
-            if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION']!, '2.3.0')) {
+            if (isXDebugNewerThan230) {
                 assert.isDefined(constantsScope, 'User defined constants')
             }
         })
@@ -459,7 +462,7 @@ describe('PHP Debug Adapter', () => {
         })
 
         // support for user defined constants was added in 2.3.0
-        if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION']!, '2.3.0')) {
+        if (isXDebugNewerThan230) {
             it('should report user defined constants correctly', async () => {
                 const constants = (await client.variablesRequest({
                     variablesReference: constantsScope!.variablesReference,
