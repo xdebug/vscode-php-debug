@@ -1,35 +1,35 @@
 {
-  "version": "2.0.0",
-  "command": "npm",
   "args": ["run", "--silent"],
+  "command": "npm",
   "options": {
     "env": {
       "VSCODE_DEBUG_PORT": "4711"
     }
   },
-  "type": "shell",
   "presentation": {
+    "clear": false,
     "echo": true,
-    "reveal": "silent",
     "focus": false,
     "panel": "shared",
-    "showReuseMessage": true,
-    "clear": false
+    "reveal": "silent",
+    "showReuseMessage": true
   },
   "tasks": [
     {
-      "label": "compile",
       "group": "build",
+      "label": "compile",
       "problemMatcher": "$tsc"
     },
     {
-      "label": "watch",
       "isBackground": true,
+      "label": "watch",
       "problemMatcher": "$tsc-watch"
     },
     {
-      "label": "test",
       "group": "test",
+      "label": "test"
     }
-  ]
+  ],
+  "type": "shell",
+  "version": "2.0.0"
 }
