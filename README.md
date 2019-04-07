@@ -1,6 +1,6 @@
 # PHP Debug Adapter for Visual Studio Code
 
-[![vs marketplace](https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace)][vsm]
+[![vs marketplace](https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace)][mvs]
 [![downloads](https://img.shields.io/vscode-marketplace/d/felixfbecker.php-debug.svg)][mvs]
 [![rating](https://img.shields.io/vscode-marketplace/r/felixfbecker.php-debug.svg)][mvs]
 [![windows build](https://img.shields.io/appveyor/ci/felixfbecker/vscode-php-debug/master.svg?label=windows+build)][appveyor]
@@ -303,7 +303,6 @@ export PYTHONPATH=/path/to/pydbgpproxy/pythonlib;$PYTHONPATH
 ```
 
 [//]: # 'These are reference links. They get stripped out when rendered.'
-[vsm]: https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace
 [mvs]: https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug
 [appveyor]: https://ci.appveyor.com/project/felixfbecker/vscode-php-debug
 [travis]: https://travis-ci.org/felixfbecker/vscode-php-debug
