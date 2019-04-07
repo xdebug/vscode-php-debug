@@ -25,17 +25,20 @@ Windows) that needs to be installed on your server.
    statement in there, then copy the output and paste it into the
    [XDebug installation wizard][xwiz]. It will analyze it and give you tailored
    installation instructions for your environment._** In short:
-   - On Windows: [Download][xdl] the appropiate precompiled DLL for your PHP
-     version, architecture (64/32 Bit), thread safety (TS/NTS) and Visual Studio
-     compiler version and place it in your PHP extension folder.
-   - On Linux: Either download the source code as a tarball or [clone it with
-     git][xdlsrc], then [compile it][xcompilesrc].
-   - On macOS: Install [`pecl`][pecl], probably either through
-     [homebrew][homebrew] or [macports][macports]. Then install with pecl.
-     `pecl install xdebug`
-2. [Configure PHP to use XDebug][xconf] by adding
-   `zend_extension=path/to/xdebug` to your `php.ini`. The path of your `php.ini`
-   is shown in your `phpinfo()` output under "Loaded Configuration File".
+   - On Windows:
+     [Download][xdl] the appropiate precompiled DLL for your PHP version,
+     architecture (64/32 Bit), thread safety (TS/NTS) and Visual Studio compiler
+     version and place it in your PHP extension folder.
+   - On Linux:
+     Either download the source code as a tarball or
+     [clone it with git][xdlsrc], then [compile it][xcompilesrc].
+   - On macOS:
+     Install [`pecl`][pecl], probably either through [homebrew][homebrew] or
+     [macports][macports]. Then install with pecl. `pecl install xdebug`
+2. [Configure PHP to use XDebug][xconf]
+   by adding `zend_extension=path/to/xdebug` to your `php.ini`. The path of
+   your `php.ini` is shown in your `phpinfo()` output under "Loaded
+   Configuration File".
 
 3. Enable remote debugging in your `php.ini`:
 
@@ -53,7 +56,8 @@ Windows) that needs to be installed on your server.
 
 4. If you are doing web development, don't forget to restart your webserver to
    reload the settings.
-5. Verify your installation by checking your `phpinfo()` output for an XDebug section.
+5. Verify your installation by checking your `phpinfo()` output for an XDebug
+   section.
 
 ### VS Code Configuration
 
@@ -72,53 +76,80 @@ new launch configuration will be created for you with two configurations:
 
 #### Supported launch.json settings
 
-- `request`: Always `"launch"`
-- `hostname`: The address to bind to when listening for XDebug (default: all IPv6 connections if available, else all IPv4 connections)
-- `port`: The port on which to listen for XDebug (default: `9000`)
-- `stopOnEntry`: Wether to break at the beginning of the script (default: `false`)
-- `pathMappings`: A list of server paths mapping to the local source paths on
-  your machine, see "Remote Host Debugging" below
-- `log`: Wether to log all communication between VS Code and the adapter to the
-  debug console. See _Troubleshooting_ further down.
-- `ignore`: An optional array of glob patterns that errors should be ignored
-  from (for example `**/vendor/**/*.php`)
-- `proxy`: All the settings for the proxy
-  - `allowMultipleSessions`: If the proxy should expect multiple
-    sessions/connections or not (default: `true`)
-  - `enable`: To enable this configuration or not (default: `false`)
-  - `host`: The IP address of the proxy. Supports host name, IP address,
-    or Unix domain socket. Ignored if xdebug.remote_connect_back is enabled.
-  - `key`: A unique key that allows the proxy to match requests to your
-    editor (default: `vsc`)
-  - `port`: The port where the adapter will register with the the proxy
+- `request`:
+  Always `"launch"`
+- `hostname`:
+  The address to bind to when listening for XDebug (default: all IPv6
+  connections if available, else all IPv4 connections)
+- `port`:
+  The port on which to listen for XDebug (default: `9000`)
+- `stopOnEntry`:
+  Wether to break at the beginning of the script (default: `false`)
+- `pathMappings`:
+  A list of server paths mapping to the local source paths on your machine, see
+  "Remote Host Debugging" below
+- `log`:
+  Wether to log all communication between VS Code and the adapter to the debug
+  console. See _Troubleshooting_ further down.
+- `ignore`:
+  An optional array of glob patterns that errors should be ignored from (for
+  example `**/vendor/**/*.php`)
+- `proxy`:
+  All the settings for the proxy
+  - `allowMultipleSessions`:
+    If the proxy should expect multiple sessions/connections or not
+    (default: `true`)
+  - `enable`:
+    To enable this configuration or not (default: `false`)
+  - `host`:
+    The IP address of the proxy. Supports host name, IP address, or Unix domain
+    socket. Ignored if xdebug.remote_connect_back is enabled.
+  - `key`:
+    A unique key that allows the proxy to match requests to your editor
+    (default: `vsc`)
+  - `port`:
+    The port where the adapter will register with the the proxy
     (default: `9001`),
-  - `timeout`: The number of milliseconds to wait before giving up on the
+  - `timeout`:
+    The number of milliseconds to wait before giving up on the
     connection(default: `3000`)
-- `xdebugSettings`: Allows you to override XDebug's remote debugging settings to
-  fine tuning XDebug to your needs. For example, you can play with
-  `max_children` and `max_depth` to change the max number of array and object
-  children that are retrieved and the max depth in structures like arrays and
-  objects. This can speed up the debugger on slow machines. For a full list of
-  feature names that can be set please refer to the [XDebug documentation][dbgp].
-  - `max_children`: max number of array or object children to initially retrieve
-  - `max_data`: max amount of variable data to initially retrieve.
-  - `max_depth`: maximum depth that the debugger engine may return when
-    sending arrays, hashs or object structures to the IDE.
-  - `show_hidden`: This feature can get set by the IDE if it wants to have
-    more detailed internal information on properties (eg. private members of
-    classes, etc.) Zero means that hidden members are not shown to the IDE.
+- `xdebugSettings`:
+  Allows you to override XDebug's remote debugging settings to fine tuning
+  XDebug to your needs. For example, you can play with `max_children` and
+  `max_depth` to change the max number of array and object children that are
+  retrieved and the max depth in structures like arrays and objects. This can
+  speed up the debugger on slow machines. For a full list of feature names that
+  can be set please refer to the [XDebug documentation][dbgp].
+  - `max_children`:
+    max number of array or object children to initially retrieve
+  - `max_data`:
+    max amount of variable data to initially retrieve.
+  - `max_depth`:
+    maximum depth that the debugger engine may return when sending arrays, hashs
+    or object structures to the IDE.
+  - `show_hidden`:
+    This feature can get set by the IDE if it wants to have more detailed
+    internal information on properties (eg. private members of classes, etc.)
+    Zero means that hidden members are not shown to the IDE.
 
 Options specific to CLI debugging:
 
-- `program`: Path to the script that should be launched
-- `args`: Arguments passed to the script
-- `cwd`: The current working directory to use when launching the script
-- `runtimeExecutable`: Path to the PHP binary used for launching the script. By
-  default the one on the PATH.
-- `runtimeArgs`: Additional arguments to pass to the PHP binary
-- `externalConsole`: Launches the script in an external console window instead
-  of the debug console (default: `false`)
-- `env`: Environment variables to pass to the script
+- `program`:
+  Path to the script that should be launched
+- `args`:
+  Arguments passed to the script
+- `cwd`:
+  The current working directory to use when launching the script
+- `runtimeExecutable`:
+  Path to the PHP binary used for launching the script. By default the one on
+  the PATH.
+- `runtimeArgs`:
+  Additional arguments to pass to the PHP binary
+- `externalConsole`:
+  Launches the script in an external console window instead of the debug console
+  (default: `false`)
+- `env`:
+  Environment variables to pass to the script
 
 ## Features
 
