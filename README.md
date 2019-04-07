@@ -1,14 +1,14 @@
 # PHP Debug Adapter for Visual Studio Code
 
-[![vs marketplace](https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace)][mvs]
-[![downloads](https://img.shields.io/vscode-marketplace/d/felixfbecker.php-debug.svg)][mvs]
-[![rating](https://img.shields.io/vscode-marketplace/r/felixfbecker.php-debug.svg)][mvs]
+[![vs marketplace](https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace)][vsm]]
+[![downloads](https://img.shields.io/vscode-marketplace/d/felixfbecker.php-debug.svg)][vsm]]
+[![rating](https://img.shields.io/vscode-marketplace/r/felixfbecker.php-debug.svg)][vsm]]
 [![windows build](https://img.shields.io/appveyor/ci/felixfbecker/vscode-php-debug/master.svg?label=windows+build)][appveyor]
 [![macos/linux build](https://img.shields.io/travis/felixfbecker/vscode-php-debug/master.svg?label=macos/linux+build)][travis]
 [![codecov](https://codecov.io/gh/felixfbecker/vscode-php-debug/branch/master/graph/badge.svg)][codecov]
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)][prettier]
-[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)][srelease]
-[![chat: on gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)][gchat]
+[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)][semrelease]
+[![chat: on gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)][g.chat]
 
 ![Demo GIF](images/demo.gif)
 
@@ -20,22 +20,26 @@ This extension is a debug adapter between VS Code and [XDebug][x] by Derick
 Rethan. XDebug is a PHP extension (a `.so` file on Linux and a `.dll` on
 Windows) that needs to be installed on your server.
 
-1. [Install XDebug][xinstall]
+1. [Install XDebug][x.install]
+
    **_I highly recommend you make a simple `test.php` file, put a `phpinfo();`
    statement in there, then copy the output and paste it into the
-   [XDebug installation wizard][xwiz]. It will analyze it and give you tailored
-   installation instructions for your environment._** In short:
+   [XDebug installation wizard][x.installguide]. It will analyze it and give
+   you tailored installation instructions for your environment._** In short:
+
    - On Windows:
-     [Download][xdl] the appropiate precompiled DLL for your PHP version,
+     [Download][x.dl] the appropiate precompiled DLL for your PHP version,
      architecture (64/32 Bit), thread safety (TS/NTS) and Visual Studio compiler
      version and place it in your PHP extension folder.
    - On Linux:
      Either download the source code as a tarball or
-     [clone it with git][xdlsrc], then [compile it][xcompilesrc].
+     [clone it with git][x.installsrc], then [compile it][x.compilesrc].
    - On macOS:
-     Install [`pecl`][pecl], probably either through [homebrew][homebrew] or
-     [macports][macports]. Then install with pecl. `pecl install xdebug`
-2. [Configure PHP to use XDebug][xconf]
+     Install [`pecl`][pecl], through your preferred package manager
+     ([Homebrew][homebrew.install], [Macports][macports.install], etc), then
+     `pecl install xdebug`
+
+2. [Configure PHP to use XDebug][x.conf]
    by adding `zend_extension=path/to/xdebug` to your `php.ini`. The path of
    your `php.ini` is shown in your `phpinfo()` output under "Loaded
    Configuration File".
@@ -52,7 +56,7 @@ Windows) that needs to be installed on your server.
    `remote_autostart`, like cookies, query parameters or browser extensions. I
    recommend `remote_autostart` because it "just works". There are also a
    variety of other options, like the port (by default 9000), please see the
-   [XDebug documentation on remote debugging][rstart] for more information.
+   [XDebug documentation on remote debugging][x.rstart] for more information.
 
 4. If you are doing web development, don't forget to restart your webserver to
    reload the settings.
@@ -119,7 +123,7 @@ new launch configuration will be created for you with two configurations:
   `max_depth` to change the max number of array and object children that are
   retrieved and the max depth in structures like arrays and objects. This can
   speed up the debugger on slow machines. For a full list of feature names that
-  can be set please refer to the [XDebug documentation][dbgp].
+  can be set please refer to the [XDebug documentation][x.dbgp].
   - `max_children`:
     max number of array or object children to initially retrieve
   - `max_data`:
@@ -172,12 +176,12 @@ Options specific to CLI debugging:
 
 To debug a running application on a remote host, you need to tell XDebug to
 connect to a different IP than `localhost`. This can either be done by setting
-[`xdebug.remote_host`][rhost] to your IP or by setting
-[`xdebug.remote_connect_back = 1`][rcb] to make XDebug always connect back to
-the machine who did the web request. The latter is the only setting that
+[`xdebug.remote_host`][x.rhost] to your IP or by setting
+[`xdebug.remote_connect_back = 1`][x.rconnectback] to make XDebug always connect
+back to the machine who did the web request. The latter is the only setting that
 supports multiple users debugging the same server and "just works" for web
-projects. Again, please see the [XDebug documentation][rcomm] on the subject for
-more information.
+projects. Again, please see the [XDebug documentation][x.rcommunication] on the
+subject for more information.
 
 To make VS Code map the files on the server to the right files on your local
 machine, you have to set the `pathMappings` settings in your launch.json.
@@ -199,16 +203,16 @@ Example:
 
 ## Troubleshooting
 
-- Ask a question on [Gitter][gitter]
-- If you think you found a bug, [open an issue][issues]
+- Ask a question on [Gitter][g]
+- If you think you found a bug, [open an issue][g.issues]
 - Make sure you have the latest version of this extension and XDebug installed
 - Try out a simple PHP file to recreate the issue, for example from the
-  [testproject][testproj]
-- In your php.ini, set [`xdebug.remote_log = /path/to/logfile`][rlog]
+  [test project][testproj]
+- In your `php.ini`, set [`xdebug.remote_log = /path/to/logfile`][x.rlog]
   (make sure your webserver has write permissions to the file)
 - Set `"log": true` in your launch.json
 - For proxy related issues, you can test locally by download one from
-  [here][proxydl].
+  [here][proxy.dl].
 
 ## Contributing
 
@@ -281,7 +285,7 @@ gulp watch
 ```
 
 You can test proxy configurations by running a local proxy. You can download one
-of your choosing from [here][proxydl]. Follow the instructions to properly run
+of your choosing from [here][proxy.dl]. Follow the instructions to properly run
 the proxy.
 
 > ### Note
@@ -303,32 +307,32 @@ export PYTHONPATH=/path/to/pydbgpproxy/pythonlib;$PYTHONPATH
 ```
 
 [//]: # 'These are reference links. They get stripped out when rendered.'
-[mvs]: https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug
-[appveyor]: https://ci.appveyor.com/project/felixfbecker/vscode-php-debug
-[travis]: https://travis-ci.org/felixfbecker/vscode-php-debug
-[codecov]: https://codecov.io/gh/felixfbecker/vscode-php-debug
-[prettier]: https://github.com/prettier/prettier
-[srelease]: https://github.com/semantic-release/semantic-release
-[gchat]: https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
-[gitter]: https://gitter.im/felixfbecker/vscode-php-debug
-[issues]: https://github.com/felixfbecker/vscode-php-debug/issues
-[rcb]: https://xdebug.org/docs/remote#remote_connect_back
-[rstart]: https://xdebug.org/docs/remote#starting
-[rcomm]: https://xdebug.org/docs/remote#communcation
-[rhost]: https://xdebug.org/docs/remote#remote_host
-[rlog]: https://xdebug.org/docs/remote#remote_log
-[testproj]: https://github.com/felixfbecker/vscode-php-debug/tree/master/testproject
-[x]: https://xdebug.org/ 'XDebug'
-[xcompilesrc]: https://xdebug.org/docs/install#compile 'Compile XDebug Src'
-[xconf]: https://xdebug.org/docs/install#configure-php 'Configure PHP for XDebug'
-[xdl]: https://xdebug.org/docs/download.php 'Download XDebug'
-[xinstall]: https://xdebug.org/docs/install.php 'Install XDebug'
-[xdlsrc]: https://xdebug.org/docs/install#source 'Install XDebug Src'
-[xwiz]: https://xdebug.org/wizard.php 'Xdebug Installation Guide'
-[dbgp]: https://xdebug.org/docs-dbgp.php#feature-names
-[proxydl]: http://code.activestate.com/komodo/remotedebugging/
-[proxyfeat]: http://docs.activestate.com/komodo/5.2/debugger.html#dbgp_proxy
-[nodedl]: https://nodejs.org/en/download/
+[appveyor]: https://ci.appveyor.com/project/felixfbecker/vscode-php-debug 'Appveyor'
+[codecov]: https://codecov.io/gh/felixfbecker/vscode-php-debug 'Code Coverage'
+[g.chat]: https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge 'Gitter - Chat'
+[g.issues]: https://github.com/felixfbecker/vscode-php-debug/issues 'Gitter - Issues'
+[g]: https://gitter.im/felixfbecker/vscode-php-debug 'Gitter'
+[homebrew.install]: https://brew.sh/ 'Homebrew - Install'
+[macports.install]: https://www.macports.org/install.php 'MacPorts - Install'
+[node.dl]: https://nodejs.org/en/download/ 'Node - Download'
 [pecl]: https://pecl.php.net/ 'Pecl'
-[homebrew]: https://brew.sh/ 'Homebrew'
-[macports]: https://www.macports.org/install.php 'MacPorts'
+[prettier]: https://github.com/prettier/prettier 'Prettier'
+[proxy.dbgp]: http://docs.activestate.com/komodo/5.2/debugger.html#dbgp_proxy 'Proxy - DBGP'
+[proxy.dl]: http://code.activestate.com/komodo/remotedebugging/ 'Proxy - Download'
+[semrelease]: https://github.com/semantic-release/semantic-release 'Semantic Release'
+[testproj]: https://github.com/felixfbecker/vscode-php-debug/tree/master/testproject 'Extension Test Project'
+[travis]: https://travis-ci.org/felixfbecker/vscode-php-debug 'Travis'
+[vsm]: https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug 'Visual Studio Marketplace'
+[x.compilesrc]: https://xdebug.org/docs/install#compile 'XDebug - Compile Src'
+[x.conf]: https://xdebug.org/docs/install#configure-php 'XDebug - Configure PHP'
+[x.dbgp]: https://xdebug.org/docs-dbgp.php#feature-names 'XDebug - DBGP'
+[x.dl]: https://xdebug.org/docs/download.php 'XDebug - Download'
+[x.install]: https://xdebug.org/docs/install.php 'XDebug - Install'
+[x.installguide]: https://xdebug.org/wizard.php 'XDebug - Installation Guide'
+[x.installsrc]: https://xdebug.org/docs/install#source 'XDebug - Install Src'
+[x.rcommunication]: https://xdebug.org/docs/remote#communcation 'XDebug - Remote Communication'
+[x.rconnectback]: https://xdebug.org/docs/remote#remote_connect_back 'XDebug - Remote Connect Back'
+[x.rhost]: https://xdebug.org/docs/remote#remote_host 'XDebug - Remote Host'
+[x.rlog]: https://xdebug.org/docs/remote#remote_log 'XDebug - Remote Log'
+[x.rstart]: https://xdebug.org/docs/remote#starting 'XDebug - Remote Start'
+[x]: https://xdebug.org/ 'XDebug'
