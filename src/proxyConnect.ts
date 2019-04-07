@@ -22,7 +22,7 @@ export class ProxyConnect extends EventEmitter {
     public _socket = new Socket()
     /** milliseconds to wait before giving up */
     private _timeout: number
-    public msgs: { [key: string]: string } = {}
+    public msgs: { [key: string]: string | undefined } = {}
     private _isRegistered = false
     private _resolve: Function
 

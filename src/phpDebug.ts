@@ -15,7 +15,7 @@ import { ProxyConnect } from './proxyConnect'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
-        moment.locale(JSON.parse(process.env['VSCODE_NLS_CONFIG']).locale)
+        moment.locale(JSON.parse(process.env['VSCODE_NLS_CONFIG']!).locale)
     } catch (e) {
         // ignore
     }
@@ -92,7 +92,7 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     /** Optional arguments passed to the runtime executable. */
     runtimeArgs?: string[]
     /** Optional environment variables to pass to the debuggee. The string valued properties of the 'environmentVariables' are used as key/value pairs. */
-    env?: { [key: string]: string }
+    env?: { [key: string]: string | undefined }
     /** If true launch the target in an external console. */
     externalConsole?: boolean
 }

@@ -12,7 +12,7 @@ describe('ProxyConnect', () => {
     const host = 'host'
     const port = 9001
     let conn: ProxyConnect
-    let msgs: { [key: string]: string } = {}
+    let msgs: { [key: string]: string | undefined } = {}
 
     beforeEach(() => {
         conn = new ProxyConnect(host, port, 1, undefined, 3000)
