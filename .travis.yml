@@ -18,11 +18,8 @@ cache:
     - $HOME/.npm
 
 before_install:
-  - pecl install xdebug-$XDEBUG_VERSION
-  - phpenv config-add travis-php.ini
-  - nvm install $NODE_VERSION
-  - nvm use $NODE_VERSION
-  - npm install -g npm@$NPM_VERSION --depth 0
+  - chmod ugo+x ./scripts/travis-beforeinstall.sh
+  - ./scripts/travis-beforeinstall.sh 'main'
 
 install:
   - npm ci
@@ -40,26 +37,11 @@ jobs:
   include:
     - stage: test
       os: osx
-      osx_image: xcode9.1
+      osx_image: xcode10.2
       language: generic
       before_install:
-        # Fix ruby error https://github.com/Homebrew/brew/issues/3299
-        - brew update
-        - brew install php@7.1
-        - brew link --force --overwrite php@7.1
-        - mkdir -p /usr/local/etc/php/7.1/conf.d
-        - cp travis-php.ini /usr/local/etc/php/7.1/conf.d/
-        # see per https://javorszky.co.uk/2018/05/03/getting-xdebug-working-on-php-7-2-and-homebrew/
-        # avoid problems with brew's symlink and pecl's recursive mkdir
-        - rm /usr/local/Cellar/php@7.1/7.1.26/pecl
-        - pecl install xdebug-$XDEBUG_VERSION
-        # make xdebug.so available at pecl's expected location
-        - ln -s /usr/local/Cellar/php@7.1/7.1.26/pecl/ /usr/local/lib/php/pecl
-        - php -i
-        - source ~/.nvm/nvm.sh
-        - nvm install $NODE_VERSION
-        - nvm use $NODE_VERSION
-        - npm install -g npm@$NPM_VERSION --depth 0
+        - chmod ugo+x ./scripts/travis-beforeinstall.sh
+        - ./scripts/travis-beforeinstall.sh 'test'
     - stage: release
       language: node_js
       node_js: '8'
