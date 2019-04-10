@@ -33,6 +33,7 @@
   "bugs": {
     "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
   },
+  "main": "./out/extension",
   "dependencies": {
     "file-url": "^2.0.0",
     "iconv-lite": "^0.4.15",
