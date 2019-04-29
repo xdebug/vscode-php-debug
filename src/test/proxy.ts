@@ -2,7 +2,7 @@ import { assert } from 'chai'
 import { ProxyConnect, ProxyMessages } from '../proxyConnect'
 import { encode } from 'iconv-lite'
 import { ENCODING } from '../xdebugConnection'
-import { Socket } from 'net';
+import { Socket } from 'net'
 
 describe('ProxyConnect', () => {
     function _xml(cmd: string, success: number, msg = '', id = 0): Buffer {
@@ -17,22 +17,22 @@ describe('ProxyConnect', () => {
     let msgs: ProxyMessages
 
     beforeEach(() => {
-        testSocket = new Socket();
+        testSocket = new Socket()
         testSocket.connect = () => {
             return
         }
-        conn = new ProxyConnect(host, port, true, undefined, 3000, testSocket);
+        conn = new ProxyConnect(host, port, true, undefined, 3000, testSocket)
         msgs = conn.msgs
     })
 
     it('should timeout', (done: MochaDone) => {
         conn.on('error', (err: Error) => {
-            console.log(err.message);
-            assert.equal(err.message, msgs.timeout);
-            done();
+            console.log(err.message)
+            assert.equal(err.message, msgs.timeout)
+            done()
         })
         assert.exists(conn)
-        testSocket.emit('error', new Error(msgs.timeout));
+        testSocket.emit('error', new Error(msgs.timeout))
     })
 
     it('should fail if proxy is unreachable', (done: MochaDone) => {
@@ -55,17 +55,17 @@ describe('ProxyConnect', () => {
 
     it('should request registration', (done: MochaDone) => {
         conn.on('info', (str: string) => {
-            assert.equal(str, msgs.registerInfo);
-            done();
+            assert.equal(str, msgs.registerInfo)
+            done()
         })
 
-        conn.sendProxyInitCommand();
+        conn.sendProxyInitCommand()
     })
 
     it('should be registered', (done: MochaDone) => {
         conn.on('response', (str: string) => {
-            assert.equal(str, msgs.registerSuccess);
-            done();
+            assert.equal(str, msgs.registerSuccess)
+            done()
         })
 
         conn.sendProxyInitCommand()

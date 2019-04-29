@@ -30,21 +30,28 @@ export class ProxyConnect extends EventEmitter {
     /** proxy response data parser */
     private _parser = new DOMParser()
     /** tcp connection to communicate with proxy server */
-    private _socket : Socket;
+    private _socket: Socket
     /** milliseconds to wait before giving up */
     private _timeout: number
-    public msgs : ProxyMessages;
+    public msgs: ProxyMessages
     private _isRegistered = false
     private _resolve: Function
 
-    constructor(host = '127.0.0.1', port = 9001, allowMultipleSessions = true, key = DEFAULTIDEKEY, timeout = 3000, socket?:Socket) {
+    constructor(
+        host = '127.0.0.1',
+        port = 9001,
+        allowMultipleSessions = true,
+        key = DEFAULTIDEKEY,
+        timeout = 3000,
+        socket?: Socket
+    ) {
         super()
         this._allowMultipleSessions = allowMultipleSessions ? 1 : 0
         this._host = host
         this._key = key
         this._port = port
         this._timeout = timeout
-        this._socket = (!!socket) ? socket: new Socket();
+        this._socket = !!socket ? socket : new Socket()
         this.msgs = {
             defaultError: 'Unknown Error',
             deregisterInfo: `Deregistering ${this._key} with proxy @ ${this._host}:${this._port}`,
@@ -55,7 +62,7 @@ export class ProxyConnect extends EventEmitter {
             registerSuccess: 'Registration successful',
             resolve: `Failure to resolve ${this._host}`,
             timeout: `Timeout connecting to ${this._host}:${this._port}`,
-        };
+        }
         this._socket.on('error', (err: Error) => {
             // Propagate error up
             this._socket.end()
