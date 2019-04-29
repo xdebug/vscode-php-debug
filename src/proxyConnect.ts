@@ -32,13 +32,13 @@ export class ProxyConnect extends EventEmitter {
         registerSuccess: 'Registration successful',
         resolve: `Failure to resolve ${this._host}`,
         timeout: `Timeout connecting to ${this._host}:${this._port}`,
-    };
+    }
     private _isRegistered = false
     private _resolve: Function
 
-    constructor(host = '127.0.0.1', port = 9001, allowMultipleSessions = 1, key = DEFAULTIDEKEY, timeout = 3000) {
+    constructor(host = '127.0.0.1', port = 9001, allowMultipleSessions = true, key = DEFAULTIDEKEY, timeout = 3000) {
         super()
-        this._allowMultipleSessions = allowMultipleSessions
+        this._allowMultipleSessions = allowMultipleSessions ? 1 : 0
         this._host = host
         this._key = key
         this._port = port

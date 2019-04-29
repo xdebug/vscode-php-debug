@@ -15,7 +15,7 @@ describe('ProxyConnect', () => {
     let msgs: { [key: string]: string | undefined } = {}
 
     beforeEach(() => {
-        conn = new ProxyConnect(host, port, 1, undefined, 3000)
+        conn = new ProxyConnect(host, port, true, undefined, 3000)
         conn._socket.connect = () => {
             return
         }

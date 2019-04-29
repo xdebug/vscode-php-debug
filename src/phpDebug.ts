@@ -71,7 +71,7 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     xdebugSettings?: { [featureName: string]: string | number }
     /** proxy connection configuration */
     proxy?: {
-        allowMultipleSessions: number
+        allowMultipleSessions: boolean
         enable: boolean
         host: string
         key: string

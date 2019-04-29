@@ -216,12 +216,9 @@
                 "type": "object",
                 "properties": {
                   "allowMultipleSessions": {
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "If the proxy should expect multiple sessions/connections or not. 1 ",
-                    "default": 1
+                    "type": "boolean",
+                    "description": "If the proxy should expect multiple sessions/connections or not.",
+                    "default": true
                   },
                   "enable": {
                     "type": "boolean",
