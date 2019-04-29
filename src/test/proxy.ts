@@ -27,7 +27,6 @@ describe('ProxyConnect', () => {
 
     it('should timeout', (done: MochaDone) => {
         conn.on('error', (err: Error) => {
-            console.log(err.message)
             assert.equal(err.message, msgs.timeout)
             done()
         })
