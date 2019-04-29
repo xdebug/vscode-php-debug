@@ -22,7 +22,17 @@ export class ProxyConnect extends EventEmitter {
     public _socket = new Socket()
     /** milliseconds to wait before giving up */
     private _timeout: number
-    public msgs: { [key: string]: string | undefined } = {}
+    public msgs = {
+        defaultError: 'Unknown Error',
+        deregisterInfo: `Deregistering ${this._key} with proxy @ ${this._host}:${this._port}`,
+        deregisterSuccess: 'Deregistration successful',
+        duplicateKey: 'IDE Key already exists',
+        nonexistentKey: 'No IDE key',
+        registerInfo: `Registering ${this._key} with proxy @ ${this._host}:${this._port}`,
+        registerSuccess: 'Registration successful',
+        resolve: `Failure to resolve ${this._host}`,
+        timeout: `Timeout connecting to ${this._host}:${this._port}`,
+    };
     private _isRegistered = false
     private _resolve: Function
 
@@ -33,17 +43,6 @@ export class ProxyConnect extends EventEmitter {
         this._key = key
         this._port = port
         this._timeout = timeout
-        this.msgs = {
-            defaultError: 'Unknown Error',
-            deregisterInfo: `Deregistering ${this._key} with proxy @ ${this._host}:${this._port}`,
-            deregisterSuccess: 'Deregistration successful',
-            duplicateKey: 'IDE Key already exists',
-            nonexistentKey: 'No IDE key',
-            registerInfo: `Registering ${this._key} with proxy @ ${this._host}:${this._port}`,
-            registerSuccess: 'Registration successful',
-            resolve: `Failure to resolve ${this._host}`,
-            timeout: `Timeout connecting to ${this._host}:${this._port}`,
-        }
         this._socket.on('error', (err: Error) => {
             // Propagate error up
             this._socket.end()
