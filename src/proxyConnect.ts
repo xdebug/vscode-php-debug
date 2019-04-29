@@ -5,6 +5,17 @@ import { decode } from 'iconv-lite'
 import { ENCODING } from './xdebugConnection'
 
 export const DEFAULTIDEKEY = 'vsc'
+export interface ProxyMessages {
+    defaultError: string
+    deregisterInfo: string
+    deregisterSuccess: string
+    duplicateKey: string
+    nonexistentKey: string
+    registerInfo: string
+    registerSuccess: string
+    resolve: string
+    timeout: string
+}
 
 /** Informs proxy of incoming connection and who to pass data back to. */
 export class ProxyConnect extends EventEmitter {
@@ -19,30 +30,32 @@ export class ProxyConnect extends EventEmitter {
     /** proxy response data parser */
     private _parser = new DOMParser()
     /** tcp connection to communicate with proxy server */
-    public _socket = new Socket()
+    private _socket : Socket;
     /** milliseconds to wait before giving up */
     private _timeout: number
-    public msgs = {
-        defaultError: 'Unknown Error',
-        deregisterInfo: `Deregistering ${this._key} with proxy @ ${this._host}:${this._port}`,
-        deregisterSuccess: 'Deregistration successful',
-        duplicateKey: 'IDE Key already exists',
-        nonexistentKey: 'No IDE key',
-        registerInfo: `Registering ${this._key} with proxy @ ${this._host}:${this._port}`,
-        registerSuccess: 'Registration successful',
-        resolve: `Failure to resolve ${this._host}`,
-        timeout: `Timeout connecting to ${this._host}:${this._port}`,
-    }
+    public msgs : ProxyMessages;
     private _isRegistered = false
     private _resolve: Function
 
-    constructor(host = '127.0.0.1', port = 9001, allowMultipleSessions = true, key = DEFAULTIDEKEY, timeout = 3000) {
+    constructor(host = '127.0.0.1', port = 9001, allowMultipleSessions = true, key = DEFAULTIDEKEY, timeout = 3000, socket?:Socket) {
         super()
         this._allowMultipleSessions = allowMultipleSessions ? 1 : 0
         this._host = host
         this._key = key
         this._port = port
         this._timeout = timeout
+        this._socket = (!!socket) ? socket: new Socket();
+        this.msgs = {
+            defaultError: 'Unknown Error',
+            deregisterInfo: `Deregistering ${this._key} with proxy @ ${this._host}:${this._port}`,
+            deregisterSuccess: 'Deregistration successful',
+            duplicateKey: 'IDE Key already exists',
+            nonexistentKey: 'No IDE key',
+            registerInfo: `Registering ${this._key} with proxy @ ${this._host}:${this._port}`,
+            registerSuccess: 'Registration successful',
+            resolve: `Failure to resolve ${this._host}`,
+            timeout: `Timeout connecting to ${this._host}:${this._port}`,
+        };
         this._socket.on('error', (err: Error) => {
             // Propagate error up
             this._socket.end()
