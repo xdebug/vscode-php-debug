@@ -202,16 +202,19 @@ class PhpDebugSession extends vscode.DebugSession {
         }
         this._args = args
         /** launches the script as CLI */
-        const launchScript = async () => {
+        const launchScript = async (debugPort: number | undefined) => {
             // check if program exists
             await new Promise((resolve, reject) =>
                 fs.access(args.program!, fs.constants.F_OK, err => (err ? reject(err) : resolve()))
             )
-            const runtimeArgs = args.runtimeArgs || []
+            let runtimeArgs = args.runtimeArgs || [];
             const runtimeExecutable = args.runtimeExecutable || 'php'
             const programArgs = args.args || []
             const cwd = args.cwd || process.cwd()
             const env = args.env || process.env
+
+            runtimeArgs = this.prependDebugOptions(runtimeArgs, debugPort);
+
             // launch in CLI mode
             if (args.externalConsole) {
                 const script = await Terminal.launchInTerminal(
@@ -246,7 +249,7 @@ class PhpDebugSession extends vscode.DebugSession {
             }
         }
         /** sets up a TCP server to listen for XDebug connections */
-        const createServer = () =>
+        const createServer = (): Promise<net.Server> =>
             new Promise((resolve, reject) => {
                 const server = (this._server = net.createServer())
                 server.on('connection', async (socket: net.Socket) => {
@@ -313,17 +316,20 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendErrorResponse(response, <Error>error)
                 })
                 server.listen(
-                    args.port || 9000,
+                    args.port || 0,
                     args.hostname,
                     (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve())
                 )
+                resolve(server);
             })
         try {
+            let debugPort: number | undefined;
             if (!args.noDebug) {
-                await createServer()
+                let server = await createServer();
+                debugPort = server.address().port;
             }
             if (args.program) {
-                await launchScript()
+                await launchScript(debugPort)
             }
         } catch (error) {
             this.sendErrorResponse(response, <Error>error)
@@ -1012,6 +1018,17 @@ class PhpDebugSession extends vscode.DebugSession {
         }
         this.sendResponse(response)
         this.shutdown()
+    }
+
+    protected prependDebugOptions(programArgs: string[], debugPort: number | undefined) {
+        if (debugPort) {
+            programArgs.unshift(
+                "-dxdebug.remote_enable=1",
+                "-dxdebug.remote_mode=req",
+                `-dxdebug.remote_port=${debugPort}`,
+            );
+        }
+        return programArgs;
     }
 
     protected async evaluateRequest(
