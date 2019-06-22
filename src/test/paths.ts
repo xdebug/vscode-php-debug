@@ -203,6 +203,14 @@ describe('paths', () => {
                     }),
                     '/home/felix/mysource/source.php'
                 )
+                // multi level source
+                assert.equal(
+                    convertDebuggerPathToClient('file:///C:/Program%20Files/MySource/app/source.php', {
+                        'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
+                        'C:\\Program Files\\MySource': '/home/felix/mysource',
+                    }),
+                    '/home/felix/mysource/app/source.php'
+                )
             })
             // windows to windows
             ;(process.platform === 'win32' ? it : it.skip)('should map windows uris to windows paths', () => {
