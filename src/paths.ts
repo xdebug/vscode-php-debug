@@ -40,10 +40,9 @@ export function convertDebuggerPathToClient(
             serverSourceRoot,
             serverPath
         )
-        pathRelativeToSourceRoot = pathRelativeToSourceRoot.replace(
-            (serverIsWindows ? path.win32 : path.posix).sep,
-            path.sep
-        )
+        if (serverIsWindows) {
+            pathRelativeToSourceRoot = pathRelativeToSourceRoot.replace(/\\/g, path.sep)
+        }
         // resolve from the local source root
         localPath = path.resolve(localSourceRoot, pathRelativeToSourceRoot)
     } else {

@@ -205,11 +205,11 @@ describe('paths', () => {
                 )
                 // multi level source
                 assert.equal(
-                    convertDebuggerPathToClient('file:///C:/Program%20Files/MySource/app/source.php', {
+                    convertDebuggerPathToClient('file:///C:/Program%20Files/MySource/src/app/source.php', {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                         'C:\\Program Files\\MySource': '/home/felix/mysource',
                     }),
-                    '/home/felix/mysource/app/source.php'
+                    '/home/felix/mysource/src/app/source.php'
                 )
             })
             // windows to windows
