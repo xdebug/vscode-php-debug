@@ -285,7 +285,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         this.sendErrorResponse(response, error)
                         reject(error)
                     })
-                    this._proxyConnect.sendProxyInitCommand()
+                    this._proxyConnect.sendProxyInitCommand(args.port || 9000)
                 }
 
                 server.on('connection', async (socket: net.Socket) => {
