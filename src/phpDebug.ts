@@ -179,6 +179,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     default: true,
                 },
             ],
+            supportsTerminateThreadsRequest: true,
         }
         this.sendResponse(response)
     }
@@ -980,6 +981,34 @@ class PhpDebugSession extends vscode.DebugSession {
 
     protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments) {
         this.sendErrorResponse(response, new Error('Pausing the execution is not supported by XDebug'))
+    }
+
+    protected async terminateThreadsRequest(
+        response: VSCodeDebugProtocol.TerminateThreadsResponse,
+        args: VSCodeDebugProtocol.TerminateThreadsArguments
+    ) {
+        try {
+            if (args.threadIds) {
+                await Promise.all(
+                    args.threadIds.map(async threadId => {
+                        const connection = this._connections.get(threadId)
+                        if (connection) {
+                            await Promise.race([
+                                connection.sendStopCommand(),
+                                new Promise(resolve => setTimeout(resolve, 500)),
+                            ])
+                            await connection.close()
+                            this._connections.delete(threadId)
+                            this._waitingConnections.delete(connection)
+                        }
+                    })
+                )
+            }
+            this.sendResponse(response)
+        } catch (error) {
+            this.sendErrorResponse(response, error)
+            return
+        }
     }
 
     protected async disconnectRequest(
