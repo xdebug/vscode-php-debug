@@ -898,20 +898,19 @@ class PhpDebugSession extends vscode.DebugSession {
         try {
             const connection = this._connections.get(args.threadId)
             if (!connection) {
-                throw new Error('Unknown thread ID ' + args.threadId)
+                return this.sendErrorResponse(response, new Error('Unknown thread ID ' + args.threadId))
             }
+            response.body = {
+                allThreadsContinued: false,
+            }
+            this.sendResponse(response)
             xdebugResponse = await connection.sendRunCommand()
         } catch (error) {
-            this.sendErrorResponse(response, error)
             if (xdebugResponse) {
                 this._checkStatus(xdebugResponse)
             }
             return
         }
-        response.body = {
-            allThreadsContinued: false,
-        }
-        this.sendResponse(response)
         this._checkStatus(xdebugResponse)
     }
 
@@ -920,17 +919,16 @@ class PhpDebugSession extends vscode.DebugSession {
         try {
             const connection = this._connections.get(args.threadId)
             if (!connection) {
-                throw new Error('Unknown thread ID ' + args.threadId)
+                return this.sendErrorResponse(response, new Error('Unknown thread ID ' + args.threadId))
             }
+            this.sendResponse(response)
             xdebugResponse = await connection.sendStepOverCommand()
         } catch (error) {
-            this.sendErrorResponse(response, error)
             if (xdebugResponse) {
                 this._checkStatus(xdebugResponse)
             }
             return
         }
-        this.sendResponse(response)
         this._checkStatus(xdebugResponse)
     }
 
@@ -942,17 +940,16 @@ class PhpDebugSession extends vscode.DebugSession {
         try {
             const connection = this._connections.get(args.threadId)
             if (!connection) {
-                throw new Error('Unknown thread ID ' + args.threadId)
+                return this.sendErrorResponse(response, new Error('Unknown thread ID ' + args.threadId))
             }
+            this.sendResponse(response)
             xdebugResponse = await connection.sendStepIntoCommand()
         } catch (error) {
-            this.sendErrorResponse(response, error)
             if (xdebugResponse) {
                 this._checkStatus(xdebugResponse)
             }
             return
         }
-        this.sendResponse(response)
         this._checkStatus(xdebugResponse)
     }
 
@@ -964,17 +961,16 @@ class PhpDebugSession extends vscode.DebugSession {
         try {
             const connection = this._connections.get(args.threadId)
             if (!connection) {
-                throw new Error('Unknown thread ID ' + args.threadId)
+                return this.sendErrorResponse(response, new Error('Unknown thread ID ' + args.threadId))
             }
+            this.sendResponse(response)
             xdebugResponse = await connection.sendStepOutCommand()
         } catch (error) {
-            this.sendErrorResponse(response, error)
             if (xdebugResponse) {
                 this._checkStatus(xdebugResponse)
             }
             return
         }
-        this.sendResponse(response)
         this._checkStatus(xdebugResponse)
     }
 
