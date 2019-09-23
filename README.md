@@ -9,7 +9,7 @@
 
 Install the extension: Press `F1`, type `ext install php-debug`.
 
-This extension is a debug adapter between VS Code and [XDebug](https://xdebug.org/) by Derick Rethan. XDebug is a PHP extension (a `.so` file on Linux and a `.dll` on Windows) that needs to be installed on your server.
+This extension is a debug adapter between VS Code and [XDebug](https://xdebug.org/) by Derick Rethans. XDebug is a PHP extension (a `.so` file on Linux and a `.dll` on Windows) that needs to be installed on your server.
 
 1. [Install XDebug](https://xdebug.org/docs/install)
    **_I highly recommend you make a simple `test.php` file, put a `phpinfo();` statement in there, then copy the output and paste it into the [XDebug installation wizard](https://xdebug.org/wizard.php). It will analyze it and give you tailored installation instructions for your environment._** In short:
