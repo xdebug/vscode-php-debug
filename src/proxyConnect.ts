@@ -25,6 +25,8 @@ export class ProxyConnect extends EventEmitter {
     private _allowMultipleSessions: number
     /** host domain or ip (default: 127.0.0.1) */
     private _host: string
+    /** ide port proxy will connect back */
+    private _ideport: number
     /** unique key that allows the proxy to match requests to your editor. (default: DEFAULTIDEKEY) */
     private _key: string
     /** proxy response data parser */
@@ -40,6 +42,7 @@ export class ProxyConnect extends EventEmitter {
     constructor(
         host = '127.0.0.1',
         port = 9001,
+        ideport = 9000,
         allowMultipleSessions = true,
         key = DEFAULTIDEKEY,
         timeout = 3000,
@@ -50,6 +53,7 @@ export class ProxyConnect extends EventEmitter {
         this._host = host
         this._key = key
         this._port = port
+        this._ideport = ideport
         this._timeout = timeout
         this._socket = !!socket ? socket : new Socket()
         this.msgs = {
@@ -90,11 +94,11 @@ export class ProxyConnect extends EventEmitter {
     }
 
     /** Register/Couples ideKey to IP so the proxy knows who to send what */
-    public sendProxyInitCommand(ideport: number) {
+    public sendProxyInitCommand() {
         if (!this._isRegistered) {
             this._command(
-                `proxyinit -k ${this._key} -p ${ideport} -m ${this._allowMultipleSessions}`,
-                this.msgs.registerInfo.replace('%ideport%', ideport.toString())
+                `proxyinit -k ${this._key} -p ${this._ideport} -m ${this._allowMultipleSessions}`,
+                this.msgs.registerInfo.replace('%ideport%', this._ideport.toString())
             )
         }
     }

@@ -21,7 +21,7 @@ describe('ProxyConnect', () => {
         testSocket.connect = () => {
             return
         }
-        conn = new ProxyConnect(host, port, true, undefined, 3000, testSocket)
+        conn = new ProxyConnect(host, port, 9000, true, undefined, 3000, testSocket)
         msgs = conn.msgs
     })
 
@@ -58,7 +58,7 @@ describe('ProxyConnect', () => {
             done()
         })
 
-        conn.sendProxyInitCommand(port)
+        conn.sendProxyInitCommand()
     })
 
     it('should be registered', (done: MochaDone) => {
@@ -67,7 +67,7 @@ describe('ProxyConnect', () => {
             done()
         })
 
-        conn.sendProxyInitCommand(port)
+        conn.sendProxyInitCommand()
         testSocket.emit('data', _xml('init', 1))
     })
 

@@ -274,6 +274,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         this._proxyConnect = new ProxyConnect(
                             args.proxy.host,
                             args.proxy.port,
+                            _ideport,
                             args.proxy.allowMultipleSessions,
                             args.proxy.key,
                             args.proxy.timeout
@@ -288,7 +289,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             this.sendErrorResponse(response, error)
                             reject(error)
                         })
-                        this._proxyConnect.sendProxyInitCommand(_ideport)
+                        this._proxyConnect.sendProxyInitCommand()
                     }
                 }
 
