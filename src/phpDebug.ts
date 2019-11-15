@@ -263,7 +263,12 @@ class PhpDebugSession extends vscode.DebugSession {
             new Promise((resolve, reject) => {
                 const server = (this._server = net.createServer())
 
-                const ideport = args.proxy && args.proxy.enable && (!args.xdebugSettings || !args.xdebugSettings.remote_connect_back) ? (args.port || 0) : (args.port || 9000)
+                const ideport =
+                    args.proxy &&
+                    args.proxy.enable &&
+                    (!args.xdebugSettings || !args.xdebugSettings.remote_connect_back)
+                        ? args.port || 0
+                        : args.port || 9000
 
                 const setupProxy = (_ideport: number) => {
                     if (
