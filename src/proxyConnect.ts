@@ -62,7 +62,7 @@ export class ProxyConnect extends EventEmitter {
             deregisterSuccess: 'Deregistration successful',
             duplicateKey: 'IDE Key already exists',
             nonexistentKey: 'No IDE key',
-            registerInfo: `Registering ${this._key} on port %ideport% with proxy @ ${this._host}:${this._port}`,
+            registerInfo: `Registering ${this._key} on port ${this._ideport} with proxy @ ${this._host}:${this._port}`,
             registerSuccess: 'Registration successful',
             resolve: `Failure to resolve ${this._host}`,
             timeout: `Timeout connecting to ${this._host}:${this._port}`,
@@ -98,7 +98,7 @@ export class ProxyConnect extends EventEmitter {
         if (!this._isRegistered) {
             this._command(
                 `proxyinit -k ${this._key} -p ${this._ideport} -m ${this._allowMultipleSessions}`,
-                this.msgs.registerInfo.replace('%ideport%', this._ideport.toString())
+                this.msgs.registerInfo
             )
         }
     }
