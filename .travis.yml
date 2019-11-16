@@ -1,8 +1,8 @@
 language: php
 
 php:
-  - '5.6'
   - '7.1'
+  - '5.6'
 env:
   global:
     - NODE_VERSION=8.9.3

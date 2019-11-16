@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 isFunction() {
   declare -fF -- "${@:?'No arguments provided.'}" > /dev/null
@@ -22,13 +23,23 @@ beforeInstall::test() {
     # Fix ruby error https://github.com/Homebrew/brew/issues/3299
     brew install "${atAbbr}" nvm
 
+    # check currenty install php
+    php --version
+
+    # Try to clobber native php install
+    brew link --force --overwrite "${atAbbr}"
+
+    echo 'export PATH="/usr/local/opt/php@7.1/bin:$PATH"' >> ~/.bash_profile
+    echo 'export PATH="/usr/local/opt/php@7.1/sbin:$PATH"' >> ~/.bash_profile
+    source ~/.bash_profile
+
     # full version
+    php --version
     vFull="$(php --version | egrep -o '([[:digit:]]+\.?){2,3}' | head -1)"
     vAbbr="${vFull%.*}"
     printf -v dirConfd '/usr/local/etc/php/%s/conf.d' "${vAbbr}"
     printf -v dirCellar '/usr/local/Cellar/%s/%s/pecl' "${atAbbr}" "${vFull}"
 
-    brew link --force --overwrite "${atAbbr}"
     mkdir -p "${dirConfd}"
     cp -f "${TRAVIS_INI}" "${dirConfd}"
     TRAVIS_INI="${dirConfd}/travis-php.ini"
@@ -39,6 +50,8 @@ beforeInstall::test() {
     # make xdebug.so available at pecl's expected location
     ln -s "${dirCellar}" '/usr/local/lib/php/pecl'
     php --ini
+    php --version
+    whereis php
 
     [ -r "${HOME}/.nvm/nvm.sh" ] && . "${HOME}/.nvm/nvm.sh"
     beforeInstall::main
