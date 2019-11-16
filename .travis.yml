@@ -41,7 +41,7 @@ jobs:
   include:
     - stage: test
       os: osx
-      osx_image: xcode9.1
+      osx_image: xcode11.2
       language: generic
       before_install:
         # Fix ruby error https://github.com/Homebrew/brew/issues/3299
