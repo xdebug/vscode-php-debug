@@ -74,6 +74,7 @@ describe('PHP Debug Adapter', () => {
 
         it('should handle disconnect', async () => {
             await Promise.all([client.launch({ program, stopOnEntry: true }), client.waitForEvent('initialized')])
+            await client.configurationDoneRequest()
             await client.disconnectRequest()
         })
     })
