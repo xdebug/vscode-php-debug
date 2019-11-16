@@ -18,6 +18,7 @@ cache:
     - $HOME/.npm
 
 before_install:
+  - pecl channel-update pecl.php.net
   - pecl install xdebug-$XDEBUG_VERSION
   - phpenv config-add travis-php.ini
   - nvm install $NODE_VERSION
