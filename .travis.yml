@@ -51,6 +51,7 @@ jobs:
         - cp travis-php.ini /usr/local/etc/php/7.1/conf.d/
         # see per https://javorszky.co.uk/2018/05/03/getting-xdebug-working-on-php-7-2-and-homebrew/
         # avoid problems with brew's symlink and pecl's recursive mkdir
+        - ls -la /usr/local/Cellar/php@7.1/
         - rm /usr/local/Cellar/php@7.1/7.1.26/pecl
         - pecl install xdebug-$XDEBUG_VERSION
         # make xdebug.so available at pecl's expected location
