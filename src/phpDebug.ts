@@ -270,7 +270,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         ? args.port || 0
                         : args.port || 9000
 
-                const setupProxy = (_ideport: number) => {
+                const setupProxy = (_ideport: number): Promise<void> => {
                     if (
                         args.proxy &&
                         args.proxy.enable &&
@@ -286,15 +286,15 @@ class PhpDebugSession extends vscode.DebugSession {
                         )
                         const proxyConsole = (str: string) => this.sendEvent(new vscode.OutputEvent(str + '\n'), true)
 
-                        this._proxyConnect.on('info', proxyConsole)
-                        this._proxyConnect.on('response', proxyConsole)
+                        this._proxyConnect.on('log_request', proxyConsole)
+                        this._proxyConnect.on('log_response', proxyConsole)
 
-                        this._proxyConnect.on('error', (error: Error) => {
-                            this.sendEvent(new vscode.OutputEvent('ERROR: ' + error.message + '\n', 'stderr'))
-                            this.sendErrorResponse(response, error)
-                            reject(error)
+                        this._proxyConnect.on('log_error', (error: Error) => {
+                            this.sendEvent(new vscode.OutputEvent('PROXY ERROR: ' + error.message + '\n', 'stderr'))
                         })
-                        this._proxyConnect.sendProxyInitCommand()
+                        return this._proxyConnect.sendProxyInitCommand()
+                    } else {
+                        return Promise.resolve()
                     }
                 }
 
@@ -365,8 +365,13 @@ class PhpDebugSession extends vscode.DebugSession {
                     if (error) {
                         reject(error)
                     } else {
-                        setupProxy(server.address().port)
-                        resolve()
+                        setupProxy(server.address().port).then(
+                            () => resolve(),
+                            perror => {
+                                this._server.close()
+                                reject(new Error('PROXY ERROR: ' + perror.message))
+                            }
+                        )
                     }
                 })
                 server.listen(ideport, args.hostname)
@@ -1042,7 +1047,7 @@ class PhpDebugSession extends vscode.DebugSession {
     ) {
         try {
             if (this._proxyConnect) {
-                await new Promise(resolve => this._proxyConnect.sendProxyStopCommand(resolve))
+                await this._proxyConnect.sendProxyStopCommand()
             }
 
             await Promise.all(

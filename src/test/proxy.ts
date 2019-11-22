@@ -26,34 +26,36 @@ describe('ProxyConnect', () => {
     })
 
     it('should timeout', (done: MochaDone) => {
-        conn.on('error', (err: Error) => {
+        assert.exists(conn)
+        conn.sendProxyInitCommand().catch(err => {
             assert.equal(err.message, msgs.timeout)
             done()
         })
-        assert.exists(conn)
         testSocket.emit('error', new Error(msgs.timeout))
     })
 
     it('should fail if proxy is unreachable', (done: MochaDone) => {
-        conn.on('error', (err: Error) => {
+        assert.exists(conn)
+        conn.sendProxyInitCommand().catch(err => {
             assert.equal(err.message, msgs.resolve)
             done()
         })
-
         testSocket.emit('lookup', new Error(msgs.resolve))
     })
 
     it('should throw an error for duplicate IDE key', (done: MochaDone) => {
-        conn.on('error', (err: Error) => {
-            assert.equal(msgs.duplicateKey, err.message)
+        assert.exists(conn)
+        conn.sendProxyInitCommand().catch(err => {
+            assert.equal(err.message, msgs.duplicateKey)
             done()
         })
 
         testSocket.emit('data', _xml('init', 0, msgs.duplicateKey))
+        testSocket.emit('close', false)
     })
 
     it('should request registration', (done: MochaDone) => {
-        conn.on('info', (str: string) => {
+        conn.on('log_request', (str: string) => {
             assert.equal(str, msgs.registerInfo)
             done()
         })
@@ -62,38 +64,47 @@ describe('ProxyConnect', () => {
     })
 
     it('should be registered', (done: MochaDone) => {
-        conn.on('response', (str: string) => {
+        conn.on('log_response', (str: string) => {
             assert.equal(str, msgs.registerSuccess)
             done()
         })
 
         conn.sendProxyInitCommand()
         testSocket.emit('data', _xml('init', 1))
+        testSocket.emit('close', false)
     })
 
     it('should request deregistration', async (done: MochaDone) => {
-        conn.on('info', (str: string) => {
+        conn.on('log_request', (str: string) => {
             assert.equal(str, msgs.deregisterInfo)
             done()
         })
         testSocket.emit('data', _xml('init', 1))
+        testSocket.emit('close', false)
 
-        await new Promise(resolve => conn.sendProxyStopCommand(resolve))
+        await conn.sendProxyStopCommand()
     })
 
-    it('should be deregistered', (done: MochaDone) => {
-        conn.on('response', (str: string) => {
+    it('should be deregistered', async (done: MochaDone) => {
+        conn.on('log_response', (str: string) => {
             assert.equal(str, msgs.deregisterSuccess)
             done()
         })
         testSocket.emit('data', _xml('stop', 1))
+        testSocket.emit('close', false)
+        await conn.sendProxyStopCommand()
     })
 
     it('should throw an error for nonexistent IDE key', (done: MochaDone) => {
-        conn.on('error', (err: Error) => {
+        conn.sendProxyInitCommand()
+        testSocket.emit('data', _xml('init', 1))
+        testSocket.emit('close', false)
+
+        conn.sendProxyStopCommand().catch(err => {
             assert.equal(msgs.nonexistentKey, err.message)
             done()
         })
         testSocket.emit('data', _xml('stop', 0, msgs.nonexistentKey))
+        testSocket.emit('close', false)
     })
 })
