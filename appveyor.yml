@@ -15,8 +15,8 @@ environment:
   NODE_VERSION: '8.9.3'
   NPM_VERSION: '^6.3.0'
   matrix:
+    - { PHP_VERSION: '7.3.12', VC_VERSION: '15', XDEBUG_VERSION: '2.8.0' }
     - { PHP_VERSION: '7.1.27', VC_VERSION: '14', XDEBUG_VERSION: '2.5.5' }
-    - { PHP_VERSION: '5.6.30', VC_VERSION: '11', XDEBUG_VERSION: '2.5.5' }
 
 install:
   - ps: . .\appveyor-install.ps1
