@@ -112,17 +112,18 @@
     ]
   },
   "contributes": {
+    "breakpoints": [
+      {
+        "language": "php"
+      }
+    ],
     "debuggers": [
       {
         "type": "php",
         "label": "PHP",
-        "enableBreakpointsFor": {
-          "languageIds": [
-            "php"
-          ]
-        },
         "program": "./out/phpDebug.js",
         "runtime": "node",
+        "languages": ["php"],
         "configurationAttributes": {
           "launch": {
             "required": [],
