@@ -234,7 +234,7 @@
                   "key": {
                     "type": "string",
                     "description": "A unique key that allows the proxy to match requests to your editor",
-                    "default": "vsc"
+                    "default": "${config:php-debug.idekey}"
                   },
                   "port": {
                     "type": "number",
@@ -290,6 +290,16 @@
           }
         ]
       }
-    ]
+    ],
+    "configuration": {
+      "title": "PHP Debug",
+      "properties": {
+        "php-debug.idekey": {
+          "type": "string",
+          "default": "vsc",
+          "description": "A unique key that allows the proxy to match requests to your editor. Only used when proxy configuration includes replacement."
+        }
+      }
+    }
   }
 }
