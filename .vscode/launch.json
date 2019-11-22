@@ -28,7 +28,7 @@
       "type": "node",
       "request": "launch",
       "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-      "args": ["out/test", "--no-timeouts", "--colors"],
+      "args": ["out/test/proxy.js", "--no-timeouts", "--colors"],
       "cwd": "${workspaceRoot}",
       "sourceMaps": true,
       "outDir": "${workspaceRoot}/out"

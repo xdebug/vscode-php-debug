@@ -18,7 +18,6 @@ cache:
     - $HOME/.npm
 
 before_install:
-  - chmod ugo+x ./scripts/travis-beforeinstall.sh
   - ./scripts/travis-beforeinstall.sh 'main'
 
 install:
@@ -40,7 +39,6 @@ jobs:
       osx_image: xcode10.2
       language: generic
       before_install:
-        - chmod ugo+x ./scripts/travis-beforeinstall.sh
         - ./scripts/travis-beforeinstall.sh 'test'
     - stage: release
       language: node_js
