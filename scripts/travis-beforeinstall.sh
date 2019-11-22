@@ -45,10 +45,13 @@ beforeInstall::test() {
     TRAVIS_INI="${dirConfd}/travis-php.ini"
     # see per https://javorszky.co.uk/2018/05/03/getting-xdebug-working-on-php-7-2-and-homebrew/
     # avoid problems with brew's symlink and pecl's recursive mkdir
-    rm "${dirCellar}"
+    find -L ${dirCellar}
+    rm -rf "${dirCellar}"
     pecl install "xdebug-${XDEBUG_VERSION}"
     # make xdebug.so available at pecl's expected location
     ln -s "${dirCellar}" '/usr/local/lib/php/pecl'
+    find -L /usr/local/lib/php/
+    find ${dirCellar}
     php --ini
     php --version
     whereis php
