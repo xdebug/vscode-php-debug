@@ -212,9 +212,11 @@ class PhpDebugSession extends vscode.DebugSession {
         /** launches the script as CLI */
         const launchScript = async () => {
             // check if program exists
-            await new Promise<void>((resolve, reject) =>
-                fs.access(args.program!, fs.constants.F_OK, err => (err ? reject(err) : resolve()))
-            )
+            if (args.program) {
+                await new Promise((resolve, reject) =>
+                    fs.access(args.program!, fs.constants.F_OK, err => (err ? reject(err) : resolve()))
+                )
+            }
             const runtimeArgs = args.runtimeArgs || []
             const runtimeExecutable = args.runtimeExecutable || 'php'
             const programArgs = args.args || []
@@ -341,7 +343,7 @@ class PhpDebugSession extends vscode.DebugSession {
             if (!args.noDebug) {
                 await createServer()
             }
-            if (args.program) {
+            if (args.program || args.runtimeArgs) {
                 await launchScript()
             }
         } catch (error) {

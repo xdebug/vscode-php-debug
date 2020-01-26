@@ -17,6 +17,18 @@
       "program": "${file}",
       "cwd": "${workspaceRoot}",
       "externalConsole": false
+    },
+    {
+      //"debugServer": 4711, // Uncomment for debugging the adapter
+      "name": "Launch server",
+      "request": "launch",
+      "type": "php",
+      "runtimeArgs": [
+        "-S",
+        "localhost:8000"
+      ],
+      "cwd": "${workspaceRoot}",
+      "externalConsole": false
     }
   ]
 }
