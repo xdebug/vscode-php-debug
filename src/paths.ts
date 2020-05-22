@@ -46,7 +46,7 @@ export function convertDebuggerPathToClient(
         localPath = path.resolve(localSourceRoot, pathRelativeToSourceRoot)
 
         if (srcExtensions && !FS.existsSync(localPath)) {
-            var extPattern = new RegExp(/\.[^.]+$/, "g");
+            const extPattern = new RegExp("/\.[^.]+$/", 'g')
             srcExtensions.some(
                 (ext): any => {
                     if (FS.existsSync(localPath.replace(extPattern, '.' + ext))) {
