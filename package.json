@@ -34,6 +34,7 @@
     "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
   },
   "dependencies": {
+    "file-system": "^2.2.2",
     "file-url": "^2.0.0",
     "iconv-lite": "^0.4.15",
     "minimatch": "^3.0.3",
@@ -199,6 +200,14 @@
                 "type": "object",
                 "default": {},
                 "description": "A mapping of server paths to local paths."
+              },
+              "srcExtensions": {
+                "type": "array",
+                "description": "Alternative source file extensions.",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
               },
               "ignore": {
                 "type": "array",

@@ -62,6 +62,8 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     localSourceRoot?: string
     /** The path to the source root on this machine that is the equivalent to the serverSourceRoot on the server. */
     pathMappings?: { [index: string]: string }
+    /** Alternative file extensions to try if the source file does not exist. */
+    srcExtensions?: string[]
     /** If true, will log all communication between VS Code and the adapter to the console */
     log?: boolean
     /** Array of glob patterns that errors should be ignored from */
@@ -696,7 +698,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     line++
                 } else {
                     // XDebug paths are URIs, VS Code file paths
-                    const filePath = convertDebuggerPathToClient(urlObject, this._args.pathMappings)
+                    const filePath = convertDebuggerPathToClient(urlObject, this._args.pathMappings, this._args.srcExtensions)
                     // "Name" of the source and the actual file path
                     source = { name: path.basename(filePath), path: filePath }
                 }
@@ -722,7 +724,7 @@ class PhpDebugSession extends vscode.DebugSession {
                                 line++
                             } else {
                                 // XDebug paths are URIs, VS Code file paths
-                                const filePath = convertDebuggerPathToClient(urlObject, this._args.pathMappings)
+                                const filePath = convertDebuggerPathToClient(urlObject, this._args.pathMappings, this._args.srcExtensions)
                                 // "Name" of the source and the actual file path
                                 source = { name: path.basename(filePath), path: filePath }
                             }

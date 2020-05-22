@@ -1,5 +1,6 @@
 import urlRelative = require('url-relative')
 import fileUrl = require('file-url')
+import FS = require('fs')
 import * as url from 'url'
 import * as path from 'path'
 import { decode } from 'urlencode'
@@ -7,7 +8,8 @@ import { decode } from 'urlencode'
 /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
 export function convertDebuggerPathToClient(
     fileUri: string | url.Url,
-    pathMapping?: { [index: string]: string }
+    pathMapping?: { [index: string]: string },
+    srcExtensions?: string[] | undefined
 ): string {
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
@@ -42,6 +44,17 @@ export function convertDebuggerPathToClient(
         )
         // resolve from the local source root
         localPath = path.resolve(localSourceRoot, pathRelativeToSourceRoot)
+
+        if (srcExtensions && !FS.existsSync(localPath)) {
+            var extPattern = /\.[^.]+$/
+            srcExtensions.some(
+                (ext): any => {
+                    if (FS.existsSync(localPath.replace(extPattern, '.' + ext))) {
+                        return (localPath = localPath.replace(extPattern, '.' + ext))
+                    }
+                }
+            )
+        }
     } else {
         localPath = path.normalize(serverPath)
     }
