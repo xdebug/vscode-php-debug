@@ -201,14 +201,6 @@
                 "default": {},
                 "description": "A mapping of server paths to local paths."
               },
-              "srcExtensions": {
-                "type": "array",
-                "description": "Alternative source file extensions.",
-                "items": {
-                  "type": "string"
-                },
-                "default": []
-              },
               "ignore": {
                 "type": "array",
                 "items": "string",

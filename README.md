@@ -49,7 +49,6 @@ In your project, go to the debugger and hit the little gear icon and choose _PHP
 - `port`: The port on which to listen for XDebug (default: `9000`)
 - `stopOnEntry`: Wether to break at the beginning of the script (default: `false`)
 - `pathMappings`: A list of server paths mapping to the local source paths on your machine, see "Remote Host Debugging" below
-- `srcExtensions`: Alternative file extensions to try if the source file does not exist. See "Alternative Source File Extensions"
 - `log`: Wether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
 - `ignore`: An optional array of glob patterns that errors should be ignored from (for example `**/vendor/**/*.php`)
 - `xdebugSettings`: Allows you to override XDebug's remote debugging settings to fine tuning XDebug to your needs. For example, you can play with `max_children` and `max_depth` to change the max number of array and object children that are retrieved and the max depth in structures like arrays and objects. This can speed up the debugger on slow machines.
@@ -97,18 +96,6 @@ To make VS Code map the files on the server to the right files on your local mac
   "/var/www/html": "${workspaceRoot}/www",
   "/app": "${workspaceRoot}/app"
 }
-```
-
-## Alternative Source File Extensions
-
-Alternative file extensions to try if the source file does not exist. Example:
-
-```json
-// Local path: /var/www/html/test.php
-"srcExtensions": [
-    "myphp", // ${workspaceRoot}/test.myphp
-    "myphp2" // ${workspaceRoot}/test.myphp2
-]
 ```
 
 Please also note that setting any of the CLI debugging options will not work with remote host debugging, because the script is always launched locally. If you want to debug a CLI script on a remote host, you need to launch it manually from the command line.

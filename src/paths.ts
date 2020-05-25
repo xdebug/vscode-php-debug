@@ -9,7 +9,7 @@ import { decode } from 'urlencode'
 export function convertDebuggerPathToClient(
     fileUri: string | url.Url,
     pathMapping?: { [index: string]: string },
-    srcExtensions?: string[] | undefined
+    env?:{ [key: string]: string | undefined }
 ): string {
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
@@ -44,10 +44,10 @@ export function convertDebuggerPathToClient(
         )
         // resolve from the local source root
         localPath = path.resolve(localSourceRoot, pathRelativeToSourceRoot)
-
-        if (srcExtensions && !FS.existsSync(localPath)) {
-            const extPattern = new RegExp("/\.[^.]+$/", 'g')
-            srcExtensions.some(
+        if (env && env.srcExtensions && !FS.existsSync(localPath)) {
+            const extPattern = new RegExp(/\.[^.]+$/, 'g')
+            const extList = env.srcExtensions.split(',')
+            extList.some(
                 (ext): any => {
                     if (FS.existsSync(localPath.replace(extPattern, '.' + ext))) {
                         return (localPath = localPath.replace(extPattern, '.' + ext))
