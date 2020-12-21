@@ -37,6 +37,10 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: xdebug-${{ matrix.xdebug }}
+          ini-values: >-
+            xdebug.remote_enable = 1,
+            xdebug.remote_autostart = 1,
+            xdebug.remote_log = /tmp/xdebug.log
       - name: Run tests
         run: npm run cover
       - name: Generate coverage report
