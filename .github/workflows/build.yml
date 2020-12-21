@@ -54,4 +54,5 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
         run: npm run semantic-release
