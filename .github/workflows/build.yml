@@ -49,6 +49,7 @@ jobs:
         run: ./node_modules/.bin/nyc report --reporter=json
       - name: Upload coverage to Codecov
         run: bash <(curl -s https://codecov.io/bash)
+        shell: bash
       - name: Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/release'
         env:
