@@ -7,6 +7,7 @@ env:
 
 jobs:
   test:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
