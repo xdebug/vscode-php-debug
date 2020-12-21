@@ -55,6 +55,7 @@ jobs:
     needs: test
     if: github.repository_owner == 'felixfbecker' && github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
+      - uses: actions/checkout@v2
       - name: Setup Node.js
         uses: actions/setup-node@v1
         with:
