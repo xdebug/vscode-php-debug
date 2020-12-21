@@ -86,11 +86,6 @@
       }
     ]
   },
-  "greenkeeper": {
-    "ignore": [
-      "@types/node"
-    ]
-  },
   "scripts": {
     "build": "tsc -p .",
     "watch": "tsc -w -p .",
