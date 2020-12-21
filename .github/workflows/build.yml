@@ -1,0 +1,50 @@
+name: build
+
+on: [push, pull_request]
+
+env:
+  FORCE_COLOR: 3
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-18.04
+          - windows-2019
+          - macos-10.15
+        xdebug:
+          - '2.5.5'
+        php:
+          - '7.4'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.15.1'
+      - name: Install npm dependencies
+        run: npm ci
+      - name: Prettier
+        run: npm run prettier
+      - name: Lint
+        run: npm run tslint
+      - name: Build extension
+        run: npm run build
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: xdebug-${{ matrix.xdebug }}
+      - name: Run tests
+        run: npm run cover
+      - name: Generate coverage report
+        run: ./node_modules/.bin/nyc report --reporter=json
+      - name: Upload coverage to Codecov
+        run: bash <(curl -s https://codecov.io/bash)
+      - name: release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run semantic-release
