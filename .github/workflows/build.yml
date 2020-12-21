@@ -24,6 +24,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '6.17.1'
+      - name: Install npm
+        run: npm install -g npm@^6.3.0
       - name: Install npm dependencies
         run: npm ci
       - name: Prettier
