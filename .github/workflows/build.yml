@@ -16,8 +16,8 @@ jobs:
           - windows-2019
           - macos-10.15
         xdebug:
-          - '2.9.8'
-          - '3.0.1'
+          - xdebug-2.9.8
+          - xdebug-3.0.1
         php:
           - '7.4'
     steps:
@@ -38,7 +38,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: xdebug-${{ matrix.xdebug }}
+          extensions: ${{ matrix.xdebug }}
           # Top: XDebug v3
           # Bottom: XDebug v2
           ini-values: >-
