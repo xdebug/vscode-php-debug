@@ -16,7 +16,7 @@
   },
   "engines": {
     "vscode": "^1.6.0",
-    "node": "^6.0.0"
+    "node": "^14.0.0"
   },
   "icon": "images/logo.png",
   "galleryBanner": {
@@ -57,7 +57,7 @@
     "chai-as-promised": "^7.0.0",
     "husky": "^0.14.3",
     "mocha": "^5.0.0",
-    "nyc": "^11.0.2",
+    "nyc": "^15.1.0",
     "prettier": "1.14.2",
     "semantic-release": "^17.3.0",
     "semantic-release-vsce": "^3.0.1",
