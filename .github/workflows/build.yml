@@ -15,7 +15,7 @@ jobs:
           - windows-2019
           - macos-10.15
         xdebug:
-          - '2.5.5'
+          - '3.0.1'
         php:
           - '7.4'
     steps:
