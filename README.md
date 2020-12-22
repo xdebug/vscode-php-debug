@@ -35,7 +35,7 @@ This extension is a debug adapter between VS Code and [XDebug](https://xdebug.or
    xdebug.remote_autostart = 1
    ```
 
-   There are other ways to tell XDebug to connect to a remote debugger, like cookies, query parameters or browser extensions. I recommend `remote_autostart` (v2)/`start_with_request` (v3) because it "just works". There are also a variety of other options, like the port (by default 9000), please see the [XDebug documentation on remote debugging](https://xdebug.org/docs/remote#starting) for more information.
+   There are other ways to tell XDebug to connect to a remote debugger, like cookies, query parameters or browser extensions. I recommend `remote_autostart` (XDebug v2)/`start_with_request` (XDebug v3) because it "just works". There are also a variety of other options, like the port, please see the [XDebug documentation on remote debugging](https://xdebug.org/docs/remote#starting) for more information. Please note that the default XDebug port changed between XDebug v2 to v3 from 9000 to 9003. The extension still defaults to 9000, so make sure your configuration in `launch.json` and `php.ini` match.
 
 4. If you are doing web development, don't forget to restart your webserver to reload the settings.
 
