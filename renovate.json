@@ -4,5 +4,48 @@
   "rangeStrategy": "bump",
   "semanticCommits": true,
   "masterIssue": true,
-  "prHourlyLimit": 0
+  "prHourlyLimit": 0,
+  "node": {
+    "supportPolicy": ["current"],
+    "major": {
+      "enabled": true
+    }
+  },
+  "regexManagers": [
+    {
+      "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
+      "matchStrings": ["xdebug: xdebug-(?<currentValue>[^,]*)"],
+      "depNameTemplate": "xdebug",
+      "lookupNameTemplate": "xdebug/xdebug",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "loose"
+    },
+    {
+      "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
+      "matchStrings": ["php: '(?<currentValue>[^']*)'"],
+      "depNameTemplate": "php",
+      "lookupNameTemplate": "php/php-src",
+      "datasourceTemplate": "github-tags",
+      "extractVersion": "^php-(?<version>.*)$",
+      "versioningTemplate": "loose"
+    },
+    {
+      "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
+      "matchStrings": ["node-version: '(?<currentValue>[^']*)'"],
+      "depNameTemplate": "node",
+      "lookupNameTemplate": "nodejs/node",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "node"
+    }
+  ],
+  "packageRules": [
+    {
+      "packageNames": ["node"],
+      "extractVersion": "^v(?<version>.*)$",
+      "commitMessageTopic": "Node.js",
+      "major": {
+        "enabled": true
+      }
+    }
+  ]
 }
