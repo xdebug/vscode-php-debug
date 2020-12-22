@@ -40,6 +40,7 @@ jobs:
           ini-values: >-
             xdebug.mode = debug,
             xdebug.start_with_request = yes,
+            xdebug.client_port = 9000,
 
             xdebug.remote_enable = 1,
             xdebug.remote_autostart = 1,
