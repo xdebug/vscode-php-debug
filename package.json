@@ -70,6 +70,9 @@
     "vscode-debugadapter-testsupport": "^1.11.0"
   },
   "release": {
+    "branches": [
+      "main"
+    ],
     "verifyConditions": [
       "semantic-release-vsce",
       "@semantic-release/github"
