@@ -270,6 +270,7 @@ class PhpDebugSession extends vscode.DebugSession {
                                         )
                                     )
                                 }
+                                this.sendEvent(new vscode.ContinuedEvent(connection.id, false))
                                 this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
                                 connection.close()
                                 this._connections.delete(connection.id)
