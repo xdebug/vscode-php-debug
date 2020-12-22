@@ -26,7 +26,6 @@
       "depNameTemplate": "php",
       "lookupNameTemplate": "php/php-src",
       "datasourceTemplate": "github-tags",
-      "extractVersion": "^php-(?<version>.*)$",
       "versioningTemplate": "loose"
     },
     {
@@ -39,6 +38,10 @@
     }
   ],
   "packageRules": [
+    {
+      "packageNames": ["php"],
+      "extractVersion": "^php-(?<version>.*)$"
+    },
     {
       "packageNames": ["node"],
       "extractVersion": "^v(?<version>.*)$",
