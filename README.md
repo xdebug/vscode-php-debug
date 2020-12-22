@@ -23,15 +23,14 @@ This extension is a debug adapter between VS Code and [XDebug](https://xdebug.or
    For XDebug v3.x.x:
 
    ```ini
-   [XDebug]
    xdebug.mode = debug
    xdebug.start_with_request = yes
+   xdebug.client_port = 9000
    ```
 
    For XDebug v2.x.x:
 
    ```ini
-   [XDebug]
    xdebug.remote_enable = 1
    xdebug.remote_autostart = 1
    ```
