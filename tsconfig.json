@@ -1,5 +1,5 @@
 {
-  "exclude": ["node_modules", "out"],
+  "include": ["src/**/*"],
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
@@ -13,6 +13,7 @@
     "strictNullChecks": true,
     "noImplicitReturns": true,
     "allowUnreachableCode": false,
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+    "esModuleInterop": true
   }
 }
