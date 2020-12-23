@@ -50,7 +50,7 @@
     "@types/file-url": "^2.0.0",
     "@types/minimatch": "^3.0.1",
     "@types/mocha": "^2.2.44",
-    "@types/node": "7.0.32",
+    "@types/node": "7.10.14",
     "@types/semver": "^5.5.0",
     "@types/xmldom": "^0.1.29",
     "chai": "^4.0.2",
