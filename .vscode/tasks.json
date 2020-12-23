@@ -1,28 +1,24 @@
 {
-  "version": "0.1.0",
-  "command": "npm",
-  "args": ["run", "--silent"],
-  "options": {
-    "env": {
-      "VSCODE_DEBUG_PORT": "4711"
-    }
-  },
-  "isShellCommand": true,
-  "showOutput": "silent",
+  "version": "2.0.0",
   "tasks": [
     {
-      "taskName": "compile",
-      "isBuildCommand": true,
-      "problemMatcher": "$tsc"
+      "type": "npm",
+      "script": "watch",
+      "problemMatcher": ["$tsc-watch"],
+      "group": "build",
+      "label": "npm: watch",
+      "detail": "tsc -w -p .",
+      "isBackground": true,
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
     },
     {
-      "taskName": "watch",
-      "isWatching": true,
-      "problemMatcher": "$tsc-watch"
-    },
-    {
-      "taskName": "test",
-      "isTestCommand": true
+      "type": "npm",
+      "script": "eslint",
+      "problemMatcher": ["$eslint-stylish"],
+      "label": "npm: eslint",
+      "detail": "eslint 'src/**/*.ts'"
     }
   ]
 }

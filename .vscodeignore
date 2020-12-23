@@ -22,4 +22,4 @@ ISSUE_TEMPLATE.md
 package-lock.json
 travis-php.ini
 tsconfig.json
-tslint.json
+.eslintrc.json

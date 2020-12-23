@@ -1,9 +1,7 @@
 // Place your settings in this file to overwrite default and user settings.
 {
   "javascript.validate.enable": false,
-  "eslint.enable": false,
   "editor.insertSpaces": true,
   "editor.tabSize": 4,
-  "tslint.ignoreDefinitionFiles": true,
   "typescript.tsdk": "./node_modules/typescript/lib"
 }

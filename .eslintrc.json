@@ -1,0 +1,9 @@
+{
+  "extends": "@sourcegraph/eslint-config",
+  "parserOptions": {
+    "project": "tsconfig.json"
+  },
+  "rules": {
+    "@typescript-eslint/consistent-type-assertions": "error"
+  }
+}

@@ -7,6 +7,7 @@
   "singleQuote": true,
   "printWidth": 120,
   "proseWrap": "preserve",
+  "arrowParens": "avoid",
   "overrides": [
     {
       "files": "{*.js?(on),*.yml,.*.yml,.prettierrc,*.md}",

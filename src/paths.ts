@@ -1,5 +1,5 @@
-import urlRelative = require('url-relative')
-import fileUrl = require('file-url')
+import urlRelative from 'url-relative'
+import fileUrl from 'file-url'
 import * as url from 'url'
 import * as path from 'path'
 import { decode } from 'urlencode'
@@ -17,16 +17,16 @@ export function convertDebuggerPathToClient(
     // convert the file URI to a path
     let serverPath = decode(fileUri.pathname!)
     // strip the trailing slash from Windows paths (indicated by a drive letter with a colon)
-    const serverIsWindows = /^\/[a-zA-Z]:\//.test(serverPath)
+    const serverIsWindows = /^\/[A-Za-z]:\//.test(serverPath)
     if (serverIsWindows) {
-        serverPath = serverPath.substr(1)
+        serverPath = serverPath.slice(1)
     }
     if (pathMapping) {
         for (const mappedServerPath of Object.keys(pathMapping)) {
             const mappedLocalSource = pathMapping[mappedServerPath]
             // normalize slashes for windows-to-unix
             const serverRelative = (serverIsWindows ? path.win32 : path.posix).relative(mappedServerPath, serverPath)
-            if (serverRelative.indexOf('..') !== 0) {
+            if (!serverRelative.startsWith('..')) {
                 serverSourceRoot = mappedServerPath
                 localSourceRoot = mappedLocalSource
                 break
@@ -53,13 +53,13 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
     // XDebug always lowercases Windows drive letters in file URIs
-    let localFileUri = fileUrl(localPath.replace(/^[A-Z]:\\/, match => match.toLowerCase()), { resolve: false })
+    const localFileUri = fileUrl(localPath.replace(/^[A-Z]:\\/, match => match.toLowerCase()), { resolve: false })
     let serverFileUri: string
     if (pathMapping) {
         for (const mappedServerPath of Object.keys(pathMapping)) {
             const mappedLocalSource = pathMapping[mappedServerPath]
             const localRelative = path.relative(mappedLocalSource, localPath)
-            if (localRelative.indexOf('..') !== 0) {
+            if (!localRelative.startsWith('..')) {
                 serverSourceRoot = mappedServerPath
                 localSourceRoot = mappedLocalSource
                 break
@@ -92,14 +92,13 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
 }
 
 function isWindowsUri(path: string): boolean {
-    return /^file:\/\/\/[a-zA-Z]:\//.test(path)
+    return /^file:\/{3}[A-Za-z]:\//.test(path)
 }
 
 export function isSameUri(clientUri: string, debuggerUri: string): boolean {
     if (isWindowsUri(clientUri) || isWindowsUri(debuggerUri)) {
         // compare case-insensitive on Windows
         return debuggerUri.toLowerCase() === clientUri.toLowerCase()
-    } else {
-        return debuggerUri === clientUri
     }
+    return debuggerUri === clientUri
 }

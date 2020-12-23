@@ -3,12 +3,12 @@ import { Socket } from 'net'
 import * as iconv from 'iconv-lite'
 import { assert } from 'chai'
 
-describe('DbgpConnection', () => {
-    function makePacket(message: string): Buffer {
-        const messageBuffer = iconv.encode(message, ENCODING)
-        return Buffer.concat([new Buffer(messageBuffer.length + '\0'), messageBuffer, new Buffer('\0')])
-    }
+function makePacket(message: string): Buffer {
+    const messageBuffer = iconv.encode(message, ENCODING)
+    return Buffer.concat([Buffer.from(`${messageBuffer.length}\0`), messageBuffer, Buffer.from('\0')])
+}
 
+describe('DbgpConnection', () => {
     const message =
         '<?xml version="1.0" encoding="iso-8859-1"?>\n<init xmlns="urn:debugger_protocol_v1" xmlns:xdebug="http://xdebug.org/dbgp/xdebug">This is just a test</init>'
     const packet = makePacket(message)
@@ -79,7 +79,7 @@ describe('DbgpConnection', () => {
     })
 
     it('should error on invalid XML', () =>
-        new Promise((resolve, reject) => {
+        new Promise<void>((resolve, reject) => {
             conn.on('error', (error: Error) => {
                 assert.isDefined(error)
                 assert.instanceOf(error, Error)

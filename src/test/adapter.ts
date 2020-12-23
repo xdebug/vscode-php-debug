@@ -1,5 +1,5 @@
 import * as chai from 'chai'
-import chaiAsPromised = require('chai-as-promised')
+import chaiAsPromised from 'chai-as-promised'
 import * as path from 'path'
 import { DebugClient } from 'vscode-debugadapter-testsupport'
 import { DebugProtocol } from 'vscode-debugprotocol'
@@ -15,7 +15,7 @@ describe('PHP Debug Adapter', () => {
     beforeEach('start debug adapter', async () => {
         client = new DebugClient('node', path.normalize(__dirname + '/../phpDebug'), 'php')
         client.defaultTimeout = 10000
-        await client.start(process.env['VSCODE_DEBUG_PORT'] ? parseInt(process.env['VSCODE_DEBUG_PORT']) : undefined)
+        await client.start(process.env.VSCODE_DEBUG_PORT ? parseInt(process.env.VSCODE_DEBUG_PORT, 10) : undefined)
     })
 
     afterEach('stop debug adapter', () => client.stop())
@@ -100,12 +100,15 @@ describe('PHP Debug Adapter', () => {
         const program = path.join(TEST_PROJECT, 'hello_world.php')
 
         describe('line breakpoints', () => {
+            // eslint-disable-next-line unicorn/consistent-function-scoping
             async function testBreakpointHit(program: string, line: number): Promise<void> {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
-                const breakpoint = (await client.setBreakpointsRequest({
-                    breakpoints: [{ line }],
-                    source: { path: program },
-                })).body.breakpoints[0]
+                const breakpoint = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints[0]
                 assert.isTrue(breakpoint.verified, 'breakpoint verification mismatch: verified')
                 assert.equal(breakpoint.line, line, 'breakpoint verification mismatch: line')
                 await Promise.all([
@@ -124,10 +127,12 @@ describe('PHP Debug Adapter', () => {
             it('should support removing a breakpoint', async () => {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
                 // set two breakpoints
-                let breakpoints = (await client.setBreakpointsRequest({
-                    breakpoints: [{ line: 3 }, { line: 5 }],
-                    source: { path: program },
-                })).body.breakpoints
+                let breakpoints = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line: 3 }, { line: 5 }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints
                 assert.lengthOf(breakpoints, 2)
                 assert.isTrue(breakpoints[0].verified, 'breakpoint verification mismatch: verified')
                 assert.equal(breakpoints[0].line, 3, 'breakpoint verification mismatch: line')
@@ -139,10 +144,12 @@ describe('PHP Debug Adapter', () => {
                     client.configurationDoneRequest(),
                 ])
                 // remove second
-                breakpoints = (await client.setBreakpointsRequest({
-                    breakpoints: [{ line: 3 }],
-                    source: { path: program },
-                })).body.breakpoints
+                breakpoints = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line: 3 }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints
                 assert.lengthOf(breakpoints, 1)
                 assert.isTrue(breakpoints[0].verified, 'breakpoint verification mismatch: verified')
                 assert.equal(breakpoints[0].line, 3, 'breakpoint verification mismatch: line')
@@ -193,7 +200,7 @@ describe('PHP Debug Adapter', () => {
             })
 
             // support for stopping on "*" was added in 2.3.0
-            if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
+            if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
                 it('should support stopping on everything', async () => {
                     await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
                     await client.setExceptionBreakpointsRequest({ filters: ['*'] })
@@ -243,9 +250,11 @@ describe('PHP Debug Adapter', () => {
                 async function getErrorScope(): Promise<ErrorScope> {
                     const frameId = (await client.stackTraceRequest({ threadId: threadId! })).body.stackFrames[0].id
                     const errorScope = (await client.scopesRequest({ frameId })).body.scopes[0]
-                    const variables = (await client.variablesRequest({
-                        variablesReference: errorScope.variablesReference,
-                    })).body.variables
+                    const variables = (
+                        await client.variablesRequest({
+                            variablesReference: errorScope.variablesReference,
+                        })
+                    ).body.variables
                     const errorInfo: ErrorScope = { name: errorScope.name }
                     const type = variables.find(variable => variable.name === 'type')
                     if (type) {
@@ -266,7 +275,7 @@ describe('PHP Debug Adapter', () => {
                     type: 'Notice',
                     message: '"Undefined index: undefined_index"',
                 }
-                if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
+                if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
                     expectedErrorScope.code = '8'
                 }
                 assert.deepEqual(await getErrorScope(), expectedErrorScope)
@@ -276,7 +285,7 @@ describe('PHP Debug Adapter', () => {
                     type: 'Warning',
                     message: '"Illegal offset type"',
                 }
-                if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
+                if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
                     expectedErrorScope.code = '2'
                 }
                 assert.deepEqual(await getErrorScope(), expectedErrorScope)
@@ -290,7 +299,7 @@ describe('PHP Debug Adapter', () => {
                 const fatalErrorScope = await getErrorScope()
                 assert.propertyVal(fatalErrorScope, 'name', 'Fatal error')
                 assert.propertyVal(fatalErrorScope, 'type', 'Fatal error')
-                assert.match(fatalErrorScope.message!, /^"Uncaught Exception/i)
+                assert.match(fatalErrorScope.message!, /^"uncaught exception/i)
                 assert.match(fatalErrorScope.message!, /this is an exception/)
                 assert.match(fatalErrorScope.message!, /"$/)
             })
@@ -301,32 +310,38 @@ describe('PHP Debug Adapter', () => {
 
             it('should stop on a conditional breakpoint when condition is true', async () => {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
-                const bp = (await client.setBreakpointsRequest({
-                    breakpoints: [{ line: 10, condition: '$anInt === 123' }],
-                    source: { path: program },
-                })).body.breakpoints[0]
-                assert.equal(bp.verified, true, 'breakpoint verification mismatch: verified')
-                assert.equal(bp.line, 10, 'breakpoint verification mismatch: line')
+                const breakpoint = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line: 10, condition: '$anInt === 123' }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints[0]
+                assert.equal(breakpoint.verified, true, 'breakpoint verification mismatch: verified')
+                assert.equal(breakpoint.line, 10, 'breakpoint verification mismatch: line')
                 const [, { frame }] = await Promise.all([
                     client.configurationDoneRequest(),
                     assertStoppedLocation('breakpoint', program, 10),
                 ])
-                const result = (await client.evaluateRequest({
-                    context: 'watch',
-                    frameId: frame.id,
-                    expression: '$anInt',
-                })).body.result
+                const result = (
+                    await client.evaluateRequest({
+                        context: 'watch',
+                        frameId: frame.id,
+                        expression: '$anInt',
+                    })
+                ).body.result
                 assert.equal(result, '123')
             })
 
             it('should not stop on a conditional breakpoint when condition is false', async () => {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
-                const bp = (await client.setBreakpointsRequest({
-                    breakpoints: [{ line: 10, condition: '$anInt !== 123' }],
-                    source: { path: program },
-                })).body.breakpoints[0]
-                assert.equal(bp.verified, true, 'breakpoint verification mismatch: verified')
-                assert.equal(bp.line, 10, 'breakpoint verification mismatch: line')
+                const breakpoint = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line: 10, condition: '$anInt !== 123' }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints[0]
+                assert.equal(breakpoint.verified, true, 'breakpoint verification mismatch: verified')
+                assert.equal(breakpoint.line, 10, 'breakpoint verification mismatch: line')
                 await Promise.all([client.configurationDoneRequest(), client.waitForEvent('terminated')])
             })
         })
@@ -337,9 +352,11 @@ describe('PHP Debug Adapter', () => {
             it('should stop on a function breakpoint', async () => {
                 await client.launch({ program })
                 await client.waitForEvent('initialized')
-                const breakpoint = (await client.setFunctionBreakpointsRequest({
-                    breakpoints: [{ name: 'a_function' }],
-                })).body.breakpoints[0]
+                const breakpoint = (
+                    await client.setFunctionBreakpointsRequest({
+                        breakpoints: [{ name: 'a_function' }],
+                    })
+                ).body.breakpoints[0]
                 assert.strictEqual(breakpoint.verified, true)
                 await Promise.all([client.configurationDoneRequest(), assertStoppedLocation('breakpoint', program, 5)])
             })
@@ -380,7 +397,7 @@ describe('PHP Debug Adapter', () => {
             assert.isDefined(localScope, 'Locals')
             assert.isDefined(superglobalsScope, 'Superglobals')
             // support for user defined constants was added in 2.3.0
-            if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
+            if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
                 assert.isDefined(constantsScope, 'User defined constants')
             }
         })
@@ -393,7 +410,7 @@ describe('PHP Debug Adapter', () => {
                     .body.variables
             })
 
-            it('should report local scalar variables correctly', async () => {
+            it('should report local scalar variables correctly', () => {
                 const variables: { [name: string]: string } = Object.create(null)
                 for (const variable of localVariables) {
                     variables[variable.name] = variable.value
@@ -434,9 +451,11 @@ describe('PHP Debug Adapter', () => {
                 assert.isDefined(aLargeArray)
                 assert.propertyVal(aLargeArray!, 'value', 'array(100)')
                 assert.property(aLargeArray!, 'variablesReference')
-                const largeArrayItems = (await client.variablesRequest({
-                    variablesReference: aLargeArray!.variablesReference,
-                })).body.variables
+                const largeArrayItems = (
+                    await client.variablesRequest({
+                        variablesReference: aLargeArray!.variablesReference,
+                    })
+                ).body.variables
                 assert.lengthOf(largeArrayItems, 100)
                 assert.propertyVal(largeArrayItems[0], 'name', '0')
                 assert.propertyVal(largeArrayItems[0], 'value', '"test"')
@@ -449,9 +468,11 @@ describe('PHP Debug Adapter', () => {
                 assert.isDefined(arrayWithSpaceKey)
                 assert.propertyVal(arrayWithSpaceKey!, 'value', 'array(1)')
                 assert.property(arrayWithSpaceKey!, 'variablesReference')
-                const arrayWithSpaceKeyItems = (await client.variablesRequest({
-                    variablesReference: arrayWithSpaceKey!.variablesReference,
-                })).body.variables
+                const arrayWithSpaceKeyItems = (
+                    await client.variablesRequest({
+                        variablesReference: arrayWithSpaceKey!.variablesReference,
+                    })
+                ).body.variables
                 assert.lengthOf(arrayWithSpaceKeyItems, 1)
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'name', 'space key')
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'value', '1')
@@ -459,11 +480,13 @@ describe('PHP Debug Adapter', () => {
         })
 
         // support for user defined constants was added in 2.3.0
-        if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
+        if (!process.env.XDEBUG_VERSION || semver.gte(process.env.XDEBUG_VERSION, '2.3.0')) {
             it('should report user defined constants correctly', async () => {
-                const constants = (await client.variablesRequest({
-                    variablesReference: constantsScope!.variablesReference,
-                })).body.variables
+                const constants = (
+                    await client.variablesRequest({
+                        variablesReference: constantsScope!.variablesReference,
+                    })
+                ).body.variables
                 assert.lengthOf(constants, 1)
                 assert.propertyVal(constants[0], 'name', 'TEST_CONSTANT')
                 assert.propertyVal(constants[0], 'value', '123')

@@ -8,20 +8,19 @@ const ENCODING = 'iso-8859-1'
 /** The first packet we receive from XDebug. Returned by waitForInitPacket() */
 export class InitPacket {
     /** The file that was requested as a file:// URI */
-    fileUri: string
+    public fileUri: string
     /** GDGP version (1.0) */
-    protocolVersion: string
+    public protocolVersion: string
     /** language being debugged (PHP) */
-    language: string
+    public language: string
     /** an IDE key, by default the PC name */
-    ideKey: string
+    public ideKey: string
     /** a reference to the connection this packet was received from */
-    connection: Connection
+    public connection: Connection
     /** the version of XDebug */
-    engineVersion: string
+    public engineVersion: string
     /**
-     * @param  {XMLDocument} document - An XML document to read from
-     * @param  {Connection} connection
+     * @param document - An XML document to read from
      */
     constructor(document: XMLDocument, connection: Connection) {
         const documentElement = document.documentElement
@@ -29,14 +28,14 @@ export class InitPacket {
         this.language = documentElement.getAttribute('language')!
         this.protocolVersion = documentElement.getAttribute('protocol_version')!
         this.ideKey = documentElement.getAttribute('idekey')!
-        this.engineVersion = documentElement.getElementsByTagName('engine')[0].getAttribute('version')!
+        this.engineVersion = documentElement.querySelectorAll('engine')[0].getAttribute('version')!
         this.connection = connection
     }
 }
 
 /** Error class for errors returned from XDebug */
 export class XDebugError extends Error {
-    code: number
+    public code: number
     constructor(message: string, code: number) {
         super(message)
         this.code = code
@@ -48,26 +47,26 @@ export class XDebugError extends Error {
 /** The base class for all XDebug responses to commands executed on a connection */
 export class Response {
     /** A unique transaction ID that matches the one in the request */
-    transactionId: number
+    public transactionId: number
     /** The command that this is an answer for */
-    command: string
+    public command: string
     /** The connection this response was received from */
-    connection: Connection
+    public connection: Connection
     /**
      * contructs a new Response object from an XML document.
      * If there is an error child node, an exception is thrown with the appropiate code and message.
-     * @param  {XMLDocument} document - An XML document to read from
-     * @param  {Connection} connection
+     *
+     * @param document - An XML document to read from
      */
     constructor(document: XMLDocument, connection: Connection) {
         const documentElement = document.documentElement
         if (documentElement.firstChild && documentElement.firstChild.nodeName === 'error') {
-            const errorNode = <Element>documentElement.firstChild
-            const code = parseInt(errorNode.getAttribute('code')!)
+            const errorNode = documentElement.firstChild as Element
+            const code = parseInt(errorNode.getAttribute('code')!, 10)
             const message = errorNode.textContent!
             throw new XDebugError(message, code)
         }
-        this.transactionId = parseInt(documentElement.getAttribute('transaction_id')!)
+        this.transactionId = parseInt(documentElement.getAttribute('transaction_id')!, 10)
         this.command = documentElement.getAttribute('command')!
         this.connection = connection
     }
@@ -76,15 +75,15 @@ export class Response {
 /** A response to the status command */
 export class StatusResponse extends Response {
     /** The current status. Can be 'break', ... */
-    status: string
+    public status: string
     /** The reason for being in this status, can be 'ok', ... */
-    reason: string
+    public reason: string
     /** Contains the file URI if the status is 'break' */
-    fileUri: string
+    public fileUri: string
     /** Contains the line number if the status is 'break' */
-    line: number
+    public line: number
     /** Contains info about the exception if the reason for breaking was an exception */
-    exception: {
+    public exception: {
         name: string
         message: string
         code?: number
@@ -95,21 +94,21 @@ export class StatusResponse extends Response {
         this.status = documentElement.getAttribute('status')!
         this.reason = documentElement.getAttribute('reason')!
         if (documentElement.hasChildNodes()) {
-            const messageNode = <Element>documentElement.firstChild
+            const messageNode = documentElement.firstChild as Element
             if (messageNode.hasAttribute('exception')) {
                 this.exception = {
                     name: messageNode.getAttribute('exception')!,
                     message: messageNode.textContent!,
                 }
                 if (messageNode.hasAttribute('code')) {
-                    this.exception.code = parseInt(messageNode.getAttribute('code')!)
+                    this.exception.code = parseInt(messageNode.getAttribute('code')!, 10)
                 }
             }
             if (messageNode.hasAttribute('filename')) {
                 this.fileUri = messageNode.getAttribute('filename')!
             }
             if (messageNode.hasAttribute('lineno')) {
-                this.line = parseInt(messageNode.getAttribute('lineno')!)
+                this.line = parseInt(messageNode.getAttribute('lineno')!, 10)
             }
         }
     }
@@ -121,13 +120,13 @@ export type BreakpointState = 'enabled' | 'disabled'
 /** Abstract base class for all breakpoints */
 export abstract class Breakpoint {
     /** Unique ID which is used for modifying the breakpoint (only when received through breakpoint_list) */
-    id: number
+    public id!: number
     /** The type of the breakpoint: line, call, return, exception, conditional or watch */
-    type: BreakpointType
+    public type: BreakpointType
     /** State of the breakpoint: enabled, disabled */
-    state: BreakpointState
+    public state!: BreakpointState
     /** The connection this breakpoint is set on */
-    connection: Connection
+    public connection!: Connection
     /** dynamically detects the type of breakpoint and returns the appropiate object */
     public static fromXml(breakpointNode: Element, connection: Connection): Breakpoint {
         switch (breakpointNode.getAttribute('type')) {
@@ -140,53 +139,53 @@ export abstract class Breakpoint {
             case 'call':
                 return new CallBreakpoint(breakpointNode, connection)
             default:
-                throw new Error(`Invalid type ${breakpointNode.getAttribute('type')}`)
+                throw new Error(`Invalid type ${breakpointNode.getAttribute('type')!}`)
         }
     }
     /** Constructs a breakpoint object from an XML node from a XDebug response */
     constructor(breakpointNode: Element, connection: Connection)
     /** To create a new breakpoint in derived classes */
     constructor(type: BreakpointType)
-    constructor() {
-        if (typeof arguments[0] === 'object') {
+    constructor(...args: any[]) {
+        if (typeof args[0] === 'object') {
             // from XML
-            const breakpointNode: Element = arguments[0]
-            this.connection = arguments[1]
-            this.type = <BreakpointType>breakpointNode.getAttribute('type')
-            this.id = parseInt(breakpointNode.getAttribute('id')!)
-            this.state = <BreakpointState>breakpointNode.getAttribute('state')
+            const breakpointNode: Element = args[0]
+            this.connection = args[1]
+            this.type = breakpointNode.getAttribute('type') as BreakpointType
+            this.id = parseInt(breakpointNode.getAttribute('id')!, 10)
+            this.state = breakpointNode.getAttribute('state') as BreakpointState
         } else {
-            this.type = arguments[0]
+            this.type = args[0]
         }
     }
     /** Removes the breakpoint by sending a breakpoint_remove command */
-    public remove() {
-        return this.connection.sendBreakpointRemoveCommand(this)
+    public remove(): Promise<Response> {
+        return this.connection!.sendBreakpointRemoveCommand(this)
     }
 }
 
 /** class for line breakpoints. Returned from a breakpoint_list or passed to sendBreakpointSetCommand */
 export class LineBreakpoint extends Breakpoint {
     /** File URI of the file in which to break */
-    fileUri: string
+    public fileUri: string
     /** Line to break on */
-    line: number
+    public line: number
     /** constructs a line breakpoint from an XML node */
     constructor(breakpointNode: Element, connection: Connection)
     /** contructs a line breakpoint for passing to sendSetBreakpointCommand */
     constructor(fileUri: string, line: number)
-    constructor() {
-        if (typeof arguments[0] === 'object') {
-            const breakpointNode: Element = arguments[0]
-            const connection: Connection = arguments[1]
+    constructor(...args: any[]) {
+        if (typeof args[0] === 'object') {
+            const breakpointNode: Element = args[0]
+            const connection: Connection = args[1]
             super(breakpointNode, connection)
-            this.line = parseInt(breakpointNode.getAttribute('lineno')!)
+            this.line = parseInt(breakpointNode.getAttribute('lineno')!, 10)
             this.fileUri = breakpointNode.getAttribute('filename')!
         } else {
             // construct from arguments
             super('line')
-            this.fileUri = arguments[0]
-            this.line = arguments[1]
+            this.fileUri = args[0]
+            this.line = args[1]
         }
     }
 }
@@ -194,25 +193,25 @@ export class LineBreakpoint extends Breakpoint {
 /** class for call breakpoints. Returned from a breakpoint_list or passed to sendBreakpointSetCommand */
 export class CallBreakpoint extends Breakpoint {
     /** the function to break on */
-    fn: string
+    public fn: string
     /** optional expression that must evaluate to true */
-    expression: string
+    public expression: string
     /** constructs a call breakpoint from an XML node */
     constructor(breakpointNode: Element, connection: Connection)
     /** contructs a call breakpoint for passing to sendSetBreakpointCommand */
     constructor(fn: string, expression?: string)
-    constructor() {
-        if (typeof arguments[0] === 'object') {
-            const breakpointNode: Element = arguments[0]
-            const connection: Connection = arguments[1]
+    constructor(...args: any[]) {
+        if (typeof args[0] === 'object') {
+            const breakpointNode: Element = args[0]
+            const connection: Connection = args[1]
             super(breakpointNode, connection)
             this.fn = breakpointNode.getAttribute('function')!
             this.expression = breakpointNode.getAttribute('expression')! // Base64 encoded?
         } else {
             // construct from arguments
             super('call')
-            this.fn = arguments[0]
-            this.expression = arguments[1]
+            this.fn = args[0]
+            this.expression = args[1]
         }
     }
 }
@@ -220,22 +219,22 @@ export class CallBreakpoint extends Breakpoint {
 /** class for exception breakpoints. Returned from a breakpoint_list or passed to sendBreakpointSetCommand */
 export class ExceptionBreakpoint extends Breakpoint {
     /** The Exception name to break on. Can also contain wildcards. */
-    exception: string
+    public exception: string
     /** Constructs a breakpoint object from an XML node from a XDebug response */
     constructor(breakpointNode: Element, connection: Connection)
     /** Constructs a breakpoint for passing it to sendSetBreakpointCommand */
     constructor(exception: string)
-    constructor() {
-        if (typeof arguments[0] === 'object') {
+    constructor(...args: any[]) {
+        if (typeof args[0] === 'object') {
             // from XML
-            const breakpointNode: Element = arguments[0]
-            const connection: Connection = arguments[1]
+            const breakpointNode: Element = args[0]
+            const connection: Connection = args[1]
             super(breakpointNode, connection)
             this.exception = breakpointNode.getAttribute('exception')!
         } else {
             // from arguments
             super('exception')
-            this.exception = arguments[0]
+            this.exception = args[0]
         }
     }
 }
@@ -243,53 +242,50 @@ export class ExceptionBreakpoint extends Breakpoint {
 /** class for conditional breakpoints. Returned from a breakpoint_list or passed to sendBreakpointSetCommand */
 export class ConditionalBreakpoint extends Breakpoint {
     /** File URI */
-    fileUri: string
+    public fileUri!: string
     /** Line (optional) */
-    line: number
+    public line?: number
     /** The PHP expression under which to break on */
-    expression: string
+    public expression: string
     /** Constructs a breakpoint object from an XML node from a XDebug response */
     constructor(breakpointNode: Element, connection: Connection)
     /** Contructs a breakpoint object for passing to sendSetBreakpointCommand */
     constructor(expression: string, fileUri: string, line?: number)
-    constructor() {
-        if (typeof arguments[0] === 'object') {
+    constructor(...args: any[]) {
+        if (typeof args[0] === 'object') {
             // from XML
-            const breakpointNode: Element = arguments[0]
-            const connection: Connection = arguments[1]
+            const breakpointNode: Element = args[0]
+            const connection: Connection = args[1]
             super(breakpointNode, connection)
             this.expression = breakpointNode.getAttribute('expression')! // Base64 encoded?
         } else {
             // from arguments
             super('conditional')
-            this.expression = arguments[0]
-            this.fileUri = arguments[1]
-            this.line = arguments[2]
+            this.expression = args[0]
+            this.fileUri = args[1]
+            this.line = args[2]
         }
     }
 }
 
 /** Response to a breakpoint_set command */
 export class BreakpointSetResponse extends Response {
-    breakpointId: number
+    public breakpointId: number
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection)
-        this.breakpointId = parseInt(document.documentElement.getAttribute('id')!)
+        this.breakpointId = parseInt(document.documentElement.getAttribute('id')!, 10)
     }
 }
 
 /** The response to a breakpoint_list command */
 export class BreakpointListResponse extends Response {
     /** The currently set breakpoints for this connection */
-    breakpoints: Breakpoint[]
-    /**
-     * @param  {XMLDocument} document
-     * @param  {Connection} connection
-     */
+    public breakpoints: Breakpoint[]
+
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection)
-        this.breakpoints = Array.from(document.documentElement.childNodes).map((breakpointNode: Element) =>
-            Breakpoint.fromXml(breakpointNode, connection)
+        this.breakpoints = [...document.documentElement.childNodes].map(breakpointNode =>
+            Breakpoint.fromXml(breakpointNode as Element, connection)
         )
     }
 }
@@ -297,27 +293,23 @@ export class BreakpointListResponse extends Response {
 /** One stackframe inside a stacktrace retrieved through stack_get */
 export class StackFrame {
     /** The UI-friendly name of this stack frame, like a function name or "{main}" */
-    name: string
+    public name: string
     /** The type of stack frame. Valid values are "file" and "eval" */
-    type: string
+    public type: string
     /** The file URI where the stackframe was entered */
-    fileUri: string
+    public fileUri: string
     /** The line number inside file where the stackframe was entered */
-    line: number
+    public line: number
     /** The level (index) inside the stack trace at which the stack frame receides */
-    level: number
+    public level: number
     /** The connection this stackframe belongs to */
-    connection: Connection
-    /**
-     * @param  {Element} stackFrameNode
-     * @param  {Connection} connection
-     */
+    public connection: Connection
     constructor(stackFrameNode: Element, connection: Connection) {
         this.name = stackFrameNode.getAttribute('where')!
         this.fileUri = stackFrameNode.getAttribute('filename')!
         this.type = stackFrameNode.getAttribute('type')!
-        this.line = parseInt(stackFrameNode.getAttribute('lineno')!)
-        this.level = parseInt(stackFrameNode.getAttribute('level')!)
+        this.line = parseInt(stackFrameNode.getAttribute('lineno')!, 10)
+        this.level = parseInt(stackFrameNode.getAttribute('level')!, 10)
         this.connection = connection
     }
     /** Returns the available contexts (scopes, such as "Local" and "Superglobals") by doing a context_names command */
@@ -329,47 +321,38 @@ export class StackFrame {
 /** The response to a stack_get command */
 export class StackGetResponse extends Response {
     /** The current stack trace */
-    stack: StackFrame[]
-    /**
-     * @param  {XMLDocument} document
-     * @param  {Connection} connection
-     */
+    public stack: StackFrame[]
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection)
-        this.stack = Array.from(document.documentElement.childNodes).map(
-            (stackFrameNode: Element) => new StackFrame(stackFrameNode, connection)
+        this.stack = [...document.documentElement.childNodes].map(
+            stackFrameNode => new StackFrame(stackFrameNode as Element, connection)
         )
     }
 }
 
 export class SourceResponse extends Response {
-    source: string
+    public source: string
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection)
-        this.source = new Buffer(document.documentElement.textContent!, 'base64').toString()
+        this.source = Buffer.from(document.documentElement.textContent!, 'base64').toString()
     }
 }
 
 /** A context inside a stack frame, like "Local" or "Superglobals" */
 export class Context {
     /** Unique id that is used for further commands */
-    id: number
+    public id: number
     /** UI-friendly name like "Local" or "Superglobals" */
-    name: string
+    public name: string
     /** The stackframe this context belongs to */
-    stackFrame: StackFrame
-    /**
-     * @param  {Element} contextNode
-     * @param  {StackFrame} stackFrame
-     */
+    public stackFrame: StackFrame
     constructor(contextNode: Element, stackFrame: StackFrame) {
-        this.id = parseInt(contextNode.getAttribute('id')!)
+        this.id = parseInt(contextNode.getAttribute('id')!, 10)
         this.name = contextNode.getAttribute('name')!
         this.stackFrame = stackFrame
     }
     /**
      * Returns the properties (variables) inside this context by doing a context_get command
-     * @returns Promise.<Property[]>
      */
     public async getProperties(): Promise<Property[]> {
         return (await this.stackFrame.connection.sendContextGetCommand(this)).properties
@@ -379,15 +362,11 @@ export class Context {
 /** Response to a context_names command */
 export class ContextNamesResponse extends Response {
     /** the available contexts inside the given stack frame */
-    contexts: Context[]
-    /**
-     * @param  {XMLDocument} document
-     * @param  {StackFrame} stackFrame
-     */
+    public contexts: Context[]
     constructor(document: XMLDocument, stackFrame: StackFrame) {
         super(document, stackFrame.connection)
-        this.contexts = Array.from(document.documentElement.childNodes).map(
-            (contextNode: Element) => new Context(contextNode, stackFrame)
+        this.contexts = [...document.documentElement.childNodes].map(
+            contextNode => new Context(contextNode as Element, stackFrame)
         )
     }
 }
@@ -395,19 +374,19 @@ export class ContextNamesResponse extends Response {
 /** The parent for properties inside a scope and properties retrieved through eval requests */
 export abstract class BaseProperty {
     /** the short name of the property */
-    name: string
+    public name!: string
     /** the data type of the variable. Can be string, int, float, bool, array, object, uninitialized, null or resource  */
-    type: string
+    public type: string
     /** the class if the type is object */
-    class: string
+    public class?: string
     /** a boolean indicating wether children of this property can be received or not. This is true for arrays and objects. */
-    hasChildren: boolean
+    public hasChildren: boolean
     /** the number of children this property has, if any. Useful for showing array length. */
-    numberOfChildren: number
+    public numberOfChildren?: number
     /** the value of the property for primitive types */
-    value: string
+    public value?: string
     /** children that were already included in the response */
-    children: BaseProperty[]
+    public children?: BaseProperty[]
 
     constructor(propertyNode: Element) {
         if (propertyNode.hasAttribute('name')) {
@@ -417,13 +396,13 @@ export abstract class BaseProperty {
         if (propertyNode.hasAttribute('classname')) {
             this.class = propertyNode.getAttribute('classname')!
         }
-        this.hasChildren = !!parseInt(propertyNode.getAttribute('children')!)
+        this.hasChildren = !!parseInt(propertyNode.getAttribute('children')!, 10)
         if (this.hasChildren) {
-            this.numberOfChildren = parseInt(propertyNode.getAttribute('numchildren')!)
+            this.numberOfChildren = parseInt(propertyNode.getAttribute('numchildren')!, 10)
         } else {
             const encoding = propertyNode.getAttribute('encoding')
             if (encoding) {
-                this.value = iconv.encode(propertyNode.textContent!, encoding) + ''
+                this.value = iconv.encode(propertyNode.textContent!, encoding).toString()
             } else {
                 this.value = propertyNode.textContent!
             }
@@ -434,29 +413,24 @@ export abstract class BaseProperty {
 /** a property (variable) inside a context or a child of another property */
 export class Property extends BaseProperty {
     /** the fully-qualified name of the property inside the context */
-    fullName: string
+    public fullName: string
     /** the context this property belongs to */
-    context: Context
+    public context: Context
 
-    children: Property[]
+    public children?: Property[]
 
-    /**
-     * @param  {Element} propertyNode
-     * @param  {Context} context
-     */
     constructor(propertyNode: Element, context: Context) {
         super(propertyNode)
         this.fullName = propertyNode.getAttribute('fullname')!
         this.context = context
         if (this.hasChildren) {
-            this.children = Array.from(propertyNode.childNodes).map(
-                (propertyNode: Element) => new Property(propertyNode, context)
+            this.children = [...propertyNode.childNodes].map(
+                propertyNode => new Property(propertyNode as Element, context)
             )
         }
     }
     /**
-     * Returns the child properties of this property by doing another property_get
-     * @returns Promise.<Property[]>
+     * Returns the child properties of this property by doing another `property_get`
      */
     public async getChildren(): Promise<Property[]> {
         if (!this.hasChildren) {
@@ -469,15 +443,11 @@ export class Property extends BaseProperty {
 /** The response to a context_get command */
 export class ContextGetResponse extends Response {
     /** the available properties inside the context */
-    properties: Property[]
-    /**
-     * @param  {XMLDocument} document
-     * @param  {Context} context
-     */
+    public properties: Property[]
     constructor(document: XMLDocument, context: Context) {
         super(document, context.stackFrame.connection)
-        this.properties = Array.from(document.documentElement.childNodes).map(
-            (propertyNode: Element) => new Property(propertyNode, context)
+        this.properties = [...document.documentElement.childNodes].map(
+            propertyNode => new Property(propertyNode as Element, context)
         )
     }
 }
@@ -485,27 +455,24 @@ export class ContextGetResponse extends Response {
 /** The response to a property_get command */
 export class PropertyGetResponse extends Response {
     /** the children of the given property */
-    children: Property[]
-    /**
-     * @param  {XMLDocument} document
-     * @param  {Property} property
-     */
+    public children: Property[]
+
     constructor(document: XMLDocument, property: Property) {
         super(document, property.context.stackFrame.connection)
-        this.children = Array.from(document.documentElement.firstChild!.childNodes).map(
-            (propertyNode: Element) => new Property(propertyNode, property.context)
+        this.children = [...document.documentElement.firstChild!.childNodes].map(
+            propertyNode => new Property(propertyNode as Element, property.context)
         )
     }
 }
 
 /** class for properties returned from eval commands. These don't have a full name or an ID, but have all children already inlined. */
 export class EvalResultProperty extends BaseProperty {
-    children: EvalResultProperty[]
+    public children?: EvalResultProperty[]
     constructor(propertyNode: Element) {
         super(propertyNode)
         if (this.hasChildren) {
-            this.children = Array.from(propertyNode.childNodes).map(
-                (propertyNode: Element) => new EvalResultProperty(propertyNode)
+            this.children = [...propertyNode.childNodes].map(
+                propertyNode => new EvalResultProperty(propertyNode as Element)
             )
         }
     }
@@ -514,11 +481,11 @@ export class EvalResultProperty extends BaseProperty {
 /** The response to an eval command */
 export class EvalResponse extends Response {
     /** the result of the expression, if there was any */
-    result: EvalResultProperty
+    public result?: EvalResultProperty
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection)
         if (document.documentElement.hasChildNodes()) {
-            this.result = new EvalResultProperty(<Element>document.documentElement.firstChild)
+            this.result = new EvalResultProperty(document.documentElement.firstChild as Element)
         }
     }
 }
@@ -526,7 +493,7 @@ export class EvalResponse extends Response {
 /** The response to an feature_set command */
 export class FeatureSetResponse extends Response {
     /** the feature that was set */
-    feature: string
+    public feature: string
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection)
         this.feature = document.documentElement.getAttribute('feature')!
@@ -569,10 +536,10 @@ export class Connection extends DbgpConnection {
     private _initPromise: Promise<InitPacket>
 
     /** resolves the init promise */
-    private _initPromiseResolveFn: (initPackt: InitPacket) => any
+    private _initPromiseResolveFn!: (initPackt: InitPacket) => any
 
     /** rejects the init promise */
-    private _initPromiseRejectFn: (err?: Error) => any
+    private _initPromiseRejectFn!: (error?: Error) => any
 
     /**
      * a map from transaction IDs to pending commands that have been sent to XDebug and are awaiting a response.
@@ -609,7 +576,7 @@ export class Connection extends DbgpConnection {
             if (response.documentElement.nodeName === 'init') {
                 this._initPromiseResolveFn(new InitPacket(response, this))
             } else {
-                const transactionId = parseInt(response.documentElement.getAttribute('transaction_id')!)
+                const transactionId = parseInt(response.documentElement.getAttribute('transaction_id')!, 10)
                 if (this._pendingCommands.has(transactionId)) {
                     const command = this._pendingCommands.get(transactionId)!
                     this._pendingCommands.delete(transactionId)
@@ -655,6 +622,7 @@ export class Connection extends DbgpConnection {
     /** Adds the given command to the queue, or executes immediately if no commands are currently being processed. */
     private _enqueue(command: Command): void {
         if (this._commandQueue.length === 0 && this._pendingCommands.size === 0) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             this._executeCommand(command)
         } else {
             this._commandQueue.push(command)
@@ -668,12 +636,12 @@ export class Connection extends DbgpConnection {
      */
     private async _executeCommand(command: Command): Promise<void> {
         const transactionId = this._transactionCounter++
-        let commandString = command.name + ' -i ' + transactionId
+        let commandString = `${command.name} -i ${transactionId}`
         if (command.args) {
             commandString += ' ' + command.args
         }
         if (command.data) {
-            commandString += ' -- ' + new Buffer(command.data).toString('base64')
+            commandString += ' -- ' + Buffer.from(command.data).toString('base64')
         }
         commandString += '\0'
         const data = iconv.encode(commandString, ENCODING)
@@ -682,7 +650,7 @@ export class Connection extends DbgpConnection {
         await this.write(data)
     }
 
-    public close() {
+    public close(): Promise<void> {
         this._commandQueue = []
         this._initPromiseRejectFn(new Error('connection closed'))
         return super.close()
@@ -700,41 +668,41 @@ export class Connection extends DbgpConnection {
     /**
      * Sends a feature_get command
      * feature can be one of
-     *  - language_supports_threads
-     *  - language_name
-     *  - language_version
-     *  - encoding
-     *  - protocol_version
-     *  - supports_async
-     *  - data_encoding
-     *  - breakpoint_languages
-     *  - breakpoint_types
-     *  - multiple_sessions
-     *  - max_children
-     *  - max_data
-     *  - max_depth
-     *  - extended_properties
+     * - language_supports_threads
+     * - language_name
+     * - language_version
+     * - encoding
+     * - protocol_version
+     * - supports_async
+     * - data_encoding
+     * - breakpoint_languages
+     * - breakpoint_types
+     * - multiple_sessions
+     * - max_children
+     * - max_data
+     * - max_depth
+     * - extended_properties
      * optional features:
-     *  - supports_postmortem
-     *  - show_hidden
-     *  - notify_ok
+     * - supports_postmortem
+     * - show_hidden
+     * - notify_ok
      * or any command.
      */
     public async sendFeatureGetCommand(feature: string): Promise<XMLDocument> {
-        return await this._enqueueCommand('feature_get', `-n feature`)
+        return this._enqueueCommand('feature_get', '-n feature')
     }
 
     /**
      * Sends a feature_set command
      * feature can be one of
-     *  - multiple_sessions
-     *  - max_children
-     *  - max_data
-     *  - max_depth
-     *  - extended_properties
+     * - multiple_sessions
+     * - max_children
+     * - max_data
+     * - max_depth
+     * - extended_properties
      * optional features:
-     *  - show_hidden
-     *  - notify_ok
+     * - show_hidden
+     * - notify_ok
      */
     public async sendFeatureSetCommand(feature: string, value: string | number): Promise<FeatureSetResponse> {
         return new FeatureSetResponse(await this._enqueueCommand('feature_set', `-n ${feature} -v ${value}`), this)
@@ -744,7 +712,8 @@ export class Connection extends DbgpConnection {
 
     /**
      * Sends a breakpoint_set command that sets a breakpoint.
-     * @param {Breakpoint} breakpoint - an instance of LineBreakpoint, ConditionalBreakpoint or ExceptionBreakpoint
+     *
+     * @param breakpoint - an instance of LineBreakpoint, ConditionalBreakpoint or ExceptionBreakpoint
      * @returns Promise.<BreakpointSetResponse>
      */
     public async sendBreakpointSetCommand(breakpoint: Breakpoint): Promise<BreakpointSetResponse> {
