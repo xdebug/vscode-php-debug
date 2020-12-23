@@ -23,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: '14.15.3'
+          node-version: '14.15.3' # renovate:keep-up-to-date
       - name: Install npm dependencies
         run: npm ci
       - name: Prettier
@@ -63,7 +63,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: '14.15.3'
+          node-version: '14.15.3' # renovate:keep-up-to-date
       - name: Install npm dependencies
         run: npm ci
       - name: Build VS Code extension
