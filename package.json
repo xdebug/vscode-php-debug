@@ -125,7 +125,7 @@
     ],
     "timeout": 20000,
     "slow": 1000,
-    "retries": 2
+    "retries": 4
   },
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
