@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "file-url": "^2.0.2",
-    "iconv-lite": "^0.4.15",
+    "iconv-lite": "^0.4.24",
     "minimatch": "^3.0.4",
     "moment": "^2.17.1",
     "url-relative": "^1.0.0",
