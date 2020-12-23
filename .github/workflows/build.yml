@@ -12,12 +12,20 @@ jobs:
     strategy:
       matrix:
         include:
-          # Latest version
-          - { xdebug: xdebug-3.0.1, php: '8.0', os: ubuntu-18.04 } # renovate:keep-up-to-date
-          - { xdebug: xdebug-3.0.1, php: '8.0', os: windows-2019 } # renovate:keep-up-to-date
-          - { xdebug: xdebug-3.0.1, php: '8.0', os: macos-10.15 } # renovate:keep-up-to-date
+          # Latest versions
+          - xdebug: xdebug-3.0.1 # renovate:keep-up-to-date
+            php: '8.0' # renovate:keep-up-to-date
+            os: ubuntu-18.04
+          - xdebug: xdebug-3.0.1 # renovate:keep-up-to-date
+            php: '8.0' # renovate:keep-up-to-date
+            os: windows-2019
+          - xdebug: xdebug-3.0.1 # renovate:keep-up-to-date
+            php: '8.0' # renovate:keep-up-to-date
+            os: macos-10.15
           # Old versions
-          - { xdebug: xdebug-2.9.8, php: '7.4', os: ubuntu-18.04 }
+          - xdebug: xdebug-2.9.8
+            php: '7.4'
+            os: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - name: Setup Node.js
