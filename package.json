@@ -58,7 +58,7 @@
     "husky": "^0.14.3",
     "mocha": "^5.0.0",
     "nyc": "^15.1.0",
-    "prettier": "1.14.2",
+    "prettier": "1.19.1",
     "semantic-release": "^17.3.0",
     "semantic-release-vsce": "^3.0.1",
     "semver": "^5.7.1",
