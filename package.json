@@ -67,7 +67,7 @@
     "typescript": "^2.1.4",
     "validate-commit-msg": "^2.14.0",
     "vsce": "^1.28.0",
-    "vscode-debugadapter-testsupport": "^1.11.0"
+    "vscode-debugadapter-testsupport": "^1.43.0"
   },
   "release": {
     "branches": [
