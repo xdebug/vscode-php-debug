@@ -15,7 +15,7 @@
     "email": "felix.b@outlook.com"
   },
   "engines": {
-    "vscode": "^1.6.0",
+    "vscode": "^1.52.1",
     "node": "^14.0.0"
   },
   "icon": "images/logo.png",
@@ -34,42 +34,45 @@
     "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
   },
   "dependencies": {
-    "file-url": "^2.0.0",
-    "iconv-lite": "^0.4.15",
-    "minimatch": "^3.0.3",
-    "moment": "^2.17.1",
+    "file-url": "^3.0.0",
+    "iconv-lite": "^0.6.2",
+    "minimatch": "^3.0.4",
+    "moment": "^2.29.1",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
-    "vscode-debugadapter": "^1.11.0",
-    "vscode-debugprotocol": "^1.11.0",
-    "xmldom": "^0.1.22"
+    "vscode-debugadapter": "^1.43.0",
+    "vscode-debugprotocol": "^1.43.0",
+    "xmldom": "^0.1.31"
   },
   "devDependencies": {
-    "@types/chai": "4.0.6",
+    "@commitlint/cli": "^11.0.0",
+    "@commitlint/config-conventional": "^11.0.0",
+    "@types/chai": "4.2.14",
     "@types/chai-as-promised": "^7.1.0",
-    "@types/file-url": "^2.0.0",
-    "@types/minimatch": "^3.0.1",
-    "@types/mocha": "^2.2.44",
-    "@types/node": "7.0.32",
-    "@types/semver": "^5.4.0",
-    "@types/xmldom": "^0.1.29",
-    "chai": "^4.0.2",
+    "@types/minimatch": "^3.0.3",
+    "@types/mocha": "^8.2.0",
+    "@types/node": "^14.14.14",
+    "@types/semver": "^7.3.4",
+    "@types/xmldom": "^0.1.30",
+    "chai": "^4.2.0",
     "chai-as-promised": "^7.0.0",
-    "husky": "^0.14.3",
-    "mocha": "^5.0.0",
+    "husky": "^4.3.6",
+    "mocha": "^8.2.1",
     "nyc": "^15.1.0",
-    "prettier": "1.14.2",
+    "prettier": "2.2.1",
     "semantic-release": "^17.3.0",
     "semantic-release-vsce": "^3.0.1",
-    "semver": "^5.3.0",
-    "tslint": "^5.4.3",
-    "tslint-config-prettier": "^1.6.0",
-    "typescript": "^2.1.4",
-    "validate-commit-msg": "^2.14.0",
-    "vsce": "^1.28.0",
-    "vscode-debugadapter-testsupport": "^1.11.0"
+    "semver": "^7.3.4",
+    "tslint": "^5.20.1",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^4.1.3",
+    "vsce": "^1.83.0",
+    "vscode-debugadapter-testsupport": "^1.43.0"
   },
   "release": {
+    "branches": [
+      "main"
+    ],
     "verifyConditions": [
       "semantic-release-vsce",
       "@semantic-release/github"
@@ -86,11 +89,6 @@
       }
     ]
   },
-  "greenkeeper": {
-    "ignore": [
-      "@types/node"
-    ]
-  },
   "scripts": {
     "build": "tsc -p .",
     "watch": "tsc -w -p .",
@@ -100,8 +98,18 @@
     "lint": "npm run tslint && npm run prettier",
     "tslint": "tslint -c tslint.json 'src/**/*.ts'",
     "prettier": "prettier \"**/{*.json,*.yml,.*.yml,*.ts,.prettierrc,*.md}\" --write --list-different",
-    "semantic-release": "semantic-release",
-    "commitmsg": "validate-commit-msg"
+    "prettier-check": "npm run prettier -- --write=false",
+    "semantic-release": "semantic-release"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAM"
+    }
   },
   "nyc": {
     "include": [

@@ -204,7 +204,7 @@ class PhpDebugSession extends vscode.DebugSession {
         /** launches the script as CLI */
         const launchScript = async () => {
             // check if program exists
-            await new Promise((resolve, reject) =>
+            await new Promise<void>((resolve, reject) =>
                 fs.access(args.program!, fs.constants.F_OK, err => (err ? reject(err) : resolve()))
             )
             const runtimeArgs = args.runtimeArgs || []
@@ -219,10 +219,12 @@ class PhpDebugSession extends vscode.DebugSession {
                     [runtimeExecutable, ...runtimeArgs, args.program!, ...programArgs],
                     env
                 )
-                // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                script.on('exit', () => {
-                    this.sendEvent(new vscode.TerminatedEvent())
-                })
+                if (script) {
+                    // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
+                    script.on('exit', () => {
+                        this.sendEvent(new vscode.TerminatedEvent())
+                    })
+                }
             } else {
                 const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program!, ...programArgs], {
                     cwd,
@@ -247,7 +249,7 @@ class PhpDebugSession extends vscode.DebugSession {
         }
         /** sets up a TCP server to listen for XDebug connections */
         const createServer = () =>
-            new Promise((resolve, reject) => {
+            new Promise<void>((resolve, reject) => {
                 const server = (this._server = net.createServer())
                 server.on('connection', async (socket: net.Socket) => {
                     try {
@@ -270,6 +272,7 @@ class PhpDebugSession extends vscode.DebugSession {
                                         )
                                     )
                                 }
+                                this.sendEvent(new vscode.ContinuedEvent(connection.id, false))
                                 this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
                                 connection.close()
                                 this._connections.delete(connection.id)
@@ -312,11 +315,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendEvent(new vscode.OutputEvent(util.inspect(error) + '\n'))
                     this.sendErrorResponse(response, <Error>error)
                 })
-                server.listen(
-                    args.port || 9000,
-                    args.hostname,
-                    (error: NodeJS.ErrnoException) => (error ? reject(error) : resolve())
-                )
+                server.listen(args.port || 9000, args.hostname, () => resolve())
             })
         try {
             if (!args.noDebug) {

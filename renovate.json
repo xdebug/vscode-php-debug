@@ -1,0 +1,58 @@
+{
+  "extends": ["config:base"],
+  "timezone": "Europe/Berlin",
+  "rangeStrategy": "bump",
+  "semanticCommits": true,
+  "masterIssue": true,
+  "prHourlyLimit": 0,
+  "node": {
+    "supportPolicy": ["current"],
+    "major": {
+      "enabled": true
+    }
+  },
+  "regexManagers": [
+    {
+      "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
+      "matchStrings": ["xdebug: xdebug-(?<currentValue>\\S+).*# renovate:keep-up-to-date"],
+      "depNameTemplate": "xdebug",
+      "lookupNameTemplate": "xdebug/xdebug",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?<prerelease>\\w+)?$"
+    },
+    {
+      "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
+      "matchStrings": ["php: '(?<currentValue>[^']+)'.*# renovate:keep-up-to-date"],
+      "depNameTemplate": "php",
+      "lookupNameTemplate": "php/php-src",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?<prerelease>\\w+)?$"
+    },
+    {
+      "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
+      "matchStrings": ["node-version: '(?<currentValue>[^']+)'.*# renovate:keep-up-to-date"],
+      "depNameTemplate": "node",
+      "lookupNameTemplate": "nodejs/node",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "node"
+    }
+  ],
+  "packageRules": [
+    {
+      "packageNames": ["php"],
+      "extractVersion": "^php-(?<version>.*)$"
+    },
+    {
+      "packageNames": ["node"],
+      "extractVersion": "^v(?<version>.*)$",
+      "commitMessageTopic": "Node.js",
+      "major": {
+        "enabled": true
+      }
+    },
+    {
+      "packagePatterns": ["^vscode-debug"],
+      "groupName": "vscode-debug"
+    }
+  ]
+}

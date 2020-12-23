@@ -2,11 +2,11 @@
 
 $array = array('hello' => 'world');
 
-// Notice (undefined index)
-echo $array['undefined_index'];
+// Notice
+trigger_error("Test notice", E_USER_NOTICE);
 
-// Warning (illegal offset type)
-$array[array()] = 123;
+// Warning
+trigger_error("Test warning", E_USER_WARNING);
 
 // Exception
 throw new Exception('this is an exception');
