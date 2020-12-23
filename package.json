@@ -47,6 +47,7 @@
   "devDependencies": {
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/chai": "4.2.14",
     "@types/chai-as-promised": "^7.1.3",
     "@types/minimatch": "^3.0.3",
@@ -66,6 +67,8 @@
     "semantic-release": "^17.3.0",
     "semantic-release-vsce": "^3.0.1",
     "semver": "^7.3.4",
+    "source-map-support": "^0.5.19",
+    "ts-node": "^9.1.1",
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.1.3",
@@ -96,8 +99,8 @@
     "build": "tsc -p .",
     "watch": "tsc -w -p .",
     "start": "code testproject --extensionDevelopmentPath=.",
-    "test": "mocha out/test --timeout 20000 --slow 1000 --retries 4",
-    "cover": "nyc --all mocha out/test --timeout 20000 --slow 1000 --retries 4",
+    "test": "mocha",
+    "cover": "nyc mocha",
     "lint": "npm run tslint && npm run prettier",
     "tslint": "tslint -c tslint.json 'src/**/*.ts'",
     "prettier": "prettier \"**/{*.json,*.yml,.*.yml,*.ts,.prettierrc,*.md}\" --write --list-different",
@@ -114,13 +117,19 @@
       "commit-msg": "commitlint -E HUSKY_GIT_PARAM"
     }
   },
-  "nyc": {
-    "include": [
-      "out/**/*.js"
+  "mocha": {
+    "spec": "src/test/**/*.ts",
+    "require": [
+      "ts-node/register",
+      "source-map-support/register"
     ],
-    "exclude": [
-      "out/test/**/*.js"
-    ]
+    "timeout": 20000,
+    "slow": 1000,
+    "retries": 2
+  },
+  "nyc": {
+    "extends": "@istanbuljs/nyc-config-typescript",
+    "all": true
   },
   "contributes": {
     "breakpoints": [
