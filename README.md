@@ -101,8 +101,8 @@ To make VS Code map the files on the server to the right files on your local mac
 ```json
 // server -> local
 "pathMappings": {
-  "/var/www/html": "${workspaceRoot}/www",
-  "/app": "${workspaceRoot}/app"
+  "/var/www/html": "${workspaceFolder}/www",
+  "/app": "${workspaceFolder}/app"
 }
 ```
 
