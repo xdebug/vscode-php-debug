@@ -15,7 +15,7 @@
     "email": "felix.b@outlook.com"
   },
   "engines": {
-    "vscode": "^1.6.0",
+    "vscode": "^1.52.1",
     "node": "^14.0.0"
   },
   "icon": "images/logo.png",
