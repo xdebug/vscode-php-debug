@@ -55,7 +55,7 @@
     "@types/xmldom": "^0.1.29",
     "chai": "^4.0.2",
     "chai-as-promised": "^7.0.0",
-    "husky": "^0.14.3",
+    "husky": "^4.3.6",
     "mocha": "^5.0.0",
     "nyc": "^15.1.0",
     "prettier": "1.19.1",
