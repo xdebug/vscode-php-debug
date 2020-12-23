@@ -18,7 +18,9 @@ describe('PHP Debug Adapter', () => {
         await client.start(process.env['VSCODE_DEBUG_PORT'] ? parseInt(process.env['VSCODE_DEBUG_PORT']) : undefined)
     })
 
-    afterEach('stop debug adapter', () => client.stop())
+    afterEach('stop debug adapter', () => {
+        client.stop()
+    })
 
     describe('initialization', () => {
         it('should return supported features', async () => {
