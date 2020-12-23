@@ -42,7 +42,7 @@
     "urlencode": "^1.1.0",
     "vscode-debugadapter": "^1.43.0",
     "vscode-debugprotocol": "^1.43.0",
-    "xmldom": "^0.1.22"
+    "xmldom": "^0.1.31"
   },
   "devDependencies": {
     "@commitlint/cli": "^11.0.0",
@@ -53,7 +53,7 @@
     "@types/mocha": "^8.2.0",
     "@types/node": "^14.14.14",
     "@types/semver": "^7.3.4",
-    "@types/xmldom": "^0.1.29",
+    "@types/xmldom": "^0.1.30",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.0.0",
     "husky": "^4.3.6",
