@@ -4,6 +4,7 @@ import * as path from 'path'
 import { DebugClient } from 'vscode-debugadapter-testsupport'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import * as semver from 'semver'
+import { promisify } from 'util'
 chai.use(chaiAsPromised)
 const assert = chai.assert
 
@@ -18,9 +19,7 @@ describe('PHP Debug Adapter', () => {
         await client.start(process.env['VSCODE_DEBUG_PORT'] ? parseInt(process.env['VSCODE_DEBUG_PORT']) : undefined)
     })
 
-    afterEach('stop debug adapter', () => {
-        client.stop()
-    })
+    afterEach('stop debug adapter', () => Promise.race([client.stop(), promisify(setTimeout)(3000)]))
 
     describe('initialization', () => {
         it('should return supported features', async () => {
