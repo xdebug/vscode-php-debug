@@ -79,7 +79,7 @@ describe('DbgpConnection', () => {
     })
 
     it('should error on invalid XML', () =>
-        new Promise((resolve, reject) => {
+        new Promise<void>((resolve, reject) => {
             conn.on('error', (error: Error) => {
                 assert.isDefined(error)
                 assert.instanceOf(error, Error)
