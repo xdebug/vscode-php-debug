@@ -36,7 +36,7 @@
   "dependencies": {
     "file-url": "^2.0.0",
     "iconv-lite": "^0.4.15",
-    "minimatch": "^3.0.3",
+    "minimatch": "^3.0.4",
     "moment": "^2.17.1",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
@@ -48,7 +48,7 @@
     "@types/chai": "4.0.6",
     "@types/chai-as-promised": "^7.1.0",
     "@types/file-url": "^2.0.0",
-    "@types/minimatch": "^3.0.1",
+    "@types/minimatch": "^3.0.3",
     "@types/mocha": "^2.2.44",
     "@types/node": "7.0.32",
     "@types/semver": "^5.4.0",
