@@ -6,6 +6,7 @@
   "bracketSpacing": true,
   "singleQuote": true,
   "printWidth": 120,
+  "endOfLine": "lf",
   "proseWrap": "preserve",
   "arrowParens": "avoid",
   "overrides": [
