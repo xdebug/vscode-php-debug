@@ -98,6 +98,7 @@
     "lint": "npm run tslint && npm run prettier",
     "tslint": "tslint -c tslint.json 'src/**/*.ts'",
     "prettier": "prettier \"**/{*.json,*.yml,.*.yml,*.ts,.prettierrc,*.md}\" --write --list-different",
+    "prettier-check": "npm run prettier -- --write=false",
     "semantic-release": "semantic-release",
     "commitmsg": "validate-commit-msg"
   },

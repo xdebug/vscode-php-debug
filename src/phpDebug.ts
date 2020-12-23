@@ -315,11 +315,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendEvent(new vscode.OutputEvent(util.inspect(error) + '\n'))
                     this.sendErrorResponse(response, <Error>error)
                 })
-                server.listen(
-                    args.port || 9000,
-                    args.hostname,
-                    () => resolve()
-                )
+                server.listen(args.port || 9000, args.hostname, () => resolve())
             })
         try {
             if (!args.noDebug) {
