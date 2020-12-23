@@ -13,8 +13,8 @@ export class Terminal {
     public static launchInTerminal(
         dir: string,
         args: string[],
-        envVars: { [key: string]: string }
-    ): Promise<CP.ChildProcess> {
+        envVars: { [key: string]: string | undefined }
+    ): Promise<CP.ChildProcess | undefined> {
         return this.terminalService().launchInTerminal(dir, args, envVars)
     }
 
@@ -46,7 +46,7 @@ export class Terminal {
 }
 
 interface ITerminalService {
-    launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string }): Promise<CP.ChildProcess>
+    launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string | undefined }): Promise<CP.ChildProcess | undefined>
     killTree(pid: number): Promise<any>
     isOnPath(program: string): boolean
 }
@@ -54,21 +54,21 @@ interface ITerminalService {
 class DefaultTerminalService implements ITerminalService {
     protected static TERMINAL_TITLE = 'VS Code Console'
 
-    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string }): Promise<CP.ChildProcess> {
+    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string }): Promise<CP.ChildProcess | undefined> {
         throw new Error('launchInTerminal not implemented')
     }
 
     public killTree(pid: number): Promise<any> {
         // on linux and OS X we kill all direct and indirect child processes as well
 
-        return new Promise<any>((resolve, reject) => {
+        return new Promise<any | void>((resolve, reject) => {
             try {
                 const cmd = Path.join(__dirname, './terminateProcess.sh')
                 const result = (<any>CP).spawnSync(cmd, [pid.toString()])
                 if (result.error) {
                     reject(result.error)
                 } else {
-                    resolve()
+                    resolve(undefined)
                 }
             } catch (err) {
                 reject(err)
@@ -100,8 +100,8 @@ class DefaultTerminalService implements ITerminalService {
 class WindowsTerminalService extends DefaultTerminalService {
     private static CMD = 'cmd.exe'
 
-    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string }): Promise<CP.ChildProcess> {
-        return new Promise<CP.ChildProcess>((resolve, reject) => {
+    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string }): Promise<CP.ChildProcess | undefined> {
+        return new Promise<CP.ChildProcess | undefined>((resolve, reject) => {
             const title = `"${dir} - ${WindowsTerminalService.TERMINAL_TITLE}"`
             const command = `""${args.join('" "')}" & pause"` // use '|' to only pause on non-zero exit code
 
@@ -127,11 +127,11 @@ class WindowsTerminalService extends DefaultTerminalService {
         // when killing a process in Windows its child processes are *not* killed but become root processes.
         // Therefore we use TASKKILL.EXE
 
-        return new Promise<any>((resolve, reject) => {
+        return new Promise<any | void>((resolve, reject) => {
             const cmd = `taskkill /F /T /PID ${pid}`
             try {
                 CP.execSync(cmd)
-                resolve()
+                resolve(undefined)
             } catch (err) {
                 reject(err)
             }
@@ -143,8 +143,8 @@ class LinuxTerminalService extends DefaultTerminalService {
     private static LINUX_TERM = '/usr/bin/gnome-terminal' // private const string LINUX_TERM = "/usr/bin/x-terminal-emulator";
     private static WAIT_MESSAGE = 'Press any key to continue...'
 
-    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string }): Promise<CP.ChildProcess> {
-        return new Promise<CP.ChildProcess>((resolve, reject) => {
+    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string }): Promise<CP.ChildProcess | undefined> {
+        return new Promise<CP.ChildProcess | undefined>((resolve, reject) => {
             if (!FS.existsSync(LinuxTerminalService.LINUX_TERM)) {
                 reject(
                     new Error(
@@ -181,7 +181,7 @@ class LinuxTerminalService extends DefaultTerminalService {
             cmd.on('exit', (code: number) => {
                 if (code === 0) {
                     // OK
-                    resolve() // since cmd is not the terminal process but just a launcher, we do not pass it in the resolve to the caller
+                    resolve(undefined) // since cmd is not the terminal process but just a launcher, we do not pass it in the resolve to the caller
                 } else {
                     reject(new Error('exit code: ' + code))
                 }
@@ -193,8 +193,8 @@ class LinuxTerminalService extends DefaultTerminalService {
 class MacTerminalService extends DefaultTerminalService {
     private static OSASCRIPT = '/usr/bin/osascript' // osascript is the AppleScript interpreter on OS X
 
-    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string }): Promise<CP.ChildProcess> {
-        return new Promise<CP.ChildProcess>((resolve, reject) => {
+    public launchInTerminal(dir: string, args: string[], envVars: { [key: string]: string }): Promise<CP.ChildProcess | undefined> {
+        return new Promise<CP.ChildProcess | undefined>((resolve, reject) => {
             // first fix the PATH so that 'runtimePath' can be found if installed with 'brew'
             // Utilities.FixPathOnOSX();
 
@@ -230,7 +230,7 @@ class MacTerminalService extends DefaultTerminalService {
             osa.on('exit', (code: number) => {
                 if (code === 0) {
                     // OK
-                    resolve() // since cmd is not the terminal process but just the osa tool, we do not pass it in the resolve to the caller
+                    resolve(undefined) // since cmd is not the terminal process but just the osa tool, we do not pass it in the resolve to the caller
                 } else {
                     if (stderr) {
                         reject(new Error(stderr))
@@ -247,7 +247,7 @@ class MacTerminalService extends DefaultTerminalService {
 
 function extendObject<T>(objectCopy: T, object: T): T {
     for (let key in object) {
-        if (object.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(object, key)) {
             ;(<any>objectCopy)[key] = (<any>object)[key]
         }
     }
