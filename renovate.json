@@ -49,6 +49,10 @@
       "major": {
         "enabled": true
       }
+    },
+    {
+      "packagePatterns": ["^vscode-debug"],
+      "groupName": "vscode-debug"
     }
   ]
 }
