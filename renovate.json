@@ -14,7 +14,7 @@
   "regexManagers": [
     {
       "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
-      "matchStrings": ["xdebug: xdebug-(?<currentValue>[^,]*)"],
+      "matchStrings": ["xdebug: xdebug-(?<currentValue>[^,]*).*# renovate:keep-up-to-date"],
       "depNameTemplate": "xdebug",
       "lookupNameTemplate": "xdebug/xdebug",
       "datasourceTemplate": "github-tags",
@@ -22,7 +22,7 @@
     },
     {
       "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
-      "matchStrings": ["php: '(?<currentValue>[^']*)'"],
+      "matchStrings": ["php: '(?<currentValue>[^']*)'.*# renovate:keep-up-to-date"],
       "depNameTemplate": "php",
       "lookupNameTemplate": "php/php-src",
       "datasourceTemplate": "github-tags",
@@ -30,7 +30,7 @@
     },
     {
       "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
-      "matchStrings": ["node-version: '(?<currentValue>[^']*)'"],
+      "matchStrings": ["node-version: '(?<currentValue>[^']*)'.*# renovate:keep-up-to-date"],
       "depNameTemplate": "node",
       "lookupNameTemplate": "nodejs/node",
       "datasourceTemplate": "github-tags",

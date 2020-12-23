@@ -13,9 +13,9 @@ jobs:
       matrix:
         include:
           # Latest version
-          - { xdebug: xdebug-3.0.1, php: '8.0', os: ubuntu-18.04 }
-          - { xdebug: xdebug-3.0.1, php: '8.0', os: windows-2019 }
-          - { xdebug: xdebug-3.0.1, php: '8.0', os: macos-10.15 }
+          - { xdebug: xdebug-3.0.1, php: '8.0', os: ubuntu-18.04 } # renovate:keep-up-to-date
+          - { xdebug: xdebug-3.0.1, php: '8.0', os: windows-2019 } # renovate:keep-up-to-date
+          - { xdebug: xdebug-3.0.1, php: '8.0', os: macos-10.15 } # renovate:keep-up-to-date
           # Old versions
           - { xdebug: xdebug-2.9.8, php: '7.4', os: ubuntu-18.04 }
     steps:
