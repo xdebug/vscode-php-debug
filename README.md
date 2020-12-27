@@ -120,7 +120,7 @@ Please also note that setting any of the CLI debugging options will not work wit
 
 ## Contributing
 
-To hack on this adapter, clone the repository and open it in VS Code. You need NodeJS and typings installed (`npm install -g typings`). Install dependencies by running `npm install` and `typings install`.
+To hack on this adapter, clone the repository and open it in VS Code. You need NodeJS with NPM installed. Install dependencies by running `npm install`.
 
 You can debug the extension (run it in "server mode") by selecting the "Debug adapter" launch configuration and hitting `F5`. Then, open a terminal inside the project, and open the included testproject with VS Code while specifying the current directory as `extensionDevelopmentPath`:
 
@@ -130,6 +130,6 @@ code testproject --extensionDevelopmentPath=.
 
 VS Code will open an "Extension Development Host" with the debug adapter running. Open `.vscode/launch.json` and uncomment the `debugServer` configuration line. Hit `F5` to start a debugging session. Now you can debug the testproject like specified above and set breakpoints inside your first VS Code instance to step through the adapter code.
 
-The extension is written in TypeScript and compiled using a Gulpfile that first transpiles to ES6 and then uses Babel to specifically target VS Code's Node version. You can run the compile task through `npm run compile`, `gulp compile` or from VS Code with `Ctrl`+`Shift`+`B`. `npm run watch` / `gulp watch` enables incremental compilation.
+The extension is written in TypeScript. You can compile it through `npm run build`. `npm run watch` enables incremental compilation.
 
-Tests are written with Mocha and can be run with `npm test`. The tests are run in CI on Linux and Windows against PHP 5.4, 5.6, 7.0 and XDebug 2.3, 2.4.
+Tests are written with Mocha and can be run with `npm test`. The tests are run in CI on Linux, macOS and Windows against multiple PHP and XDebug versions.
