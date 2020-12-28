@@ -96,8 +96,8 @@
     "build": "tsc -p .",
     "watch": "tsc -w -p .",
     "start": "code testproject --extensionDevelopmentPath=.",
-    "test": "mocha out/test --timeout 20000 --slow 1000 --retries 4",
-    "cover": "nyc --all mocha out/test --timeout 20000 --slow 1000 --retries 4",
+    "test": "mocha",
+    "cover": "nyc mocha",
     "lint": "npm run tslint && npm run prettier",
     "tslint": "tslint -c tslint.json 'src/**/*.ts'",
     "prettier": "prettier \"**/{*.json,*.yml,.*.yml,*.ts,.prettierrc,*.md}\" --write --list-different",
@@ -114,12 +114,20 @@
       "commit-msg": "commitlint -E HUSKY_GIT_PARAM"
     }
   },
+  "mocha": {
+    "spec": "./out/test",
+    "timeout": 20000,
+    "slow": 1000,
+    "retries": 4
+  },
   "nyc": {
+    "all": true,
     "include": [
-      "out/**/*.js"
+      "out/**/*.*",
+      "src/**/*.*"
     ],
     "exclude": [
-      "out/test/**/*.js"
+      "out/test/**/*.*"
     ]
   },
   "contributes": {
