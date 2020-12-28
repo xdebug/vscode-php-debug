@@ -28,10 +28,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/felixfbecker/vscode-php-debug.git"
+    "url": "https://github.com/xdebug/vscode-php-debug.git"
   },
   "bugs": {
-    "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
+    "url": "https://github.com/xdebug/vscode-php-debug/issues"
   },
   "dependencies": {
     "file-url": "^3.0.0",

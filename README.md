@@ -1,6 +1,6 @@
 # PHP Debug Adapter for Visual Studio Code
 
-[![vs marketplace](https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![downloads](https://img.shields.io/vscode-marketplace/d/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![rating](https://img.shields.io/vscode-marketplace/r/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![build status](https://img.shields.io/github/workflow/status/felixfbecker/vscode-php-debug/build/main?logo=github)](https://github.com/felixfbecker/vscode-php-debug/actions?query=branch%3Amain) [![codecov](https://codecov.io/gh/felixfbecker/vscode-php-debug/branch/main/graph/badge.svg)](https://codecov.io/gh/felixfbecker/vscode-php-debug) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier) [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release) [![chat: on gitter](https://badges.gitter.im/felixfbecker/vscode-php-debug.svg)](https://gitter.im/felixfbecker/vscode-php-debug?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![vs marketplace](https://img.shields.io/vscode-marketplace/v/felixfbecker.php-debug.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![downloads](https://img.shields.io/vscode-marketplace/d/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![rating](https://img.shields.io/vscode-marketplace/r/felixfbecker.php-debug.svg)](https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug) [![build status](https://img.shields.io/github/workflow/status/xdebug/vscode-php-debug/build/main?logo=github)](https://github.com/xdebug/vscode-php-debug/actions?query=branch%3Amain) [![codecov](https://codecov.io/gh/xdebug/vscode-php-debug/branch/main/graph/badge.svg)](https://codecov.io/gh/xdebug/vscode-php-debug) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier) [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
 ![Demo GIF](images/demo.gif)
 
@@ -110,10 +110,10 @@ Please also note that setting any of the CLI debugging options will not work wit
 
 ## Troubleshooting
 
-- Ask a question on [Gitter](https://gitter.im/felixfbecker/vscode-php-debug)
-- If you think you found a bug, [open an issue](https://github.com/felixfbecker/vscode-php-debug/issues)
+- Ask a question on [StackOverflow](https://stackoverflow.com/)
+- If you think you found a bug, [open an issue](https://github.com/xdebug/vscode-php-debug/issues)
 - Make sure you have the latest version of this extension and XDebug installed
-- Try out a simple PHP file to recreate the issue, for example from the [testproject](https://github.com/felixfbecker/vscode-php-debug/tree/main/testproject)
+- Try out a simple PHP file to recreate the issue, for example from the [testproject](https://github.com/xdebug/vscode-php-debug/tree/main/testproject)
 - In your php.ini, set [`xdebug.remote_log = /path/to/logfile`](https://xdebug.org/docs/remote#remote_log)
   (make sure your webserver has write permissions to the file)
 - Set `"log": true` in your launch.json
