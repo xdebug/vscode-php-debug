@@ -365,6 +365,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 exceptionText = response.exception.name + ': ' + response.exception.message // this seems to be ignored currently by VS Code
             } else if (this._args.stopOnEntry) {
                 stoppedEventReason = 'entry'
+                this._args.stopOnEntry = false
             } else if (response.command.indexOf('step') === 0) {
                 stoppedEventReason = 'step'
             } else {
