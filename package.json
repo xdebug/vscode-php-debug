@@ -64,7 +64,7 @@
     "prettier": "2.2.1",
     "relateurl": "^0.2.7",
     "semantic-release": "^17.3.0",
-    "semantic-release-vsce": "^3.0.1",
+    "semantic-release-vsce": "^4.0.0",
     "semver": "^7.3.4",
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
