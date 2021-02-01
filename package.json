@@ -69,7 +69,7 @@
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.1.3",
-    "vsce": "^1.83.0",
+    "vsce": "^1.85.0",
     "vscode-debugadapter-testsupport": "^1.43.0"
   },
   "release": {
