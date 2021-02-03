@@ -20,7 +20,7 @@ describe('DbgpConnection', () => {
         conn = new DbgpConnection(socket)
     })
 
-    it('should parse a response in one data event', (done: MochaDone) => {
+    it('should parse a response in one data event', done => {
         conn.on('message', (document: XMLDocument) => {
             assert.equal(document.documentElement.nodeName, 'init')
             assert.equal(document.documentElement.textContent, 'This is just a test')
@@ -33,7 +33,7 @@ describe('DbgpConnection', () => {
         }, 100)
     })
 
-    it('should parse a response over multiple data events', (done: MochaDone) => {
+    it('should parse a response over multiple data events', done => {
         conn.on('message', (document: XMLDocument) => {
             assert.equal(document.documentElement.nodeName, 'init')
             assert.equal(document.documentElement.textContent, 'This is just a test')
@@ -55,7 +55,7 @@ describe('DbgpConnection', () => {
         }, 100)
     })
 
-    it('should parse multiple responses in one data event', (done: MochaDone) => {
+    it('should parse multiple responses in one data event', done => {
         conn.once('message', (document: XMLDocument) => {
             assert.equal(document.documentElement.nodeName, 'init')
             assert.equal(document.documentElement.textContent, 'This is just a test')
@@ -79,7 +79,7 @@ describe('DbgpConnection', () => {
     })
 
     it('should error on invalid XML', () =>
-        new Promise((resolve, reject) => {
+        new Promise<void>((resolve, reject) => {
             conn.on('error', (error: Error) => {
                 assert.isDefined(error)
                 assert.instanceOf(error, Error)

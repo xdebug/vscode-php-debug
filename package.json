@@ -15,8 +15,8 @@
     "email": "felix.b@outlook.com"
   },
   "engines": {
-    "vscode": "^1.6.0",
-    "node": ">=6.0.0"
+    "vscode": "^1.52.1",
+    "node": "^14.0.0"
   },
   "icon": "images/logo.png",
   "galleryBanner": {
@@ -28,101 +28,118 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/felixfbecker/vscode-php-debug.git"
+    "url": "https://github.com/xdebug/vscode-php-debug.git"
   },
   "bugs": {
-    "url": "https://github.com/felixfbecker/vscode-php-debug/issues"
+    "url": "https://github.com/xdebug/vscode-php-debug/issues"
   },
   "dependencies": {
-    "file-url": "^2.0.0",
-    "iconv-lite": "^0.4.15",
-    "minimatch": "^3.0.3",
-    "moment": "^2.17.1",
+    "file-url": "^3.0.0",
+    "iconv-lite": "^0.6.2",
+    "minimatch": "^3.0.4",
+    "moment": "^2.29.1",
+    "relateurl": "^0.2.7",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
-    "vscode-debugadapter": "^1.11.0",
-    "vscode-debugprotocol": "^1.11.0",
-    "xmldom": "^0.1.22"
+    "vscode-debugadapter": "^1.43.0",
+    "vscode-debugprotocol": "^1.43.0",
+    "xmldom": "^0.4.0"
   },
   "devDependencies": {
-    "@semantic-release/git": "^2.2.0",
-    "@semantic-release/github": "^2.0.0",
-    "@types/chai": "4.0.6",
-    "@types/chai-as-promised": "^7.1.0",
-    "@types/file-url": "^2.0.0",
-    "@types/minimatch": "^3.0.1",
-    "@types/mocha": "^2.2.44",
-    "@types/node": "7.0.32",
-    "@types/semver": "^5.4.0",
-    "@types/xmldom": "^0.1.29",
-    "chai": "^4.0.2",
-    "chai-as-promised": "^7.0.0",
-    "husky": "^0.14.3",
-    "mocha": "^5.0.0",
-    "nyc": "^11.0.2",
-    "prettier": "1.9.2",
-    "semantic-release": "^12.2.2",
-    "semantic-release-vsce": "^2.0.0",
-    "semver": "^5.3.0",
-    "tslint": "^5.4.3",
-    "tslint-config-prettier": "^1.6.0",
-    "typescript": "^2.1.4",
-    "validate-commit-msg": "^2.14.0",
-    "vsce": "^1.28.0",
-    "vscode-debugadapter-testsupport": "^1.11.0"
+    "@commitlint/cli": "^11.0.0",
+    "@commitlint/config-conventional": "^11.0.0",
+    "@types/chai": "4.2.14",
+    "@types/chai-as-promised": "^7.1.3",
+    "@types/minimatch": "^3.0.3",
+    "@types/mocha": "^8.2.0",
+    "@types/node": "^14.14.14",
+    "@types/relateurl": "^0.2.28",
+    "@types/semver": "^7.3.4",
+    "@types/urlencode": "^1.1.2",
+    "@types/xmldom": "^0.1.30",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "husky": "^4.3.6",
+    "mocha": "^8.2.1",
+    "nyc": "^15.1.0",
+    "prettier": "2.2.1",
+    "semantic-release": "^17.3.0",
+    "semantic-release-vsce": "^3.0.1",
+    "semver": "^7.3.4",
+    "tslint": "^5.20.1",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^4.1.3",
+    "vsce": "^1.83.0",
+    "vscode-debugadapter-testsupport": "^1.43.0"
   },
   "release": {
+    "branches": [
+      "main"
+    ],
     "verifyConditions": [
       "semantic-release-vsce",
       "@semantic-release/github"
     ],
-    "getLastRelease": "@semantic-release/git",
+    "prepare": {
+      "path": "semantic-release-vsce",
+      "packageVsix": "php-debug.vsix"
+    },
     "publish": [
-      {
-        "path": "semantic-release-vsce",
-        "packageVsix": "php-debug.vsix"
-      },
+      "semantic-release-vsce",
       {
         "path": "@semantic-release/github",
         "assets": "php-debug.vsix"
       }
     ]
   },
-  "greenkeeper": {
-    "ignore": [
-      "@types/node"
-    ]
-  },
   "scripts": {
     "build": "tsc -p .",
     "watch": "tsc -w -p .",
     "start": "code testproject --extensionDevelopmentPath=.",
-    "test": "mocha out/test --timeout 20000 --slow 1000 --retries 4",
-    "cover": "nyc --all mocha out/test --timeout 20000 --slow 1000 --retries 4",
+    "test": "mocha",
+    "cover": "nyc mocha",
     "lint": "npm run tslint && npm run prettier",
     "tslint": "tslint -c tslint.json 'src/**/*.ts'",
-    "prettier": "prettier \"**/{*.json,*.ts,.prettierrc}\" --write --list-different",
-    "semantic-release": "semantic-release",
-    "commitmsg": "validate-commit-msg"
+    "prettier": "prettier \"**/{*.json,*.yml,.*.yml,*.ts,.prettierrc,*.md}\" --write --list-different",
+    "prettier-check": "npm run prettier -- --write=false",
+    "semantic-release": "semantic-release"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAM"
+    }
+  },
+  "mocha": {
+    "spec": "./out/test",
+    "timeout": 20000,
+    "slow": 1000,
+    "retries": 4
   },
   "nyc": {
+    "all": true,
     "include": [
-      "out/**/*.js"
+      "out/**/*.*",
+      "src/**/*.*"
     ],
     "exclude": [
-      "out/test/**/*.js"
+      "out/test/**/*.*"
     ]
   },
   "contributes": {
+    "breakpoints": [
+      {
+        "language": "php"
+      }
+    ],
     "debuggers": [
       {
         "type": "php",
         "label": "PHP",
-        "enableBreakpointsFor": {
-          "languageIds": [
-            "php"
-          ]
-        },
         "program": "./out/phpDebug.js",
         "runtime": "node",
         "configurationAttributes": {
@@ -176,6 +193,11 @@
                 },
                 "description": "Environment variables passed to the program.",
                 "default": {}
+              },
+              "hostname": {
+                "type": "string",
+                "description": "Address to bind to when listening for XDebug",
+                "default": "::"
               },
               "port": {
                 "type": "number",

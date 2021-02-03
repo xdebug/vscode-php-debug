@@ -102,10 +102,12 @@ describe('PHP Debug Adapter', () => {
         describe('line breakpoints', () => {
             async function testBreakpointHit(program: string, line: number): Promise<void> {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
-                const breakpoint = (await client.setBreakpointsRequest({
-                    breakpoints: [{ line }],
-                    source: { path: program },
-                })).body.breakpoints[0]
+                const breakpoint = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints[0]
                 assert.isTrue(breakpoint.verified, 'breakpoint verification mismatch: verified')
                 assert.equal(breakpoint.line, line, 'breakpoint verification mismatch: line')
                 await Promise.all([
@@ -124,10 +126,12 @@ describe('PHP Debug Adapter', () => {
             it('should support removing a breakpoint', async () => {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
                 // set two breakpoints
-                let breakpoints = (await client.setBreakpointsRequest({
-                    breakpoints: [{ line: 3 }, { line: 5 }],
-                    source: { path: program },
-                })).body.breakpoints
+                let breakpoints = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line: 3 }, { line: 5 }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints
                 assert.lengthOf(breakpoints, 2)
                 assert.isTrue(breakpoints[0].verified, 'breakpoint verification mismatch: verified')
                 assert.equal(breakpoints[0].line, 3, 'breakpoint verification mismatch: line')
@@ -139,10 +143,12 @@ describe('PHP Debug Adapter', () => {
                     client.configurationDoneRequest(),
                 ])
                 // remove second
-                breakpoints = (await client.setBreakpointsRequest({
-                    breakpoints: [{ line: 3 }],
-                    source: { path: program },
-                })).body.breakpoints
+                breakpoints = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line: 3 }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints
                 assert.lengthOf(breakpoints, 1)
                 assert.isTrue(breakpoints[0].verified, 'breakpoint verification mismatch: verified')
                 assert.equal(breakpoints[0].line, 3, 'breakpoint verification mismatch: line')
@@ -224,7 +230,11 @@ describe('PHP Debug Adapter', () => {
             it.skip('should report the error in a virtual error scope', async () => {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
                 await client.setExceptionBreakpointsRequest({ filters: ['Notice', 'Warning', 'Exception'] })
-                const [{ body: { threadId } }] = await Promise.all([
+                const [
+                    {
+                        body: { threadId },
+                    },
+                ] = await Promise.all([
                     client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>,
                     client.configurationDoneRequest(),
                 ])
@@ -239,9 +249,11 @@ describe('PHP Debug Adapter', () => {
                 async function getErrorScope(): Promise<ErrorScope> {
                     const frameId = (await client.stackTraceRequest({ threadId: threadId! })).body.stackFrames[0].id
                     const errorScope = (await client.scopesRequest({ frameId })).body.scopes[0]
-                    const variables = (await client.variablesRequest({
-                        variablesReference: errorScope.variablesReference,
-                    })).body.variables
+                    const variables = (
+                        await client.variablesRequest({
+                            variablesReference: errorScope.variablesReference,
+                        })
+                    ).body.variables
                     const errorInfo: ErrorScope = { name: errorScope.name }
                     const type = variables.find(variable => variable.name === 'type')
                     if (type) {
@@ -297,30 +309,36 @@ describe('PHP Debug Adapter', () => {
 
             it('should stop on a conditional breakpoint when condition is true', async () => {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
-                const bp = (await client.setBreakpointsRequest({
-                    breakpoints: [{ line: 10, condition: '$anInt === 123' }],
-                    source: { path: program },
-                })).body.breakpoints[0]
+                const bp = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line: 10, condition: '$anInt === 123' }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints[0]
                 assert.equal(bp.verified, true, 'breakpoint verification mismatch: verified')
                 assert.equal(bp.line, 10, 'breakpoint verification mismatch: line')
                 const [, { frame }] = await Promise.all([
                     client.configurationDoneRequest(),
                     assertStoppedLocation('breakpoint', program, 10),
                 ])
-                const result = (await client.evaluateRequest({
-                    context: 'watch',
-                    frameId: frame.id,
-                    expression: '$anInt',
-                })).body.result
+                const result = (
+                    await client.evaluateRequest({
+                        context: 'watch',
+                        frameId: frame.id,
+                        expression: '$anInt',
+                    })
+                ).body.result
                 assert.equal(result, '123')
             })
 
             it('should not stop on a conditional breakpoint when condition is false', async () => {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
-                const bp = (await client.setBreakpointsRequest({
-                    breakpoints: [{ line: 10, condition: '$anInt !== 123' }],
-                    source: { path: program },
-                })).body.breakpoints[0]
+                const bp = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line: 10, condition: '$anInt !== 123' }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints[0]
                 assert.equal(bp.verified, true, 'breakpoint verification mismatch: verified')
                 assert.equal(bp.line, 10, 'breakpoint verification mismatch: line')
                 await Promise.all([client.configurationDoneRequest(), client.waitForEvent('terminated')])
@@ -333,9 +351,11 @@ describe('PHP Debug Adapter', () => {
             it('should stop on a function breakpoint', async () => {
                 await client.launch({ program })
                 await client.waitForEvent('initialized')
-                const breakpoint = (await client.setFunctionBreakpointsRequest({
-                    breakpoints: [{ name: 'a_function' }],
-                })).body.breakpoints[0]
+                const breakpoint = (
+                    await client.setFunctionBreakpointsRequest({
+                        breakpoints: [{ name: 'a_function' }],
+                    })
+                ).body.breakpoints[0]
                 assert.strictEqual(breakpoint.verified, true)
                 await Promise.all([client.configurationDoneRequest(), assertStoppedLocation('breakpoint', program, 5)])
             })
@@ -430,9 +450,11 @@ describe('PHP Debug Adapter', () => {
                 assert.isDefined(aLargeArray)
                 assert.propertyVal(aLargeArray!, 'value', 'array(100)')
                 assert.property(aLargeArray!, 'variablesReference')
-                const largeArrayItems = (await client.variablesRequest({
-                    variablesReference: aLargeArray!.variablesReference,
-                })).body.variables
+                const largeArrayItems = (
+                    await client.variablesRequest({
+                        variablesReference: aLargeArray!.variablesReference,
+                    })
+                ).body.variables
                 assert.lengthOf(largeArrayItems, 100)
                 assert.propertyVal(largeArrayItems[0], 'name', '0')
                 assert.propertyVal(largeArrayItems[0], 'value', '"test"')
@@ -445,9 +467,11 @@ describe('PHP Debug Adapter', () => {
                 assert.isDefined(arrayWithSpaceKey)
                 assert.propertyVal(arrayWithSpaceKey!, 'value', 'array(1)')
                 assert.property(arrayWithSpaceKey!, 'variablesReference')
-                const arrayWithSpaceKeyItems = (await client.variablesRequest({
-                    variablesReference: arrayWithSpaceKey!.variablesReference,
-                })).body.variables
+                const arrayWithSpaceKeyItems = (
+                    await client.variablesRequest({
+                        variablesReference: arrayWithSpaceKey!.variablesReference,
+                    })
+                ).body.variables
                 assert.lengthOf(arrayWithSpaceKeyItems, 1)
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'name', 'space key')
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'value', '1')
@@ -457,9 +481,11 @@ describe('PHP Debug Adapter', () => {
         // support for user defined constants was added in 2.3.0
         if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
             it('should report user defined constants correctly', async () => {
-                const constants = (await client.variablesRequest({
-                    variablesReference: constantsScope!.variablesReference,
-                })).body.variables
+                const constants = (
+                    await client.variablesRequest({
+                        variablesReference: constantsScope!.variablesReference,
+                    })
+                ).body.variables
                 assert.lengthOf(constants, 1)
                 assert.propertyVal(constants[0], 'name', 'TEST_CONSTANT')
                 assert.propertyVal(constants[0], 'value', '123')

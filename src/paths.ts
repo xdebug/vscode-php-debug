@@ -1,8 +1,27 @@
-import urlRelative = require('url-relative')
 import fileUrl = require('file-url')
 import * as url from 'url'
 import * as path from 'path'
 import { decode } from 'urlencode'
+import RelateUrl from 'relateurl'
+
+/**
+ * Options to make sure that RelateUrl only outputs relative URLs and performs not other "smart" modifications.
+ * They would mess up things like prefix checking.
+ */
+const RELATE_URL_OPTIONS: RelateUrl.Options = {
+    // Make sure RelateUrl does not prefer root-relative URLs if shorter
+    output: RelateUrl.PATH_RELATIVE,
+    // Make sure RelateUrl does not remove trailing slash if present
+    removeRootTrailingSlash: false,
+    // Make sure RelateUrl does not remove default ports
+    defaultPorts: {},
+}
+
+/**
+ * Like `path.relative()` but for URLs.
+ * Inverse of `url.resolve()` or `new URL(relative, base)`.
+ */
+const relativeUrl = (from: string, to: string): string => RelateUrl.relate(from, to, RELATE_URL_OPTIONS)
 
 /** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
 export function convertDebuggerPathToClient(
@@ -53,7 +72,10 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
     // XDebug always lowercases Windows drive letters in file URIs
-    let localFileUri = fileUrl(localPath.replace(/^[A-Z]:\\/, match => match.toLowerCase()), { resolve: false })
+    let localFileUri = fileUrl(
+        localPath.replace(/^[A-Z]:\\/, match => match.toLowerCase()),
+        { resolve: false }
+    )
     let serverFileUri: string
     if (pathMapping) {
         for (const mappedServerPath of Object.keys(pathMapping)) {
@@ -82,7 +104,7 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
             serverSourceRootUrl += '/'
         }
         // get the part of the path that is relative to the source root
-        const urlRelativeToSourceRoot = urlRelative(localSourceRootUrl, localFileUri)
+        const urlRelativeToSourceRoot = relativeUrl(localSourceRootUrl, localFileUri)
         // resolve from the server source root
         serverFileUri = url.resolve(serverSourceRootUrl, urlRelativeToSourceRoot)
     } else {
