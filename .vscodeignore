@@ -23,3 +23,5 @@ package-lock.json
 travis-php.ini
 tsconfig.json
 tslint.json
+renovate.json
+.github
