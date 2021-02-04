@@ -57,7 +57,7 @@
     "@types/semver": "^7.3.4",
     "@types/urlencode": "^1.1.2",
     "@types/xmldom": "^0.1.30",
-    "chai": "^4.2.0",
+    "chai": "^4.3.0",
     "chai-as-promised": "^7.1.1",
     "husky": "^4.3.8",
     "mocha": "^8.2.1",
