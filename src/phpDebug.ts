@@ -140,6 +140,9 @@ class PhpDebugSession extends vscode.DebugSession {
     /** A map from unique VS Code variable IDs to XDebug eval result properties, because property children returned from eval commands are always inlined */
     private _evalResultProperties = new Map<number, xdebug.EvalResultProperty>()
 
+    /** A flag to indicate that the adapter has already processed the stopOnEntry step request */
+    private _hasStoppedOnEntry = false
+
     public constructor() {
         super()
         this.setDebuggerColumnsStartAt1(true)
@@ -363,8 +366,9 @@ class PhpDebugSession extends vscode.DebugSession {
                 }
                 stoppedEventReason = 'exception'
                 exceptionText = response.exception.name + ': ' + response.exception.message // this seems to be ignored currently by VS Code
-            } else if (this._args.stopOnEntry) {
+            } else if (this._args.stopOnEntry && !this._hasStoppedOnEntry) {
                 stoppedEventReason = 'entry'
+                this._hasStoppedOnEntry = true
             } else if (response.command.indexOf('step') === 0) {
                 stoppedEventReason = 'step'
             } else {
@@ -623,6 +627,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     // either tell VS Code we stopped on entry or run the script
                     if (this._args.stopOnEntry) {
                         // do one step to the first statement
+                        this._hasStoppedOnEntry = false
                         return connection.sendStepIntoCommand()
                     } else {
                         return connection.sendRunCommand()
