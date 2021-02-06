@@ -55,6 +55,15 @@ describe('paths', () => {
                     }),
                     'file:///app/source.php'
                 )
+                // longest prefix matching for server paths
+                assert.strictEqual(
+                    convertClientPathToDebugger('/home/felix/mysource/subdir/source.php', {
+                        '/var/www': '/home/felix/mysite',
+                        '/app/subdir1': '/home/felix/mysource/subdir',
+                        '/app': '/home/felix/mysource',
+                    }),
+                    'file:///app/subdir1/source.php'
+                )
             })
             // unix to windows
             it('should convert a unix path to a windows URI', () => {
@@ -164,6 +173,15 @@ describe('paths', () => {
                         '/app': '/home/felix/mysource',
                     }),
                     '/home/felix/mysource/source.php'
+                )
+                // longest prefix matching for local paths
+                assert.strictEqual(
+                    convertDebuggerPathToClient('file:///app/subdir/source.php', {
+                        '/var/www': '/home/felix/mysite',
+                        '/app/subdir': '/home/felix/mysource/subdir1',
+                        '/app': '/home/felix/mysource',
+                    }),
+                    '/home/felix/mysource/subdir1/source.php'
                 )
             })
             // unix to windows
