@@ -23,7 +23,7 @@ const RELATE_URL_OPTIONS: RelateUrl.Options = {
  */
 const relativeUrl = (from: string, to: string): string => RelateUrl.relate(from, to, RELATE_URL_OPTIONS)
 
-/** converts a server-side XDebug file URI to a local path for VS Code with respect to source root settings */
+/** converts a server-side Xdebug file URI to a local path for VS Code with respect to source root settings */
 export function convertDebuggerPathToClient(
     fileUri: string | url.Url,
     pathMapping?: { [index: string]: string }
@@ -71,11 +71,11 @@ export function convertDebuggerPathToClient(
     return localPath
 }
 
-/** converts a local path from VS Code to a server-side XDebug file URI with respect to source root settings */
+/** converts a local path from VS Code to a server-side Xdebug file URI with respect to source root settings */
 export function convertClientPathToDebugger(localPath: string, pathMapping?: { [index: string]: string }): string {
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
-    // XDebug always lowercases Windows drive letters in file URIs
+    // Xdebug always lowercases Windows drive letters in file URIs
     let localFileUri = fileUrl(
         localPath.replace(/^[A-Z]:\\/, match => match.toLowerCase()),
         { resolve: false }

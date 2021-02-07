@@ -3,7 +3,7 @@
   "configurations": [
     {
       //"debugServer": 4711, // Uncomment for debugging the adapter
-      "name": "Listen for XDebug",
+      "name": "Listen for Xdebug",
       "type": "php",
       "request": "launch",
       "port": 9000,
