@@ -2,10 +2,10 @@ import * as net from 'net'
 import * as iconv from 'iconv-lite'
 import { DbgpConnection } from './dbgp'
 
-/** The encoding all XDebug messages are encoded with */
+/** The encoding all Xdebug messages are encoded with */
 const ENCODING = 'iso-8859-1'
 
-/** The first packet we receive from XDebug. Returned by waitForInitPacket() */
+/** The first packet we receive from Xdebug. Returned by waitForInitPacket() */
 export class InitPacket {
     /** The file that was requested as a file:// URI */
     fileUri: string
@@ -17,7 +17,7 @@ export class InitPacket {
     ideKey: string
     /** a reference to the connection this packet was received from */
     connection: Connection
-    /** the version of XDebug */
+    /** the version of Xdebug */
     engineVersion: string
     /**
      * @param  {XMLDocument} document - An XML document to read from
@@ -34,18 +34,18 @@ export class InitPacket {
     }
 }
 
-/** Error class for errors returned from XDebug */
-export class XDebugError extends Error {
+/** Error class for errors returned from Xdebug */
+export class XdebugError extends Error {
     code: number
     constructor(message: string, code: number) {
         super(message)
         this.code = code
         this.message = message
-        this.name = 'XDebugError'
+        this.name = 'XdebugError'
     }
 }
 
-/** The base class for all XDebug responses to commands executed on a connection */
+/** The base class for all Xdebug responses to commands executed on a connection */
 export class Response {
     /** A unique transaction ID that matches the one in the request */
     transactionId: number
@@ -65,7 +65,7 @@ export class Response {
             const errorNode = <Element>documentElement.firstChild
             const code = parseInt(errorNode.getAttribute('code')!)
             const message = errorNode.textContent!
-            throw new XDebugError(message, code)
+            throw new XdebugError(message, code)
         }
         this.transactionId = parseInt(documentElement.getAttribute('transaction_id')!)
         this.command = documentElement.getAttribute('command')!
@@ -143,7 +143,7 @@ export abstract class Breakpoint {
                 throw new Error(`Invalid type ${breakpointNode.getAttribute('type')}`)
         }
     }
-    /** Constructs a breakpoint object from an XML node from a XDebug response */
+    /** Constructs a breakpoint object from an XML node from a Xdebug response */
     constructor(breakpointNode: Element, connection: Connection)
     /** To create a new breakpoint in derived classes */
     constructor(type: BreakpointType)
@@ -221,7 +221,7 @@ export class CallBreakpoint extends Breakpoint {
 export class ExceptionBreakpoint extends Breakpoint {
     /** The Exception name to break on. Can also contain wildcards. */
     exception: string
-    /** Constructs a breakpoint object from an XML node from a XDebug response */
+    /** Constructs a breakpoint object from an XML node from a Xdebug response */
     constructor(breakpointNode: Element, connection: Connection)
     /** Constructs a breakpoint for passing it to sendSetBreakpointCommand */
     constructor(exception: string)
@@ -248,7 +248,7 @@ export class ConditionalBreakpoint extends Breakpoint {
     line: number
     /** The PHP expression under which to break on */
     expression: string
-    /** Constructs a breakpoint object from an XML node from a XDebug response */
+    /** Constructs a breakpoint object from an XML node from a Xdebug response */
     constructor(breakpointNode: Element, connection: Connection)
     /** Contructs a breakpoint object for passing to sendSetBreakpointCommand */
     constructor(expression: string, fileUri: string, line?: number)
@@ -550,7 +550,7 @@ interface Command {
 }
 
 /**
- * This class represents a connection to XDebug and is instantiated with a socket.
+ * This class represents a connection to Xdebug and is instantiated with a socket.
  */
 export class Connection extends DbgpConnection {
     /** a counter for unique connection IDs */
@@ -575,15 +575,15 @@ export class Connection extends DbgpConnection {
     private _initPromiseRejectFn: (err?: Error) => any
 
     /**
-     * a map from transaction IDs to pending commands that have been sent to XDebug and are awaiting a response.
+     * a map from transaction IDs to pending commands that have been sent to Xdebug and are awaiting a response.
      * This should in theory only contain max one element at any time.
      */
     private _pendingCommands = new Map<number, Command>()
 
     /**
-     * XDebug does NOT support async communication.
+     * Xdebug does NOT support async communication.
      * This means before sending a new command, we have to wait until we get a response for the previous.
-     * This array is a stack of commands that get passed to _sendCommand once XDebug can accept commands again.
+     * This array is a stack of commands that get passed to _sendCommand once Xdebug can accept commands again.
      */
     private _commandQueue: Command[] = []
 
@@ -596,7 +596,7 @@ export class Connection extends DbgpConnection {
         return this._pendingExecuteCommand
     }
 
-    /** Constructs a new connection that uses the given socket to communicate with XDebug. */
+    /** Constructs a new connection that uses the given socket to communicate with Xdebug. */
     constructor(socket: net.Socket) {
         super(socket)
         this.id = Connection._connectionCounter++
@@ -631,7 +631,7 @@ export class Connection extends DbgpConnection {
 
     /**
      * Pushes a new command to the queue that will be executed after all the previous commands have finished and we received a response.
-     * If the queue is empty AND there are no pending transactions (meaning we already received a response and XDebug is waiting for
+     * If the queue is empty AND there are no pending transactions (meaning we already received a response and Xdebug is waiting for
      * commands) the command will be executed immediately.
      */
     private _enqueueCommand(name: string, args?: string, data?: string): Promise<XMLDocument> {
@@ -643,7 +643,7 @@ export class Connection extends DbgpConnection {
     /**
      * Pushes a new execute command (one that results in executing PHP code) to the queue that will be executed after all the previous
      * commands have finished and we received a response.
-     * If the queue is empty AND there are no pending transactions (meaning we already received a response and XDebug is waiting for
+     * If the queue is empty AND there are no pending transactions (meaning we already received a response and Xdebug is waiting for
      * commands) the command will be executed immediately.
      */
     private _enqueueExecuteCommand(name: string, args?: string, data?: string): Promise<XMLDocument> {
@@ -662,8 +662,8 @@ export class Connection extends DbgpConnection {
     }
 
     /**
-     * Sends a command to XDebug with a new transaction ID and calls the callback on the command. This can
-     * only be called when XDebug can actually accept commands, which is after we received a response for the
+     * Sends a command to Xdebug with a new transaction ID and calls the callback on the command. This can
+     * only be called when Xdebug can actually accept commands, which is after we received a response for the
      * previous command.
      */
     private async _executeCommand(command: Command): Promise<void> {

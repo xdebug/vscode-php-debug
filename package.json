@@ -4,7 +4,7 @@
   "version": "0.0.0-development",
   "publisher": "felixfbecker",
   "license": "MIT",
-  "description": "Debug support for PHP with XDebug",
+  "description": "Debug support for PHP with Xdebug",
   "keywords": [
     "php",
     "debug",
@@ -196,12 +196,12 @@
               },
               "hostname": {
                 "type": "string",
-                "description": "Address to bind to when listening for XDebug",
+                "description": "Address to bind to when listening for Xdebug",
                 "default": "::"
               },
               "port": {
                 "type": "number",
-                "description": "Port on which to listen for XDebug",
+                "description": "Port on which to listen for Xdebug",
                 "default": 9000
               },
               "serverSourceRoot": {
@@ -250,7 +250,7 @@
                     "description": "This feature can get set by the IDE if it wants to have more detailed internal information on properties (eg. private members of classes, etc.) Zero means that hidden members are not shown to the IDE"
                   }
                 },
-                "description": "Overrides for XDebug remote debugging settings. See https://xdebug.org/docs-dbgp.php#feature-names",
+                "description": "Overrides for Xdebug remote debugging settings. See https://xdebug.org/docs-dbgp.php#feature-names",
                 "default": {}
               }
             }
@@ -258,7 +258,7 @@
         },
         "initialConfigurations": [
           {
-            "name": "Listen for XDebug",
+            "name": "Listen for Xdebug",
             "type": "php",
             "request": "launch",
             "port": 9000

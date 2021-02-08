@@ -46,20 +46,20 @@ This extension is a debug adapter between VS Code and [Xdebug](https://xdebug.or
 In your project, go to the debugger and hit the little gear icon and choose _PHP_. A new launch configuration will be created for you with two configurations:
 
 - **Listen for Xdebug**
-  This setting will simply start listening on the specified port (by default 9000) for XDebug. If you configured XDebug like recommended above, everytime you make a request with a browser to your webserver or launch a CLI script Xdebug will connect and you can stop on breakpoints, exceptions etc.
+  This setting will simply start listening on the specified port (by default 9000) for Xdebug. If you configured Xdebug like recommended above, everytime you make a request with a browser to your webserver or launch a CLI script Xdebug will connect and you can stop on breakpoints, exceptions etc.
 - **Launch currently open script**
   This setting is an example of CLI debugging. It will launch the currently opened script as a CLI, show all stdout/stderr output in the debug console and end the debug session once the script exits.
 
 #### Supported launch.json settings:
 
 - `request`: Always `"launch"`
-- `hostname`: The address to bind to when listening for XDebug (default: all IPv6 connections if available, else all IPv4 connections)
+- `hostname`: The address to bind to when listening for Xdebug (default: all IPv6 connections if available, else all IPv4 connections)
 - `port`: The port on which to listen for Xdebug (default: `9000`)
 - `stopOnEntry`: Whether to break at the beginning of the script (default: `false`)
 - `pathMappings`: A list of server paths mapping to the local source paths on your machine, see "Remote Host Debugging" below
 - `log`: Whether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
 - `ignore`: An optional array of glob patterns that errors should be ignored from (for example `**/vendor/**/*.php`)
-- `xdebugSettings`: Allows you to override XDebug's remote debugging settings to fine tuning XDebug to your needs. For example, you can play with `max_children` and `max_depth` to change the max number of array and object children that are retrieved and the max depth in structures like arrays and objects. This can speed up the debugger on slow machines.
+- `xdebugSettings`: Allows you to override Xdebug's remote debugging settings to fine tuning Xdebug to your needs. For example, you can play with `max_children` and `max_depth` to change the max number of array and object children that are retrieved and the max depth in structures like arrays and objects. This can speed up the debugger on slow machines.
   For a full list of feature names that can be set please refer to the [Xdebug documentation](https://xdebug.org/docs-dbgp.php#feature-names).
   - `max_children`: max number of array or object children to initially retrieve
   - `max_data`: max amount of variable data to initially retrieve.
@@ -132,4 +132,4 @@ VS Code will open an "Extension Development Host" with the debug adapter running
 
 The extension is written in TypeScript. You can compile it through `npm run build`. `npm run watch` enables incremental compilation.
 
-Tests are written with Mocha and can be run with `npm test`. The tests are run in CI on Linux, macOS and Windows against multiple PHP and XDebug versions.
+Tests are written with Mocha and can be run with `npm test`. The tests are run in CI on Linux, macOS and Windows against multiple PHP and Xdebug versions.

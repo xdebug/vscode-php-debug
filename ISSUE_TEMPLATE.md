@@ -1,11 +1,11 @@
-PHP version:  
-XDebug version:  
+PHP version:
+Xdebug version:
 Adapter version:
 
-Your launch.json:  
-XDebug php.ini config:
+Your launch.json:
+Xdebug php.ini config:
 
-XDebug logfile (from setting `xdebug.remote_log` in php.ini):  
+Xdebug logfile (from setting `xdebug.remote_log` in php.ini):
 Adapter logfile (from setting `"log": true` in launch.json):
 
 Code snippet to reproduce:

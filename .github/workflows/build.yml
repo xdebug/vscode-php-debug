@@ -45,8 +45,8 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: ${{ matrix.xdebug }}
-          # Top: XDebug v3
-          # Bottom: XDebug v2
+          # Top: Xdebug v3
+          # Bottom: Xdebug v2
           ini-values: >-
             xdebug.mode = debug,
             xdebug.start_with_request = yes,

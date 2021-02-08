@@ -389,7 +389,7 @@ describe('PHP Debug Adapter', () => {
             const scopes = (await client.scopesRequest({ frameId: stackFrame.id })).body.scopes
             localScope = scopes.find(scope => scope.name === 'Locals')
             superglobalsScope = scopes.find(scope => scope.name === 'Superglobals')
-            constantsScope = scopes.find(scope => scope.name === 'User defined constants') // XDebug >2.3 only
+            constantsScope = scopes.find(scope => scope.name === 'User defined constants') // Xdebug >2.3 only
         })
 
         it('should report scopes correctly', () => {

@@ -50,9 +50,9 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
  * This interface should always match the schema found in the mock-debug extension manifest.
  */
 interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArguments {
-    /** The address to bind to for listening for XDebug connections (default: all IPv6 connections if available, else all IPv4 connections) */
+    /** The address to bind to for listening for Xdebug connections (default: all IPv6 connections if available, else all IPv4 connections) */
     hostname?: string
-    /** The port where the adapter should listen for XDebug connections (default: 9000) */
+    /** The port where the adapter should listen for Xdebug connections (default: 9000) */
     port?: number
     /** Automatically stop target after launch. If not specified, target does not stop. */
     stopOnEntry?: boolean
@@ -66,7 +66,7 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     log?: boolean
     /** Array of glob patterns that errors should be ignored from */
     ignore?: string[]
-    /** XDebug configuration */
+    /** Xdebug configuration */
     xdebugSettings?: { [featureName: string]: string | number }
 
     // CLI options
@@ -91,15 +91,15 @@ class PhpDebugSession extends vscode.DebugSession {
     /** The arguments that were given to launchRequest */
     private _args: LaunchRequestArguments
 
-    /** The TCP server that listens for XDebug connections */
+    /** The TCP server that listens for Xdebug connections */
     private _server: net.Server
 
     /** The child process of the launched PHP script, if launched by the debug adapter */
     private _phpProcess?: childProcess.ChildProcess
 
     /**
-     * A map from VS Code thread IDs to XDebug Connections.
-     * XDebug makes a new connection for each request to the webserver, we present these as threads to VS Code.
+     * A map from VS Code thread IDs to Xdebug Connections.
+     * Xdebug makes a new connection for each request to the webserver, we present these as threads to VS Code.
      * The threadId key is equal to the id attribute of the connection.
      */
     private _connections = new Map<number, xdebug.Connection>()
@@ -110,34 +110,34 @@ class PhpDebugSession extends vscode.DebugSession {
     /** A counter for unique source IDs */
     private _sourceIdCounter = 1
 
-    /** A map of VS Code source IDs to XDebug file URLs for virtual files (dpgp://whatever) and the corresponding connection */
+    /** A map of VS Code source IDs to Xdebug file URLs for virtual files (dpgp://whatever) and the corresponding connection */
     private _sources = new Map<number, { connection: xdebug.Connection; url: string }>()
 
     /** A counter for unique stackframe IDs */
     private _stackFrameIdCounter = 1
 
-    /** A map from unique stackframe IDs (even across connections) to XDebug stackframes */
+    /** A map from unique stackframe IDs (even across connections) to Xdebug stackframes */
     private _stackFrames = new Map<number, xdebug.StackFrame>()
 
-    /** A map from XDebug connections to their current status */
+    /** A map from Xdebug connections to their current status */
     private _statuses = new Map<xdebug.Connection, xdebug.StatusResponse>()
 
     /** A counter for unique context, property and eval result properties (as these are all requested by a VariableRequest from VS Code) */
     private _variableIdCounter = 1
 
-    /** A map from unique VS Code variable IDs to XDebug statuses for virtual error stack frames */
+    /** A map from unique VS Code variable IDs to Xdebug statuses for virtual error stack frames */
     private _errorStackFrames = new Map<number, xdebug.StatusResponse>()
 
-    /** A map from unique VS Code variable IDs to XDebug statuses for virtual error scopes */
+    /** A map from unique VS Code variable IDs to Xdebug statuses for virtual error scopes */
     private _errorScopes = new Map<number, xdebug.StatusResponse>()
 
-    /** A map from unique VS Code variable IDs to an XDebug contexts */
+    /** A map from unique VS Code variable IDs to an Xdebug contexts */
     private _contexts = new Map<number, xdebug.Context>()
 
-    /** A map from unique VS Code variable IDs to a XDebug properties */
+    /** A map from unique VS Code variable IDs to a Xdebug properties */
     private _properties = new Map<number, xdebug.Property>()
 
-    /** A map from unique VS Code variable IDs to XDebug eval result properties, because property children returned from eval commands are always inlined */
+    /** A map from unique VS Code variable IDs to Xdebug eval result properties, because property children returned from eval commands are always inlined */
     private _evalResultProperties = new Map<number, xdebug.EvalResultProperty>()
 
     /** A flag to indicate that the adapter has already processed the stopOnEntry step request */
@@ -250,13 +250,13 @@ class PhpDebugSession extends vscode.DebugSession {
                 this._phpProcess = script
             }
         }
-        /** sets up a TCP server to listen for XDebug connections */
+        /** sets up a TCP server to listen for Xdebug connections */
         const createServer = () =>
             new Promise<void>((resolve, reject) => {
                 const server = (this._server = net.createServer())
                 server.on('connection', async (socket: net.Socket) => {
                     try {
-                        // new XDebug connection
+                        // new Xdebug connection
                         const connection = new xdebug.Connection(socket)
                         if (args.log) {
                             this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'), true)
@@ -456,7 +456,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 vscodeBreakpoints = args.breakpoints!.map(breakpoint => ({ verified: false, line: breakpoint.line }))
             } else {
                 vscodeBreakpoints = []
-                // create XDebug breakpoints from the arguments
+                // create Xdebug breakpoints from the arguments
                 xdebugBreakpoints = args.breakpoints!.map(breakpoint => {
                     if (breakpoint.condition) {
                         return new xdebug.ConditionalBreakpoint(breakpoint.condition, fileUri, breakpoint.line)
@@ -651,7 +651,7 @@ class PhpDebugSession extends vscode.DebugSession {
     protected threadsRequest(response: VSCodeDebugProtocol.ThreadsResponse): void {
         // PHP doesn't have threads, but it may have multiple requests in parallel.
         // Think about a website that makes multiple, parallel AJAX requests to your PHP backend.
-        // XDebug opens a new socket connection for each of them, we tell VS Code that these are our threads.
+        // Xdebug opens a new socket connection for each of them, we tell VS Code that these are our threads.
         const connections = Array.from(this._connections.values())
         response.body = {
             threads: connections.map(
@@ -699,7 +699,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
                     line++
                 } else {
-                    // XDebug paths are URIs, VS Code file paths
+                    // Xdebug paths are URIs, VS Code file paths
                     const filePath = convertDebuggerPathToClient(urlObject, this._args.pathMappings)
                     // "Name" of the source and the actual file path
                     source = { name: path.basename(filePath), path: filePath }
@@ -725,7 +725,7 @@ class PhpDebugSession extends vscode.DebugSession {
                                 // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
                                 line++
                             } else {
-                                // XDebug paths are URIs, VS Code file paths
+                                // Xdebug paths are URIs, VS Code file paths
                                 const filePath = convertDebuggerPathToClient(urlObject, this._args.pathMappings)
                                 // "Name" of the source and the actual file path
                                 source = { name: path.basename(filePath), path: filePath }
@@ -734,7 +734,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             const stackFrameId = this._stackFrameIdCounter++
                             // save the connection this stackframe belongs to and the level of the stackframe under the stacktrace id
                             this._stackFrames.set(stackFrameId, stackFrame)
-                            // prepare response for VS Code (column is always 1 since XDebug doesn't tell us the column)
+                            // prepare response for VS Code (column is always 1 since Xdebug doesn't tell us the column)
                             return { id: stackFrameId, name: stackFrame.name, source, line, column: 1 }
                         }
                     ),
@@ -791,7 +791,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 const contexts = await stackFrame.getContexts()
                 scopes = contexts.map(context => {
                     const variableId = this._variableIdCounter++
-                    // remember that this new variable ID is assigned to a SCOPE (in XDebug "context"), not a variable (in XDebug "property"),
+                    // remember that this new variable ID is assigned to a SCOPE (in Xdebug "context"), not a variable (in Xdebug "property"),
                     // so when VS Code does a variablesRequest with that ID we do a context_get and not a property_get
                     this._contexts.set(variableId, context)
                     // send VS Code the variable ID as identifier
@@ -1002,7 +1002,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments) {
-        this.sendErrorResponse(response, new Error('Pausing the execution is not supported by XDebug'))
+        this.sendErrorResponse(response, new Error('Pausing the execution is not supported by Xdebug'))
     }
 
     protected async disconnectRequest(
