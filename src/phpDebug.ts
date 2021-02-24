@@ -46,6 +46,18 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
     return displayValue
 }
 
+class NewDbgpConnectionEvent extends vscode.Event {
+    body: {
+        connId: number
+    }
+    constructor(connId: number) {
+        super('newDbgpConnection');
+        this.body = {
+            connId: connId
+        }
+    }
+}
+
 /**
  * This interface should always match the schema found in the mock-debug extension manifest.
  */
@@ -85,9 +97,11 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     env?: { [key: string]: string }
     /** If true launch the target in an external console. */
     externalConsole?: boolean
+    /** Internal variable for passing connections between adapter instances */
+    connId?: number
 }
 
-class PhpDebugSession extends vscode.DebugSession {
+export class PhpDebugSession extends vscode.DebugSession {
     /** The arguments that were given to launchRequest */
     private _args: LaunchRequestArguments
 
@@ -143,6 +157,9 @@ class PhpDebugSession extends vscode.DebugSession {
     /** A flag to indicate that the adapter has already processed the stopOnEntry step request */
     private _hasStoppedOnEntry = false
 
+    /** Static store of all active connections used to pass them betweeen adapter instances */
+    private static _allConnections = new Map<number, xdebug.Connection>()
+
     public constructor() {
         super()
         this.setDebuggerColumnsStartAt1(true)
@@ -186,12 +203,69 @@ class PhpDebugSession extends vscode.DebugSession {
         this.sendResponse(response)
     }
 
-    protected attachRequest(
+    protected async attachRequest(
         response: VSCodeDebugProtocol.AttachResponse,
-        args: VSCodeDebugProtocol.AttachRequestArguments
+        args2: VSCodeDebugProtocol.AttachRequestArguments
     ) {
-        this.sendErrorResponse(response, new Error('Attach requests are not supported'))
-        this.shutdown()
+      const args = args2 as LaunchRequestArguments
+        if (!args.connId  || !PhpDebugSession._allConnections.has(args.connId)) {
+            this.sendErrorResponse(response, new Error('Cant find connection'))
+            this.shutdown()
+            return
+        }
+        this.sendResponse(response)
+
+        this._args = args
+        const connection = PhpDebugSession._allConnections.get(args.connId!)!
+        
+        this._connections.set(connection.id, connection)
+        this._waitingConnections.add(connection)
+        const disposeConnection = (error?: Error) => {
+            if (this._connections.has(connection.id)) {
+                if (args.log) {
+                    this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ' closed\n'))
+                }
+                if (error) {
+                    this.sendEvent(
+                        new vscode.OutputEvent(
+                            'connection ' + connection.id + ': ' + error.message + '\n'
+                        )
+                    )
+                }
+                this.sendEvent(new vscode.ContinuedEvent(connection.id, false))
+                this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
+                connection.close()
+                this._connections.delete(connection.id)
+                this._waitingConnections.delete(connection)
+            }
+            PhpDebugSession._allConnections.delete(connection.id)
+            this.sendEvent(new vscode.TerminatedEvent())
+        }
+        connection.on('warning', (warning: string) => {
+            this.sendEvent(new vscode.OutputEvent(warning + '\n'))
+        })
+        connection.on('error', disposeConnection)
+        connection.on('close', disposeConnection)
+        await connection.waitForInitPacket()
+
+        // override features from launch.json
+        try {
+            const xdebugSettings = args.xdebugSettings || {}
+            await Promise.all(
+                Object.keys(xdebugSettings).map(setting =>
+                    connection.sendFeatureSetCommand(setting, xdebugSettings[setting])
+                )
+            )
+        } catch (error) {
+            throw new Error(
+                'Error applying xdebugSettings: ' + (error instanceof Error ? error.message : error)
+            )
+        }
+
+        this.sendEvent(new vscode.ThreadEvent('started', connection.id))
+
+        // request breakpoints from VS Code
+        this.sendEvent(new vscode.InitializedEvent())
     }
 
     protected async launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
@@ -263,6 +337,9 @@ class PhpDebugSession extends vscode.DebugSession {
                         if (args.log) {
                             this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'), true)
                         }
+                        PhpDebugSession._allConnections.set(connection.id, connection)
+                        this.sendEvent(new NewDbgpConnectionEvent(connection.id))
+                        /*
                         this._connections.set(connection.id, connection)
                         this._waitingConnections.add(connection)
                         const disposeConnection = (error?: Error) => {
@@ -282,6 +359,7 @@ class PhpDebugSession extends vscode.DebugSession {
                                 connection.close()
                                 this._connections.delete(connection.id)
                                 this._waitingConnections.delete(connection)
+                                PhpDebugSession._allConnections.delete(connection.id)
                             }
                         }
                         connection.on('warning', (warning: string) => {
@@ -309,6 +387,7 @@ class PhpDebugSession extends vscode.DebugSession {
 
                         // request breakpoints from VS Code
                         await this.sendEvent(new vscode.InitializedEvent())
+                        */
                     } catch (error) {
                         this.sendEvent(
                             new vscode.OutputEvent((error instanceof Error ? error.message : error) + '\n', 'stderr')
@@ -1075,6 +1154,10 @@ class PhpDebugSession extends vscode.DebugSession {
         } catch (error) {
             this.sendErrorResponse(response, error)
         }
+    }
+
+    protected customRequest(command: string, response: VSCodeDebugProtocol.Response, args: any): void {
+        console.log('test', args)
     }
 }
 

@@ -57,6 +57,7 @@
     "@types/semver": "^7.3.4",
     "@types/urlencode": "^1.1.2",
     "@types/xmldom": "^0.1.30",
+    "@types/vscode": "^1.53.0",
     "chai": "^4.3.0",
     "chai-as-promised": "^7.1.1",
     "husky": "^4.3.8",
@@ -130,6 +131,10 @@
       "out/test/**/*.*"
     ]
   },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onDebug"
+  ],
   "contributes": {
     "breakpoints": [
       {
@@ -302,12 +307,12 @@
               "port": 0,
               "runtimeArgs": [
                 "-dxdebug.start_with_request=yes"
-                ],
-                "env": {
-                  "XDEBUG_MODE": "debug,develop",
-                  "XDEBUG_CONFIG": "^\"client_port=\\${port\\}\""
-                }
+              ],
+              "env": {
+                "XDEBUG_MODE": "debug,develop",
+                "XDEBUG_CONFIG": "^\"client_port=\\${port\\}\""
               }
+            }
           },
           {
             "label": "PHP: Launch currently open script with Xdebug 2",
