@@ -51,9 +51,9 @@ class NewDbgpConnectionEvent extends vscode.Event {
         connId: number
     }
     constructor(connId: number) {
-        super('newDbgpConnection');
+        super('newDbgpConnection')
         this.body = {
-            connId: connId
+            connId: connId,
         }
     }
 }
@@ -207,8 +207,8 @@ export class PhpDebugSession extends vscode.DebugSession {
         response: VSCodeDebugProtocol.AttachResponse,
         args2: VSCodeDebugProtocol.AttachRequestArguments
     ) {
-      const args = args2 as LaunchRequestArguments
-        if (!args.connId  || !PhpDebugSession._allConnections.has(args.connId)) {
+        const args = args2 as LaunchRequestArguments
+        if (!args.connId || !PhpDebugSession._allConnections.has(args.connId)) {
             this.sendErrorResponse(response, new Error('Cant find connection'))
             this.shutdown()
             return
@@ -217,7 +217,7 @@ export class PhpDebugSession extends vscode.DebugSession {
 
         this._args = args
         const connection = PhpDebugSession._allConnections.get(args.connId!)!
-        
+
         this._connections.set(connection.id, connection)
         this._waitingConnections.add(connection)
         const disposeConnection = (error?: Error) => {
@@ -226,11 +226,7 @@ export class PhpDebugSession extends vscode.DebugSession {
                     this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ' closed\n'))
                 }
                 if (error) {
-                    this.sendEvent(
-                        new vscode.OutputEvent(
-                            'connection ' + connection.id + ': ' + error.message + '\n'
-                        )
-                    )
+                    this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ': ' + error.message + '\n'))
                 }
                 this.sendEvent(new vscode.ContinuedEvent(connection.id, false))
                 this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
@@ -257,9 +253,7 @@ export class PhpDebugSession extends vscode.DebugSession {
                 )
             )
         } catch (error) {
-            throw new Error(
-                'Error applying xdebugSettings: ' + (error instanceof Error ? error.message : error)
-            )
+            throw new Error('Error applying xdebugSettings: ' + (error instanceof Error ? error.message : error))
         }
 
         this.sendEvent(new vscode.ThreadEvent('started', connection.id))
