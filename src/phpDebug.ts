@@ -346,7 +346,7 @@ export class PhpDebugSession extends vscode.DebugSession {
                 const port = (server.address() as net.AddressInfo).port
                 resolve(port)
             })
-            const listenPort = args.port === undefined ? 9003 : args.port
+            const listenPort = args.port === undefined ? 9000 : args.port
             server.listen(listenPort, args.hostname)
         })
     }
