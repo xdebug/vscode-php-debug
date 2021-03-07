@@ -61,7 +61,7 @@ class NewDbgpConnectionEvent extends vscode.Event {
 /**
  * This interface should always match the schema found in the mock-debug extension manifest.
  */
-interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArguments {
+export interface StartRequestArguments {
     /** The address to bind to for listening for Xdebug connections (default: all IPv6 connections if available, else all IPv4 connections) */
     hostname?: string
     /** The port where the adapter should listen for Xdebug connections (default: 9000) */
@@ -103,7 +103,7 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
 
 export class PhpDebugSession extends vscode.DebugSession {
     /** The arguments that were given to launchRequest */
-    private _args: LaunchRequestArguments
+    private _args: StartRequestArguments
 
     /** The TCP server that listens for Xdebug connections */
     private _server: net.Server
@@ -160,8 +160,12 @@ export class PhpDebugSession extends vscode.DebugSession {
     /** Static store of all active connections used to pass them betweeen adapter instances */
     private static _allConnections = new Map<number, xdebug.Connection>()
 
-    public constructor() {
+    /** A flag indicating the adapter was initiatefd from vscode extension - controls how sessions are handeled */
+    private _fromExtension = false
+
+    public constructor(fromExtension = false) {
         super()
+        this._fromExtension = fromExtension
         this.setDebuggerColumnsStartAt1(true)
         this.setDebuggerLinesStartAt1(true)
         this.setDebuggerPathFormat('uri')
@@ -205,11 +209,10 @@ export class PhpDebugSession extends vscode.DebugSession {
 
     protected async attachRequest(
         response: VSCodeDebugProtocol.AttachResponse,
-        args2: VSCodeDebugProtocol.AttachRequestArguments
+        args: StartRequestArguments & VSCodeDebugProtocol.AttachRequestArguments
     ) {
-        const args = args2 as LaunchRequestArguments
         if (!args.connId || !PhpDebugSession._allConnections.has(args.connId)) {
-            this.sendErrorResponse(response, new Error('Cant find connection'))
+            this.sendErrorResponse(response, new Error("Can't find connection"))
             this.shutdown()
             return
         }
@@ -218,6 +221,137 @@ export class PhpDebugSession extends vscode.DebugSession {
         this._args = args
         const connection = PhpDebugSession._allConnections.get(args.connId!)!
 
+        await this.processConnection(connection, args)
+    }
+
+    protected async launchRequest(
+        response: VSCodeDebugProtocol.LaunchResponse,
+        args: StartRequestArguments & VSCodeDebugProtocol.LaunchRequestArguments
+    ) {
+        if (args.localSourceRoot && args.serverSourceRoot) {
+            let pathMappings: { [index: string]: string } = {}
+            if (args.pathMappings) {
+                pathMappings = args.pathMappings
+            }
+            pathMappings[args.serverSourceRoot] = args.localSourceRoot
+            args.pathMappings = pathMappings
+        }
+        this._args = args
+        try {
+            if (args.connId) {
+                if (!PhpDebugSession._allConnections.has(args.connId)) {
+                    this.sendErrorResponse(response, new Error("Can't find connection"))
+                    this.shutdown()
+                    return
+                }
+                const connection = PhpDebugSession._allConnections.get(args.connId!)!
+                await this.processConnection(connection, args)
+            } else {
+                let port = 0
+                if (!args.noDebug) {
+                    port = await this.createServer(args)
+                }
+                if (args.program) {
+                    await this.launchScript(port, args)
+                }
+            }
+        } catch (error) {
+            this.sendErrorResponse(response, <Error>error)
+            return
+        }
+        this.sendResponse(response)
+    }
+
+    /** launches the script as CLI */
+    private async launchScript(port: number, args: StartRequestArguments): Promise<void> {
+        // check if program exists
+        await new Promise<void>((resolve, reject) =>
+            fs.access(args.program!, fs.constants.F_OK, err => (err ? reject(err) : resolve()))
+        )
+        const runtimeArgs = (args.runtimeArgs || []).map(v => v.replace('${port}', port.toString()))
+        const runtimeExecutable = args.runtimeExecutable || 'php'
+        const programArgs = args.args || []
+        const cwd = args.cwd || process.cwd()
+        const env = Object.fromEntries(
+            Object.entries(args.env || process.env).map(v => [v[0], v[1]?.replace('${port}', port.toString())])
+        )
+        // launch in CLI mode
+        if (args.externalConsole) {
+            const script = await Terminal.launchInTerminal(
+                cwd,
+                [runtimeExecutable, ...runtimeArgs, args.program!, ...programArgs],
+                env
+            )
+            if (script) {
+                // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
+                script.on('exit', () => {
+                    this.sendEvent(new vscode.TerminatedEvent())
+                })
+            }
+        } else {
+            const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program!, ...programArgs], {
+                cwd,
+                env,
+            })
+            // redirect output to debug console
+            script.stdout.on('data', (data: Buffer) => {
+                this.sendEvent(new vscode.OutputEvent(data + '', 'stdout'))
+            })
+            script.stderr.on('data', (data: Buffer) => {
+                this.sendEvent(new vscode.OutputEvent(data + '', 'stderr'))
+            })
+            // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
+            script.on('exit', () => {
+                this.sendEvent(new vscode.TerminatedEvent())
+            })
+            script.on('error', (error: Error) => {
+                this.sendEvent(new vscode.OutputEvent(util.inspect(error) + '\n'))
+            })
+            this._phpProcess = script
+        }
+    }
+
+    /** sets up a TCP server to listen for Xdebug connections */
+    private createServer(args: StartRequestArguments): Promise<number> {
+        return new Promise<number>((resolve, reject) => {
+            const server = (this._server = net.createServer())
+            server.on('connection', async (socket: net.Socket) => {
+                try {
+                    // new Xdebug connection
+                    const connection = new xdebug.Connection(socket)
+                    if (args.log) {
+                        this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'), true)
+                    }
+
+                    // HANDLE NEW SESSION
+                    if (this._fromExtension) {
+                        PhpDebugSession._allConnections.set(connection.id, connection)
+                        this.sendEvent(new NewDbgpConnectionEvent(connection.id))
+                    } else {
+                        // handle as thread
+                        this.processConnection(connection, args)
+                    }
+                } catch (error) {
+                    this.sendEvent(
+                        new vscode.OutputEvent((error instanceof Error ? error.message : error) + '\n', 'stderr')
+                    )
+                    this.shutdown()
+                }
+            })
+            server.on('error', (error: Error) => {
+                this.sendEvent(new vscode.OutputEvent(util.inspect(error) + '\n'))
+                reject(error)
+            })
+            server.on('listening', () => {
+                const port = (server.address() as net.AddressInfo).port
+                resolve(port)
+            })
+            const listenPort = args.port === undefined ? 9003 : args.port
+            server.listen(listenPort, args.hostname)
+        })
+    }
+
+    private async processConnection(connection: xdebug.Connection, args: StartRequestArguments): Promise<void> {
         this._connections.set(connection.id, connection)
         this._waitingConnections.add(connection)
         const disposeConnection = (error?: Error) => {
@@ -260,159 +394,6 @@ export class PhpDebugSession extends vscode.DebugSession {
 
         // request breakpoints from VS Code
         this.sendEvent(new vscode.InitializedEvent())
-    }
-
-    protected async launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
-        if (args.localSourceRoot && args.serverSourceRoot) {
-            let pathMappings: { [index: string]: string } = {}
-            if (args.pathMappings) {
-                pathMappings = args.pathMappings
-            }
-            pathMappings[args.serverSourceRoot] = args.localSourceRoot
-            args.pathMappings = pathMappings
-        }
-        this._args = args
-        /** launches the script as CLI */
-        const launchScript = async (port: number) => {
-            // check if program exists
-            await new Promise<void>((resolve, reject) =>
-                fs.access(args.program!, fs.constants.F_OK, err => (err ? reject(err) : resolve()))
-            )
-            const runtimeArgs = (args.runtimeArgs || []).map(v => v.replace('${port}', port.toString()))
-            const runtimeExecutable = args.runtimeExecutable || 'php'
-            const programArgs = args.args || []
-            const cwd = args.cwd || process.cwd()
-            const env = Object.fromEntries(
-                Object.entries(args.env || process.env).map(v => [v[0], v[1]?.replace('${port}', port.toString())])
-            )
-            // launch in CLI mode
-            if (args.externalConsole) {
-                const script = await Terminal.launchInTerminal(
-                    cwd,
-                    [runtimeExecutable, ...runtimeArgs, args.program!, ...programArgs],
-                    env
-                )
-                if (script) {
-                    // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                    script.on('exit', () => {
-                        this.sendEvent(new vscode.TerminatedEvent())
-                    })
-                }
-            } else {
-                const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program!, ...programArgs], {
-                    cwd,
-                    env,
-                })
-                // redirect output to debug console
-                script.stdout.on('data', (data: Buffer) => {
-                    this.sendEvent(new vscode.OutputEvent(data + '', 'stdout'))
-                })
-                script.stderr.on('data', (data: Buffer) => {
-                    this.sendEvent(new vscode.OutputEvent(data + '', 'stderr'))
-                })
-                // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                script.on('exit', () => {
-                    this.sendEvent(new vscode.TerminatedEvent())
-                })
-                script.on('error', (error: Error) => {
-                    this.sendEvent(new vscode.OutputEvent(util.inspect(error) + '\n'))
-                })
-                this._phpProcess = script
-            }
-        }
-        /** sets up a TCP server to listen for Xdebug connections */
-        const createServer = () =>
-            new Promise<number>((resolve, reject) => {
-                const server = (this._server = net.createServer())
-                server.on('connection', async (socket: net.Socket) => {
-                    try {
-                        // new Xdebug connection
-                        const connection = new xdebug.Connection(socket)
-                        if (args.log) {
-                            this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'), true)
-                        }
-                        PhpDebugSession._allConnections.set(connection.id, connection)
-                        this.sendEvent(new NewDbgpConnectionEvent(connection.id))
-                        /*
-                        this._connections.set(connection.id, connection)
-                        this._waitingConnections.add(connection)
-                        const disposeConnection = (error?: Error) => {
-                            if (this._connections.has(connection.id)) {
-                                if (args.log) {
-                                    this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ' closed\n'))
-                                }
-                                if (error) {
-                                    this.sendEvent(
-                                        new vscode.OutputEvent(
-                                            'connection ' + connection.id + ': ' + error.message + '\n'
-                                        )
-                                    )
-                                }
-                                this.sendEvent(new vscode.ContinuedEvent(connection.id, false))
-                                this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
-                                connection.close()
-                                this._connections.delete(connection.id)
-                                this._waitingConnections.delete(connection)
-                                PhpDebugSession._allConnections.delete(connection.id)
-                            }
-                        }
-                        connection.on('warning', (warning: string) => {
-                            this.sendEvent(new vscode.OutputEvent(warning + '\n'))
-                        })
-                        connection.on('error', disposeConnection)
-                        connection.on('close', disposeConnection)
-                        await connection.waitForInitPacket()
-
-                        // override features from launch.json
-                        try {
-                            const xdebugSettings = args.xdebugSettings || {}
-                            await Promise.all(
-                                Object.keys(xdebugSettings).map(setting =>
-                                    connection.sendFeatureSetCommand(setting, xdebugSettings[setting])
-                                )
-                            )
-                        } catch (error) {
-                            throw new Error(
-                                'Error applying xdebugSettings: ' + (error instanceof Error ? error.message : error)
-                            )
-                        }
-
-                        this.sendEvent(new vscode.ThreadEvent('started', connection.id))
-
-                        // request breakpoints from VS Code
-                        await this.sendEvent(new vscode.InitializedEvent())
-                        */
-                    } catch (error) {
-                        this.sendEvent(
-                            new vscode.OutputEvent((error instanceof Error ? error.message : error) + '\n', 'stderr')
-                        )
-                        this.shutdown()
-                    }
-                })
-                server.on('error', (error: Error) => {
-                    this.sendEvent(new vscode.OutputEvent(util.inspect(error) + '\n'))
-                    reject(error)
-                })
-                server.on('listening', () => {
-                    const port = (server.address() as net.AddressInfo).port
-                    resolve(port)
-                })
-                const listenPort = args.port === undefined ? 9000 : args.port
-                server.listen(listenPort, args.hostname)
-            })
-        try {
-            let port = 0
-            if (!args.noDebug) {
-                port = await createServer()
-            }
-            if (args.program) {
-                await launchScript(port)
-            }
-        } catch (error) {
-            this.sendErrorResponse(response, <Error>error)
-            return
-        }
-        this.sendResponse(response)
     }
 
     /**
@@ -1103,7 +1084,7 @@ export class PhpDebugSession extends vscode.DebugSession {
             )
             // If listening for connections, close server
             if (this._server) {
-                await new Promise(resolve => this._server.close(resolve))
+                this._server.close()
             }
             // If launched as CLI, kill process
             if (this._phpProcess) {
