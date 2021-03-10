@@ -11,7 +11,7 @@ export function activate(context: vscode.ExtensionContext) {
                 config.request = 'launch'
                 config.name = 'DBGp connection ' + event.body.connId
                 config.connId = event.body.connId
-                vscode.debug.startDebugging(undefined, config, event.session)
+                vscode.debug.startDebugging(undefined, config)
             }
         })
     )
