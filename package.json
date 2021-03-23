@@ -271,6 +271,30 @@
             "cwd": "${fileDirname}",
             "port": 9000
           }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "PHP: Listen for Xdebug 2",
+            "description": "Listen for incoming XDebug connections",
+            "body": {
+              "name": "Listen for Xdebug 2",
+              "type": "php",
+              "request": "launch",
+              "port": 9000
+            }
+          },
+          {
+            "label": "PHP: Launch currently open script 2",
+            "description": "Debug the currently open PHP script in CLI mode",
+            "body": {
+              "name": "Launch currently open script 2",
+              "type": "php",
+              "request": "launch",
+              "program": "^\"${1:\\${file\\}}\"",
+              "cwd": "^\"${2:\\${fileDirname\\}}\"",
+              "port": 9000
+            }
+          }
         ]
       }
     ]
