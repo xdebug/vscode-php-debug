@@ -58,15 +58,19 @@ export function convertDebuggerPathToClient(
     }
     let localPath: string
     if (serverSourceRoot && localSourceRoot) {
+        const clientIsWindows = /^[a-zA-Z]:\\/.test(localSourceRoot) || /^\\\\/.test(localSourceRoot)
         // get the part of the path that is relative to the source root
-        const pathRelativeToSourceRoot = (serverIsWindows ? path.win32 : path.posix).relative(
+        let pathRelativeToSourceRoot = (serverIsWindows ? path.win32 : path.posix).relative(
             serverSourceRoot,
             serverPath
         )
+        if (serverIsWindows && !clientIsWindows) {
+            pathRelativeToSourceRoot = pathRelativeToSourceRoot.replace(/\\/g, path.posix.sep)
+        }
         // resolve from the local source root
-        localPath = path.resolve(localSourceRoot, pathRelativeToSourceRoot)
+        localPath = (clientIsWindows ? path.win32 : path.posix).resolve(localSourceRoot, pathRelativeToSourceRoot)
     } else {
-        localPath = path.normalize(serverPath)
+        localPath = (serverIsWindows ? path.win32 : path.posix).normalize(serverPath)
     }
     return localPath
 }
