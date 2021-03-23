@@ -274,20 +274,20 @@
         ],
         "configurationSnippets": [
           {
-            "label": "PHP: Listen for Xdebug 2",
+            "label": "PHP: Listen for Xdebug",
             "description": "Listen for incoming XDebug connections",
             "body": {
-              "name": "Listen for Xdebug 2",
+              "name": "Listen for Xdebug",
               "type": "php",
               "request": "launch",
               "port": 9000
             }
           },
           {
-            "label": "PHP: Launch currently open script 2",
+            "label": "PHP: Launch currently open script",
             "description": "Debug the currently open PHP script in CLI mode",
             "body": {
-              "name": "Launch currently open script 2",
+              "name": "Launch currently open script",
               "type": "php",
               "request": "launch",
               "program": "^\"${1:\\${file\\}}\"",
