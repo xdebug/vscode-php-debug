@@ -102,6 +102,34 @@ describe('paths', () => {
                     }),
                     'file:///app/source.php'
                 )
+                // only driv eletter
+                assert.equal(
+                    convertClientPathToDebugger('C:\\source.php', {
+                        '/var/www': 'C:',
+                    }),
+                    'file:///var/www/source.php'
+                )
+                // only driv eletter
+                assert.equal(
+                    convertClientPathToDebugger('C:\\app\\source.php', {
+                        '/': 'C:',
+                    }),
+                    'file:///app/source.php'
+                )
+                // drive letter with slash
+                assert.equal(
+                    convertClientPathToDebugger('C:\\app\\source.php', {
+                        '/var/www': 'C:/',
+                    }),
+                    'file:///var/www/app/source.php'
+                )
+                // drive letter with slash
+                assert.equal(
+                    convertClientPathToDebugger('C:\\app\\source.php', {
+                        '/': 'C:/',
+                    }),
+                    'file:///app/source.php'
+                )
             })
             ;(process.platform === 'win32' ? it : it.skip)(
                 'should convert a windows path with inconsistent casing to a unix URI',
@@ -201,6 +229,34 @@ describe('paths', () => {
                         '/app': 'C:\\Users\\felix\\mysource',
                     }),
                     'C:\\Users\\felix\\mysource\\source.php'
+                )
+                // only drive letter
+                assert.equal(
+                    convertDebuggerPathToClient('file:///var/www/source.php', {
+                        '/var/www': 'C:',
+                    }),
+                    'C:\\source.php'
+                )
+                // only drive letter
+                assert.equal(
+                    convertDebuggerPathToClient('file:///app/source.php', {
+                        '/': 'C:',
+                    }),
+                    'C:\\app\\source.php'
+                )
+                // drive letter with slash
+                assert.equal(
+                    convertDebuggerPathToClient('file:///var/www/source.php', {
+                        '/var': 'C:/',
+                    }),
+                    'C:\\www\\source.php'
+                )
+                // drive letter with slash
+                assert.equal(
+                    convertDebuggerPathToClient('file:///app/source.php', {
+                        '/': 'C:/',
+                    }),
+                    'C:\\app\\source.php'
                 )
             })
             // windows to unix

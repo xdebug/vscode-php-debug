@@ -58,7 +58,11 @@ export function convertDebuggerPathToClient(
     }
     let localPath: string
     if (serverSourceRoot && localSourceRoot) {
-        const clientIsWindows = /^[a-zA-Z]:\\/.test(localSourceRoot) || /^\\\\/.test(localSourceRoot)
+        const clientIsWindows =
+            /^[a-zA-Z]:\\/.test(localSourceRoot) ||
+            /^\\\\/.test(localSourceRoot) ||
+            /^[a-zA-Z]:$/.test(localSourceRoot) ||
+            /^[a-zA-Z]:\//.test(localSourceRoot)
         // get the part of the path that is relative to the source root
         let pathRelativeToSourceRoot = (serverIsWindows ? path.win32 : path.posix).relative(
             serverSourceRoot,
@@ -66,6 +70,10 @@ export function convertDebuggerPathToClient(
         )
         if (serverIsWindows && !clientIsWindows) {
             pathRelativeToSourceRoot = pathRelativeToSourceRoot.replace(/\\/g, path.posix.sep)
+        }
+        if (clientIsWindows && /^[a-zA-Z]:$/.test(localSourceRoot)) {
+            // if local source root mapping is only drive letter, add backslash
+            localSourceRoot += '\\'
         }
         // resolve from the local source root
         localPath = (clientIsWindows ? path.win32 : path.posix).resolve(localSourceRoot, pathRelativeToSourceRoot)
@@ -87,7 +95,11 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
     let serverFileUri: string
     if (pathMapping) {
         for (const mappedServerPath of Object.keys(pathMapping)) {
-            const mappedLocalSource = pathMapping[mappedServerPath]
+            let mappedLocalSource = pathMapping[mappedServerPath]
+            if (/^[a-zA-Z]:$/.test(mappedLocalSource)) {
+                // if local source root mapping is only drive letter, add backslash
+                mappedLocalSource += '\\'
+            }
             const localRelative = path.relative(mappedLocalSource, localPath)
             if (localRelative.indexOf('..') !== 0) {
                 // If a matching mapping has previously been found, only update
@@ -101,10 +113,14 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
         }
     }
     if (localSourceRoot) {
+        localSourceRoot = localSourceRoot.replace(/^[A-Z]:$/, match => match.toLowerCase())
         localSourceRoot = localSourceRoot.replace(/^[A-Z]:\\/, match => match.toLowerCase())
+        localSourceRoot = localSourceRoot.replace(/^[A-Z]:\//, match => match.toLowerCase())
     }
     if (serverSourceRoot) {
+        serverSourceRoot = serverSourceRoot.replace(/^[A-Z]:$/, match => match.toLowerCase())
         serverSourceRoot = serverSourceRoot.replace(/^[A-Z]:\\/, match => match.toLowerCase())
+        serverSourceRoot = serverSourceRoot.replace(/^[A-Z]:\//, match => match.toLowerCase())
     }
     if (serverSourceRoot && localSourceRoot) {
         let localSourceRootUrl = fileUrl(localSourceRoot, { resolve: false })
