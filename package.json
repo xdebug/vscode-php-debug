@@ -82,13 +82,14 @@
     ],
     "prepare": {
       "path": "semantic-release-vsce",
-      "packageVsix": "php-debug.vsix"
+      "packageVsix": true
     },
     "publish": [
       "semantic-release-vsce",
       {
         "path": "@semantic-release/github",
-        "assets": "php-debug.vsix"
+        "assets": "*.vsix",
+        "addReleases": "bottom"
       }
     ]
   },
