@@ -182,6 +182,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     default: true,
                 },
             ],
+            supportTerminateDebuggee: true,
         }
         this.sendResponse(response)
     }
@@ -1012,9 +1013,14 @@ class PhpDebugSession extends vscode.DebugSession {
         try {
             await Promise.all(
                 Array.from(this._connections).map(async ([id, connection]) => {
-                    // Try to send stop command for 500ms
-                    // If the script is running, just close the connection
-                    await Promise.race([connection.sendStopCommand(), new Promise(resolve => setTimeout(resolve, 500))])
+                    if (args?.terminateDebuggee !== false) {
+                        // Try to send stop command for 500ms
+                        // If the script is running, just close the connection
+                        await Promise.race([
+                            connection.sendStopCommand(),
+                            new Promise(resolve => setTimeout(resolve, 500)),
+                        ])
+                    }
                     await connection.close()
                     this._connections.delete(id)
                     this._waitingConnections.delete(connection)
