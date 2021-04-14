@@ -31,12 +31,12 @@ export function convertDebuggerPathToClient(
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
     if (typeof fileUri === 'string') {
-        fileUri = url.parse(fileUri)
+        fileUri = url.parse(fileUri, false, true)
     }
     // convert the file URI to a path
-    let serverPath = decode(fileUri.pathname!)
+    let serverPath = decode((fileUri.host ? '///' + fileUri.host : '') + fileUri.pathname!)
     // strip the trailing slash from Windows paths (indicated by a drive letter with a colon)
-    const serverIsWindows = /^\/[a-zA-Z]:\//.test(serverPath)
+    const serverIsWindows = /^\/[a-zA-Z]:\//.test(serverPath) || /^\/\/\//.test(serverPath)
     if (serverIsWindows) {
         serverPath = serverPath.substr(1)
     }
@@ -92,6 +92,9 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
         localPath.replace(/^[A-Z]:\\/, match => match.toLowerCase()),
         { resolve: false }
     )
+    if (/^file:\/\/\/\//.test(localFileUri)) {
+        localFileUri = localFileUri.replace(/^file:\/\/\/\//, 'file://')
+    }
     let serverFileUri: string
     if (pathMapping) {
         for (const mappedServerPath of Object.keys(pathMapping)) {
@@ -142,7 +145,7 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
 }
 
 function isWindowsUri(path: string): boolean {
-    return /^file:\/\/\/[a-zA-Z]:\//.test(path)
+    return /^file:\/\/\/[a-zA-Z]:\//.test(path) || /^file:\/\/[^\/]/.test(path)
 }
 
 export function isSameUri(clientUri: string, debuggerUri: string): boolean {

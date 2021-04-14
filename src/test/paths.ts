@@ -32,6 +32,12 @@ describe('paths', () => {
                     'file:///c:/Users/felix/test.php'
                 )
             })
+            it('should convert a windows UNC path to a URI', () => {
+                assert.strictEqual(
+                    convertClientPathToDebugger('\\\\server\\Users\\felix\\test.php'),
+                    'file://server/Users/felix/test.php'
+                )
+            })
             it('should convert a unix path to a URI', () => {
                 assert.equal(convertClientPathToDebugger('/home/felix/test.php'), 'file:///home/felix/test.php')
             })
@@ -180,6 +186,24 @@ describe('paths', () => {
                 assert.equal(
                     convertDebuggerPathToClient('file:///d:/arx%20iT/2-R%C3%A9alisation/mmi/V1.0/Web/core/header.php'),
                     'd:\\arx iT\\2-Réalisation\\mmi\\V1.0\\Web\\core\\header.php'
+                )
+            })
+            it('should convert windows UNC URI to windows UNC path', () => {
+                assert.strictEqual(
+                    convertDebuggerPathToClient('file://WSL/Ubuntu/home/zobo/php/test1.php'),
+                    '\\\\wsl\\Ubuntu\\home\\zobo\\php\\test1.php'
+                )
+            })
+            it('should convert windows UNC URI to windows UNC path with $ in host', () => {
+                assert.strictEqual(
+                    convertDebuggerPathToClient('file://WSL%24/Ubuntu/home/zobo/php/test1.php'),
+                    '\\\\wsl$\\Ubuntu\\home\\zobo\\php\\test1.php'
+                )
+            })
+            it('should convert windows UNC URI to windows UNC path with $ in path', () => {
+                assert.strictEqual(
+                    convertDebuggerPathToClient('file://SERVER/C$/home/zobo/php/test1.php'),
+                    '\\\\server\\C$\\home\\zobo\\php\\test1.php'
                 )
             })
         })
