@@ -101,9 +101,8 @@ describe('PHP Debug Adapter', () => {
 
         async function waitForBreakpointUpdate(breakpoint: DebugProtocol.Breakpoint): Promise<void> {
             while (true) {
-                var event = (await client.waitForEvent('breakpoint')) as DebugProtocol.BreakpointEvent
-                if (event.body.breakpoint.id == breakpoint.id) {
-                    //breakpoint = {...breakpoint, ...event.body.breakpoint}
+                let event = (await client.waitForEvent('breakpoint')) as DebugProtocol.BreakpointEvent
+                if (event.body.breakpoint.id === breakpoint.id) {
                     for (const [key, value] of Object.entries(event.body.breakpoint)) {
                         ;(breakpoint as any)[key] = value
                     }

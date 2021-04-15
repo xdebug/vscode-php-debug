@@ -71,8 +71,12 @@ export class BreakpointManager extends EventEmitter {
 
         toAdd = sourceBreakpoints
 
-        if (toRemove.length > 0) this.emit('remove', toRemove)
-        if (toAdd.size > 0) this.emit('add', toAdd)
+        if (toRemove.length > 0) {
+            this.emit('remove', toRemove)
+        }
+        if (toAdd.size > 0) {
+            this.emit('add', toAdd)
+        }
 
         return vscodeBreakpoints
     }
@@ -98,8 +102,12 @@ export class BreakpointManager extends EventEmitter {
 
         toAdd = this._exceptionBreakpoints
 
-        if (toRemove.length > 0) this.emit('remove', toRemove)
-        if (toAdd.size > 0) this.emit('add', toAdd)
+        if (toRemove.length > 0) {
+            this.emit('remove', toRemove)
+        }
+        if (toAdd.size > 0) {
+            this.emit('add', toAdd)
+        }
 
         return vscodeBreakpoints
     }
@@ -131,8 +139,12 @@ export class BreakpointManager extends EventEmitter {
 
         toAdd = this._callBreakpoints
 
-        if (toRemove.length > 0) this.emit('remove', toRemove)
-        if (toAdd.size > 0) this.emit('add', toAdd)
+        if (toRemove.length > 0) {
+            this.emit('remove', toRemove)
+        }
+        if (toAdd.size > 0) {
+            this.emit('add', toAdd)
+        }
 
         return vscodeBreakpoints
     }
