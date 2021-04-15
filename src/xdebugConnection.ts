@@ -773,8 +773,14 @@ export class Connection extends DbgpConnection {
     }
 
     /** sends a breakpoint_remove command */
-    public async sendBreakpointRemoveCommand(breakpoint: Breakpoint): Promise<Response> {
-        return new Response(await this._enqueueCommand('breakpoint_remove', `-d ${breakpoint.id}`), this)
+    public async sendBreakpointRemoveCommand(breakpoint: Breakpoint | number): Promise<Response> {
+        let breakpointId: number
+        if (typeof breakpoint === 'number') {
+            breakpointId = breakpoint
+        } else {
+            breakpointId = breakpoint.id
+        }
+        return new Response(await this._enqueueCommand('breakpoint_remove', `-d ${breakpointId}`), this)
     }
 
     // ----------------------------- continuation ---------------------------------
