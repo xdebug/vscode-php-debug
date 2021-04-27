@@ -1,28 +1,46 @@
 {
-  "version": "0.1.0",
-  "command": "npm",
-  "args": ["run", "--silent"],
-  "options": {
-    "env": {
-      "VSCODE_DEBUG_PORT": "4711"
-    }
-  },
-  "isShellCommand": true,
-  "showOutput": "silent",
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
   "tasks": [
     {
-      "taskName": "compile",
-      "isBuildCommand": true,
-      "problemMatcher": "$tsc"
+      "type": "npm",
+      "script": "watch",
+      "problemMatcher": ["$tsc-watch"],
+      "isBackground": true,
+      "label": "npm: watch",
+      "detail": "tsc -w -p .",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     {
-      "taskName": "watch",
-      "isWatching": true,
-      "problemMatcher": "$tsc-watch"
+      "label": "npm: build",
+      "type": "npm",
+      "script": "build",
+      "problemMatcher": ["$tsc"],
+      "isBackground": false
     },
     {
-      "taskName": "test",
-      "isTestCommand": true
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": ["$eslint-stylish"],
+      "label": "npm: lint",
+      "detail": "npm run tslint && npm run prettier"
+    },
+    {
+      "type": "npm",
+      "script": "test",
+      "group": "test",
+      "problemMatcher": [],
+      "label": "npm: test",
+      "detail": "mocha",
+      "options": {
+        "env": {
+          "VSCODE_DEBUG_PORT": "4711"
+        }
+      }
     }
   ]
 }
