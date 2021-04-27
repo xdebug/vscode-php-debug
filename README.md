@@ -120,16 +120,16 @@ Please also note that setting any of the CLI debugging options will not work wit
 
 ## Contributing
 
-To hack on this adapter, clone the repository and open it in VS Code. You need NodeJS with NPM installed. Install dependencies by running `npm install`.
+To hack on this adapter, clone the repository and open it in VS Code. You need NodeJS with NPM installed and in your PATH. Also a recent PHP and Xdebug should be installed and in your PATH.
 
-You can debug the extension (run it in "server mode") by selecting the "Debug adapter" launch configuration and hitting `F5`. Then, open a terminal inside the project, and open the included testproject with VS Code while specifying the current directory as `extensionDevelopmentPath`:
+1. Install NPM packages by either running `npm install` on command line in the project directory or selecting `Terminal / Run Task... / npm / npm: install` in VS Code menu.
+2. Run the build/watch process either by running `npm run watch` on command line in the project directory or selecting `Terminal / Run Build Task...` in VS Code menu.
+3. Start the debug adapter by opening the Run and Debug side bar, selecting `Debug adapter` configuration and clicking on the green Run arrow (or hitting `F5`). The compiled adapter will be running in "server mode" and listering on TCP port 4711.
+4. Run a separate instance of VS Code, called "Extension Development Host" by running `code testproject --extensionDevelopmentPath=.` on command line in the project directory or selecting the `Launch Extension` Run and Debug configuration and pressing the green Run arrow. Another shortcut is to run `npm run start`. You can also run an Insiders build of VS Code for testing newer features.
+5. In the "Extension Development Host" instance open `.vscode/launch.json` and uncomment the `debugServer` configuration line. Run your PHP debug session by selecting the desired configuration and hitting `F5`. Now you can debug the testproject like specified above and set breakpoints inside your first VS Code instance to step through the adapter code.
 
-```sh
-code testproject --extensionDevelopmentPath=.
-```
+More on testing extensions can be found on https://code.visualstudio.com/api/working-with-extensions/testing-extension.
 
-VS Code will open an "Extension Development Host" with the debug adapter running. Open `.vscode/launch.json` and uncomment the `debugServer` configuration line. Hit `F5` to start a debugging session. Now you can debug the testproject like specified above and set breakpoints inside your first VS Code instance to step through the adapter code.
+Tests are written with Mocha and can be run with `npm test` or from `Terminal / Run Task... / npm: test`. When you submit a PR the tests will be run in CI on Linux, macOS and Windows against multiple PHP and Xdebug versions.
 
-The extension is written in TypeScript. You can compile it through `npm run build`. `npm run watch` enables incremental compilation.
-
-Tests are written with Mocha and can be run with `npm test`. The tests are run in CI on Linux, macOS and Windows against multiple PHP and Xdebug versions.
+Before submitting a PR also run `npm run lint` or `Terminal / Run Tasks... / npm: lint`.
