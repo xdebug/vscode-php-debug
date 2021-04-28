@@ -469,7 +469,8 @@ class PhpDebugSession extends vscode.DebugSession {
         args: VSCodeDebugProtocol.SetExceptionBreakpointsArguments
     ) {
         try {
-            this._breakpointManager.setExceptionBreakPoints(args.filters)
+            const vscodeBreakpoints = this._breakpointManager.setExceptionBreakPoints(args.filters)
+            response.body = { breakpoints: vscodeBreakpoints }
         } catch (error) {
             this.sendErrorResponse(response, error)
             return
