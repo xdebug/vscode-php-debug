@@ -163,12 +163,15 @@ export class PhpDebugSession extends vscode.DebugSession {
     /** A flag indicating the adapter was initiatefd from vscode extension - controls how sessions are handeled */
     private _fromExtension = false
 
-    public constructor(fromExtension = false) {
+    public constructor() {
         super()
-        this._fromExtension = fromExtension
         this.setDebuggerColumnsStartAt1(true)
         this.setDebuggerLinesStartAt1(true)
         this.setDebuggerPathFormat('uri')
+    }
+
+    public setFromExtension(fromExtension = false): void {
+        this._fromExtension = fromExtension
     }
 
     protected initializeRequest(
@@ -369,7 +372,9 @@ export class PhpDebugSession extends vscode.DebugSession {
                 this._waitingConnections.delete(connection)
             }
             PhpDebugSession._allConnections.delete(connection.id)
-            this.sendEvent(new vscode.TerminatedEvent())
+            if (this._fromExtension) {
+                this.sendEvent(new vscode.TerminatedEvent())
+            }
         }
         connection.on('warning', (warning: string) => {
             this.sendEvent(new vscode.OutputEvent(warning + '\n'))
