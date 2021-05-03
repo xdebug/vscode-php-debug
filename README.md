@@ -124,7 +124,7 @@ To hack on this adapter, clone the repository and open it in VS Code. You need N
 
 1. Install NPM packages by either running `npm install` on command line in the project directory or selecting `Terminal / Run Task... / npm / npm: install` in VS Code menu.
 2. Run the build/watch process either by running `npm run watch` on command line in the project directory or selecting `Terminal / Run Build Task...` in VS Code menu.
-3. Start the debug adapter by opening the Run and Debug side bar, selecting `Debug adapter` configuration and clicking on the green Run arrow (or hitting `F5`). The compiled adapter will be running in "server mode" and listering on TCP port 4711.
+3. Start the debug adapter by opening the Run and Debug side bar, selecting `Debug adapter` configuration and clicking on the green Run arrow (or hitting `F5`). The compiled adapter will be running in "server mode" and listening on TCP port 4711.
 4. Run a separate instance of VS Code, called "Extension Development Host" by running `code testproject --extensionDevelopmentPath=.` on command line in the project directory or selecting the `Launch Extension` Run and Debug configuration and pressing the green Run arrow. Another shortcut is to run `npm run start`. You can also run an Insiders build of VS Code for testing newer features.
 5. In the "Extension Development Host" instance open `.vscode/launch.json` and uncomment the `debugServer` configuration line. Run your PHP debug session by selecting the desired configuration and hitting `F5`. Now you can debug the testproject like specified above and set breakpoints inside your first VS Code instance to step through the adapter code.
 
