@@ -228,7 +228,7 @@ export class BreakpointAdapter extends EventEmitter {
 
             // first execute all map modifying operations
             while (this._queue.length > 0) {
-                const f = this._queue.pop()!
+                const f = this._queue.shift()!
                 f()
             }
 
