@@ -176,6 +176,8 @@ export class BreakpointAdapter extends EventEmitter {
     private _connection: xdebug.Connection
     private _breakpointManager: BreakpointManager
     private _map = new Map<number, AdapterBreakpoint>()
+    private _queue: (() => void)[] = []
+    private _executing = false
 
     constructor(connecton: xdebug.Connection, breakpointManager: BreakpointManager) {
         super()
@@ -194,64 +196,93 @@ export class BreakpointAdapter extends EventEmitter {
 
     protected _add = (breakpoints: Map<number, xdebug.Breakpoint>): void => {
         breakpoints.forEach((xbp, id) => {
-            this._map.set(id, { xdebugBreakpoint: xbp, state: 'add' })
+            this._queue.push(() => this._map.set(id, { xdebugBreakpoint: xbp, state: 'add' }))
         })
     }
 
     protected _remove = (breakpointIds: number[]): void => {
         breakpointIds.forEach(id => {
-            if (this._map.has(id)) {
-                let bp = this._map.get(id)!
-                if (!bp.xdebugId) {
-                    // has not been set
-                    this._map.delete(id)
-                    return
+            this._queue.push(() => {
+                if (this._map.has(id)) {
+                    let bp = this._map.get(id)!
+                    if (!bp.xdebugId) {
+                        // has not been set
+                        this._map.delete(id)
+                        return
+                    }
+                    bp.state = 'remove'
                 }
-                bp.state = 'remove'
-            }
+            })
         })
     }
 
     protected _process = async (): Promise<void> => {
-        if (this._connection.isPendingExecuteCommand) {
+        if (this._executing) {
+            // Protect from re-entry
             return
         }
-        this._map.forEach(async (abp, id) => {
-            if (abp.state === 'remove') {
-                try {
-                    await this._connection.sendBreakpointRemoveCommand(abp.xdebugId!)
-                } catch (err) {
-                    this.emit('dapEvent', new vscode.OutputEvent(util.inspect(err) + '\n'))
-                }
-                this._map.delete(id)
+
+        try {
+            // Protect from re-entry
+            this._executing = true
+
+            // first execute all map modifying operations
+            while (this._queue.length > 0) {
+                const f = this._queue.pop()!
+                f()
             }
-        })
-        this._map.forEach(async (abp, id) => {
-            if (abp.state === 'add') {
-                try {
-                    let ret = await this._connection.sendBreakpointSetCommand(abp.xdebugBreakpoint!)
-                    this._map.set(id, { xdebugId: ret.breakpointId, state: '' })
-                    // TODO copy original breakpoint object
-                    this.emit(
-                        'dapEvent',
-                        new vscode.BreakpointEvent('changed', {
-                            id: id,
-                            verified: true,
-                        } as VSCodeDebugProtocol.Breakpoint)
-                    )
-                } catch (err) {
-                    this.emit('dapEvent', new vscode.OutputEvent(util.inspect(err) + '\n'))
-                    // TODO copy original breakpoint object
-                    this.emit(
-                        'dapEvent',
-                        new vscode.BreakpointEvent('changed', {
-                            id: id,
-                            verified: false,
-                            message: (<Error>err).message,
-                        } as VSCodeDebugProtocol.Breakpoint)
-                    )
+
+            // do not execute netowrk operations until network channel available
+            if (this._connection.isPendingExecuteCommand) {
+                return
+            }
+
+            for (const [id, abp] of this._map) {
+                if (abp.state === 'remove') {
+                    try {
+                        await this._connection.sendBreakpointRemoveCommand(abp.xdebugId!)
+                    } catch (err) {
+                        this.emit('dapEvent', new vscode.OutputEvent(util.inspect(err) + '\n'))
+                    }
+                    this._map.delete(id)
                 }
             }
-        })
+            for (const [id, abp] of this._map) {
+                if (abp.state === 'add') {
+                    try {
+                        let ret = await this._connection.sendBreakpointSetCommand(abp.xdebugBreakpoint!)
+                        this._map.set(id, { xdebugId: ret.breakpointId, state: '' })
+                        // TODO copy original breakpoint object
+                        this.emit(
+                            'dapEvent',
+                            new vscode.BreakpointEvent('changed', {
+                                id: id,
+                                verified: true,
+                            } as VSCodeDebugProtocol.Breakpoint)
+                        )
+                    } catch (err) {
+                        this.emit('dapEvent', new vscode.OutputEvent(util.inspect(err) + '\n'))
+                        // TODO copy original breakpoint object
+                        this.emit(
+                            'dapEvent',
+                            new vscode.BreakpointEvent('changed', {
+                                id: id,
+                                verified: false,
+                                message: (<Error>err).message,
+                            } as VSCodeDebugProtocol.Breakpoint)
+                        )
+                    }
+                }
+            }
+        } catch (error) {
+            this.emit('dapEvent', new vscode.OutputEvent(util.inspect(error) + '\n'))
+        } finally {
+            this._executing = false
+        }
+
+        // If there were any concurent chanegs to the op-queue, rerun processing right away
+        if (this._queue.length > 0) {
+            this._process()
+        }
     }
 }
