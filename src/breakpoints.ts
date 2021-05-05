@@ -192,6 +192,7 @@ export class BreakpointAdapter extends EventEmitter {
             this._breakpointManager.off('remove', this._remove)
             this._breakpointManager.off('process', this._process)
         })
+        this._connection.on('notify_breakpoint_resolved', this._notify)
     }
 
     protected _add = (breakpoints: Map<number, xdebug.Breakpoint>): void => {
@@ -214,6 +215,27 @@ export class BreakpointAdapter extends EventEmitter {
                 }
             })
         })
+    }
+
+    protected _notify = (notify: xdebug.BreakpointResolvedNotify): void => {
+        if (
+            notify.breakpoint.resolved === 'resolved' &&
+            (notify.breakpoint instanceof xdebug.LineBreakpoint ||
+                notify.breakpoint instanceof xdebug.ConditionalBreakpoint)
+        ) {
+            Array.from(this._map.entries())
+                .filter(([id, abp]) => abp.xdebugId === notify.breakpoint.id)
+                .map(([id, abp]) => {
+                    this.emit(
+                        'dapEvent',
+                        new vscode.BreakpointEvent('changed', {
+                            id: id,
+                            verified: true,
+                            line: (<xdebug.LineBreakpoint | xdebug.ConditionalBreakpoint>notify.breakpoint).line,
+                        } as VSCodeDebugProtocol.Breakpoint)
+                    )
+                })
+        }
     }
 
     protected _process = async (): Promise<void> => {
@@ -252,12 +274,21 @@ export class BreakpointAdapter extends EventEmitter {
                     try {
                         let ret = await this._connection.sendBreakpointSetCommand(abp.xdebugBreakpoint!)
                         this._map.set(id, { xdebugId: ret.breakpointId, state: '' })
+                        let extra: any = {}
+                        if (
+                            ret.resolved === 'resolved' &&
+                            (abp.xdebugBreakpoint!.type === 'line' || abp.xdebugBreakpoint!.type === 'conditional')
+                        ) {
+                            let bp = await this._connection.sendBreakpointGetCommand(ret.breakpointId)
+                            extra.line = (<xdebug.LineBreakpoint | xdebug.ConditionalBreakpoint>bp.breakpoint).line
+                        }
                         // TODO copy original breakpoint object
                         this.emit(
                             'dapEvent',
                             new vscode.BreakpointEvent('changed', {
                                 id: id,
-                                verified: true,
+                                verified: ret.resolved !== 'unresolved',
+                                ...extra,
                             } as VSCodeDebugProtocol.Breakpoint)
                         )
                     } catch (err) {

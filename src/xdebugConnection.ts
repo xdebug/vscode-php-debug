@@ -115,8 +115,41 @@ export class StatusResponse extends Response {
     }
 }
 
+export type NotifyName = 'breakpoint_resolved'
+
+/** Abstract base class for all notify packets */
+export class Notify {
+    /** Name of the notify */
+    name: String
+    /** dynamically detects the type of notifyand returns the appropiate object */
+    public static fromXml(document: XMLDocument, connection: Connection) {
+        switch (<NotifyName>document.documentElement.getAttribute('name')!) {
+            case 'breakpoint_resolved':
+                return new BreakpointResolvedNotify(document, connection)
+            default:
+                return new Notify(document)
+        }
+    }
+    /** Constructs a notify object from an XML node from a Xdebug response */
+    constructor(document: XMLDocument) {
+        this.name = document.documentElement.getAttribute('name')!
+    }
+}
+
+/** Class for breakpoint_resolved nofity */
+export class BreakpointResolvedNotify extends Notify {
+    /** breakpoint being resolved */
+    breakpoint: Breakpoint
+    /** Constructs a notify object from an XML node from a Xdebug response */
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document)
+        this.breakpoint = Breakpoint.fromXml(<Element>document.documentElement.firstChild, connection)
+    }
+}
+
 export type BreakpointType = 'line' | 'call' | 'return' | 'exception' | 'conditional' | 'watch'
 export type BreakpointState = 'enabled' | 'disabled'
+export type BreakpointResolved = 'resolved' | 'unresolved'
 
 /** Abstract base class for all breakpoints */
 export abstract class Breakpoint {
@@ -126,6 +159,8 @@ export abstract class Breakpoint {
     type: BreakpointType
     /** State of the breakpoint: enabled, disabled */
     state: BreakpointState
+    /** Flag to denote whether a breakpoint has been resolved */
+    resolved: BreakpointResolved
     /** The connection this breakpoint is set on */
     connection: Connection
     /** dynamically detects the type of breakpoint and returns the appropiate object */
@@ -155,6 +190,7 @@ export abstract class Breakpoint {
             this.type = <BreakpointType>breakpointNode.getAttribute('type')
             this.id = parseInt(breakpointNode.getAttribute('id')!)
             this.state = <BreakpointState>breakpointNode.getAttribute('state')
+            this.resolved = <BreakpointResolved>breakpointNode.getAttribute('resolved')
         } else {
             this.type = arguments[0]
         }
@@ -272,9 +308,11 @@ export class ConditionalBreakpoint extends Breakpoint {
 /** Response to a breakpoint_set command */
 export class BreakpointSetResponse extends Response {
     breakpointId: number
+    resolved: BreakpointResolved
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection)
         this.breakpointId = parseInt(document.documentElement.getAttribute('id')!)
+        this.resolved = <BreakpointResolved>document.documentElement.getAttribute('resolved')
     }
 }
 
@@ -291,6 +329,20 @@ export class BreakpointListResponse extends Response {
         this.breakpoints = Array.from(document.documentElement.childNodes).map((breakpointNode: Element) =>
             Breakpoint.fromXml(breakpointNode, connection)
         )
+    }
+}
+
+/** The response to a breakpoint_get command */
+export class BreakpointGetResponse extends Response {
+    /** The currently set breakpoints for this connection */
+    breakpoint: Breakpoint
+    /**
+     * @param  {XMLDocument} document
+     * @param  {Connection} connection
+     */
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document, connection)
+        this.breakpoint = Breakpoint.fromXml(<Element>document.documentElement.firstChild, connection)
     }
 }
 
@@ -523,13 +575,26 @@ export class EvalResponse extends Response {
     }
 }
 
-/** The response to an feature_set command */
+/** The response to a feature_set command */
 export class FeatureSetResponse extends Response {
     /** the feature that was set */
     feature: string
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection)
         this.feature = document.documentElement.getAttribute('feature')!
+    }
+}
+
+/** The response to a feature_get command */
+export class FeatureGetResponse extends Response {
+    /** the feature is supported */
+    supported: '0' | '1'
+    /** the feature name */
+    feature: string
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document, connection)
+        this.feature = document.documentElement.getAttribute('feature')!
+        this.supported = <'0' | '1'>document.documentElement.getAttribute('supported')!
     }
 }
 
@@ -608,6 +673,9 @@ export class Connection extends DbgpConnection {
         this.on('message', (response: XMLDocument) => {
             if (response.documentElement.nodeName === 'init') {
                 this._initPromiseResolveFn(new InitPacket(response, this))
+            } else if (response.documentElement.nodeName === 'notify') {
+                const n = Notify.fromXml(response, this)
+                this.emit('notify_' + n.name, n)
             } else {
                 const transactionId = parseInt(response.documentElement.getAttribute('transaction_id')!)
                 if (this._pendingCommands.has(transactionId)) {
@@ -720,8 +788,8 @@ export class Connection extends DbgpConnection {
      *  - notify_ok
      * or any command.
      */
-    public async sendFeatureGetCommand(feature: string): Promise<XMLDocument> {
-        return await this._enqueueCommand('feature_get', `-n feature`)
+    public async sendFeatureGetCommand(feature: string): Promise<FeatureGetResponse> {
+        return new FeatureGetResponse(await this._enqueueCommand('feature_get', `-n ${feature}`), this)
     }
 
     /**
@@ -770,6 +838,21 @@ export class Connection extends DbgpConnection {
     /** sends a breakpoint_list command */
     public async sendBreakpointListCommand(): Promise<BreakpointListResponse> {
         return new BreakpointListResponse(await this._enqueueCommand('breakpoint_list'), this)
+    }
+
+    /**
+     * Sends a breakpoint_get command
+     * @param {Breakpoint|number} breakpoint - an instance or id of a breakpoint
+     * @returns Promise.<BreakpointGetResonse>
+     */
+    public async sendBreakpointGetCommand(breakpoint: Breakpoint | number): Promise<BreakpointGetResponse> {
+        let breakpointId: number
+        if (typeof breakpoint === 'number') {
+            breakpointId = breakpoint
+        } else {
+            breakpointId = breakpoint.id
+        }
+        return new BreakpointGetResponse(await this._enqueueCommand('breakpoint_get', `-d ${breakpointId}`), this)
     }
 
     /** sends a breakpoint_remove command */

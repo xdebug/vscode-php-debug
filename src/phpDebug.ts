@@ -293,6 +293,16 @@ class PhpDebugSession extends vscode.DebugSession {
                         connection.on('close', disposeConnection)
                         await connection.waitForInitPacket()
 
+                        // support for breakpoints
+                        let feat_rb = await connection.sendFeatureGetCommand('resolved_breakpoints')
+                        if (feat_rb.supported === '1') {
+                            await connection.sendFeatureSetCommand('resolved_breakpoints', '1')
+                        }
+                        let feat_no = await connection.sendFeatureGetCommand('notify_ok')
+                        if (feat_no.supported === '1') {
+                            await connection.sendFeatureSetCommand('notify_ok', '1')
+                        }
+
                         // override features from launch.json
                         try {
                             const xdebugSettings = args.xdebugSettings || {}
