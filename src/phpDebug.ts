@@ -961,7 +961,9 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             this.sendResponse(response)
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            response.message = error.message
+            response.success = false
+            this.sendResponse(response)
         }
     }
 }
