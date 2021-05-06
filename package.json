@@ -41,8 +41,8 @@
     "relateurl": "^0.2.7",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
-    "vscode-debugadapter": "^1.44.0",
-    "vscode-debugprotocol": "^1.44.0",
+    "vscode-debugadapter": "^1.47.0",
+    "vscode-debugprotocol": "^1.47.0",
     "xmldom": "^0.5.0"
   },
   "devDependencies": {

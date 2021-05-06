@@ -99,6 +99,18 @@ describe('PHP Debug Adapter', () => {
     describe('breakpoints', () => {
         const program = path.join(TEST_PROJECT, 'hello_world.php')
 
+        async function waitForBreakpointUpdate(breakpoint: DebugProtocol.Breakpoint): Promise<void> {
+            while (true) {
+                let event = (await client.waitForEvent('breakpoint')) as DebugProtocol.BreakpointEvent
+                if (event.body.breakpoint.id === breakpoint.id) {
+                    for (const [key, value] of Object.entries(event.body.breakpoint)) {
+                        ;(breakpoint as any)[key] = value
+                    }
+                    break
+                }
+            }
+        }
+
         describe('line breakpoints', () => {
             async function testBreakpointHit(program: string, line: number): Promise<void> {
                 await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
@@ -108,6 +120,7 @@ describe('PHP Debug Adapter', () => {
                         source: { path: program },
                     })
                 ).body.breakpoints[0]
+                await waitForBreakpointUpdate(breakpoint)
                 assert.isTrue(breakpoint.verified, 'breakpoint verification mismatch: verified')
                 assert.equal(breakpoint.line, line, 'breakpoint verification mismatch: line')
                 await Promise.all([
@@ -132,6 +145,8 @@ describe('PHP Debug Adapter', () => {
                         source: { path: program },
                     })
                 ).body.breakpoints
+                await waitForBreakpointUpdate(breakpoints[0])
+                await waitForBreakpointUpdate(breakpoints[1])
                 assert.lengthOf(breakpoints, 2)
                 assert.isTrue(breakpoints[0].verified, 'breakpoint verification mismatch: verified')
                 assert.equal(breakpoints[0].line, 3, 'breakpoint verification mismatch: line')
@@ -149,6 +164,7 @@ describe('PHP Debug Adapter', () => {
                         source: { path: program },
                     })
                 ).body.breakpoints
+                await waitForBreakpointUpdate(breakpoints[0])
                 assert.lengthOf(breakpoints, 1)
                 assert.isTrue(breakpoints[0].verified, 'breakpoint verification mismatch: verified')
                 assert.equal(breakpoints[0].line, 3, 'breakpoint verification mismatch: line')
@@ -315,6 +331,7 @@ describe('PHP Debug Adapter', () => {
                         source: { path: program },
                     })
                 ).body.breakpoints[0]
+                await waitForBreakpointUpdate(bp)
                 assert.equal(bp.verified, true, 'breakpoint verification mismatch: verified')
                 assert.equal(bp.line, 10, 'breakpoint verification mismatch: line')
                 const [, { frame }] = await Promise.all([
@@ -339,6 +356,7 @@ describe('PHP Debug Adapter', () => {
                         source: { path: program },
                     })
                 ).body.breakpoints[0]
+                await waitForBreakpointUpdate(bp)
                 assert.equal(bp.verified, true, 'breakpoint verification mismatch: verified')
                 assert.equal(bp.line, 10, 'breakpoint verification mismatch: line')
                 await Promise.all([client.configurationDoneRequest(), client.waitForEvent('terminated')])
@@ -356,6 +374,7 @@ describe('PHP Debug Adapter', () => {
                         breakpoints: [{ name: 'a_function' }],
                     })
                 ).body.breakpoints[0]
+                await waitForBreakpointUpdate(breakpoint)
                 assert.strictEqual(breakpoint.verified, true)
                 await Promise.all([client.configurationDoneRequest(), assertStoppedLocation('breakpoint', program, 5)])
             })
