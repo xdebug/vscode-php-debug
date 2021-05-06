@@ -10,3 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - Support for terminateDebuggee option letting the user choose to keep the debugee running. Press Alt when hovering over stop action.
 - Handle breakpoints in a async manner.
+
+### Changed
+
+- Do not display error dialog on failed eval
