@@ -399,7 +399,7 @@ describe('PHP Debug Adapter', () => {
                 }),
                 client.waitForEvent('initialized'),
             ])
-            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 17 }] })
+            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 18 }] })
             const [, event] = await Promise.all([
                 client.configurationDoneRequest(),
                 client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>,
@@ -495,6 +495,21 @@ describe('PHP Debug Adapter', () => {
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'name', 'space key')
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'value', '1')
             })
+
+            it('should report values with null correctly', async () => {
+                const arrayExtended = localVariables.find(variable => variable.name === '$arrayExtended')
+                assert.isDefined(arrayExtended)
+                assert.propertyVal(arrayExtended!, 'value', 'array(1)')
+                assert.property(arrayExtended!, 'variablesReference')
+                const arrayExtendedItems = (
+                    await client.variablesRequest({
+                        variablesReference: arrayExtended!.variablesReference,
+                    })
+                ).body.variables
+                assert.lengthOf(arrayExtendedItems, 1)
+                assert.propertyVal(arrayExtendedItems[0], 'name', 'a\0b')
+                assert.propertyVal(arrayExtendedItems[0], 'value', '"c\0d"')
+            })
         })
 
         // support for user defined constants was added in 2.3.0
@@ -510,6 +525,62 @@ describe('PHP Debug Adapter', () => {
                 assert.propertyVal(constants[0], 'value', '123')
             })
         }
+    })
+
+    describe('extended variables', () => {
+        const program = path.join(TEST_PROJECT, 'variables.php')
+
+        let localScope: DebugProtocol.Scope | undefined
+        // let superglobalsScope: DebugProtocol.Scope | undefined
+        // let constantsScope: DebugProtocol.Scope | undefined
+
+        beforeEach(async () => {
+            await Promise.all([
+                client.launch({
+                    program,
+                    xdebugSettings: {
+                        max_data: 10000,
+                        max_children: 100,
+                        extended_properties: '1',
+                    },
+                }),
+                client.waitForEvent('initialized'),
+            ])
+            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 18 }] })
+            const [, event] = await Promise.all([
+                client.configurationDoneRequest(),
+                client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>,
+            ])
+            const stackFrame = (await client.stackTraceRequest({ threadId: event.body.threadId! })).body.stackFrames[0]
+            const scopes = (await client.scopesRequest({ frameId: stackFrame.id })).body.scopes
+            localScope = scopes.find(scope => scope.name === 'Locals')
+            // superglobalsScope = scopes.find(scope => scope.name === 'Superglobals')
+            // constantsScope = scopes.find(scope => scope.name === 'User defined constants') // Xdebug >2.3 only
+        })
+
+        describe('extended local variables', () => {
+            let localVariables: DebugProtocol.Variable[]
+
+            beforeEach(async () => {
+                localVariables = (await client.variablesRequest({ variablesReference: localScope!.variablesReference }))
+                    .body.variables
+            })
+
+            it('should report extended with null correctly', async () => {
+                const arrayExtended = localVariables.find(variable => variable.name === '$arrayExtended')
+                assert.isDefined(arrayExtended)
+                assert.propertyVal(arrayExtended!, 'value', 'array(1)')
+                assert.property(arrayExtended!, 'variablesReference')
+                const arrayExtendedItems = (
+                    await client.variablesRequest({
+                        variablesReference: arrayExtended!.variablesReference,
+                    })
+                ).body.variables
+                assert.lengthOf(arrayExtendedItems, 1)
+                assert.propertyVal(arrayExtendedItems[0], 'name', 'a\0b')
+                assert.propertyVal(arrayExtendedItems[0], 'value', '"c\0d"')
+            })
+        })
     })
 
     describe('virtual sources', () => {

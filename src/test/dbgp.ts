@@ -6,7 +6,7 @@ import { assert } from 'chai'
 describe('DbgpConnection', () => {
     function makePacket(message: string): Buffer {
         const messageBuffer = iconv.encode(message, ENCODING)
-        return Buffer.concat([new Buffer(messageBuffer.length + '\0'), messageBuffer, new Buffer('\0')])
+        return Buffer.concat([Buffer.from(messageBuffer.length + '\0'), messageBuffer, Buffer.from('\0')])
     }
 
     const message =

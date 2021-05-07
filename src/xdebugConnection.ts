@@ -398,7 +398,7 @@ export class SourceResponse extends Response {
     source: string
     constructor(document: XMLDocument, connection: Connection) {
         super(document, connection)
-        this.source = new Buffer(document.documentElement.textContent!, 'base64').toString()
+        this.source = Buffer.from(document.documentElement.textContent!, 'base64').toString()
     }
 }
 
@@ -464,20 +464,28 @@ export abstract class BaseProperty {
     constructor(propertyNode: Element) {
         if (propertyNode.hasAttribute('name')) {
             this.name = propertyNode.getAttribute('name')!
+        } else if (propertyNode.getElementsByTagName('name').length > 0) {
+            this.name = decodeTag(propertyNode, 'name')
         }
         this.type = propertyNode.getAttribute('type')!
         if (propertyNode.hasAttribute('classname')) {
             this.class = propertyNode.getAttribute('classname')!
+        } else if (propertyNode.getElementsByTagName('classname').length > 0) {
+            this.class = decodeTag(propertyNode, 'classname')
         }
         this.hasChildren = !!parseInt(propertyNode.getAttribute('children')!)
         if (this.hasChildren) {
             this.numberOfChildren = parseInt(propertyNode.getAttribute('numchildren')!)
         } else {
-            const encoding = propertyNode.getAttribute('encoding')
-            if (encoding) {
-                this.value = iconv.encode(propertyNode.textContent!, encoding) + ''
+            if (propertyNode.getElementsByTagName('value').length > 0) {
+                this.value = decodeTag(propertyNode, 'value')
             } else {
-                this.value = propertyNode.textContent!
+                const encoding = propertyNode.getAttribute('encoding')
+                if (encoding) {
+                    this.value = iconv.encode(propertyNode.textContent!, encoding) + ''
+                } else {
+                    this.value = propertyNode.textContent!
+                }
             }
         }
     }
@@ -498,7 +506,11 @@ export class Property extends BaseProperty {
      */
     constructor(propertyNode: Element, context: Context) {
         super(propertyNode)
-        this.fullName = propertyNode.getAttribute('fullname')!
+        if (propertyNode.hasAttribute('fullname')) {
+            this.fullName = propertyNode.getAttribute('fullname')!
+        } else if (propertyNode.getElementsByTagName('fullname').length > 0) {
+            this.fullName = decodeTag(propertyNode, 'fullname')
+        }
         this.context = context
         if (this.hasChildren) {
             this.children = Array.from(propertyNode.childNodes).map(
@@ -515,6 +527,16 @@ export class Property extends BaseProperty {
             throw new Error('This property has no children')
         }
         return (await this.context.stackFrame.connection.sendPropertyGetCommand(this)).children
+    }
+}
+
+function decodeTag(propertyNode: Element, tagName: string): string {
+    const tag = propertyNode.getElementsByTagName(tagName).item(0)!
+    const encoding = tag.getAttribute('encoding')
+    if (encoding) {
+        return iconv.encode(tag.textContent!, encoding) + ''
+    } else {
+        return tag.textContent!
     }
 }
 
@@ -741,7 +763,7 @@ export class Connection extends DbgpConnection {
             commandString += ' ' + command.args
         }
         if (command.data) {
-            commandString += ' -- ' + new Buffer(command.data).toString('base64')
+            commandString += ' -- ' + Buffer.from(command.data).toString('base64')
         }
         commandString += '\0'
         const data = iconv.encode(commandString, ENCODING)

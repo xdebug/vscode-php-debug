@@ -13,5 +13,6 @@ $nullValue = null;
 $variableThatsNotSet;
 $aLargeArray = array_fill(0, 100, 'test');
 $arrayWithSpaceKey = array('space key' => 1);
+$arrayExtended = array("a\0b" => "c\0d");
 
 exit;
