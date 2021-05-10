@@ -313,6 +313,10 @@ class PhpDebugSession extends vscode.DebugSession {
                         if (feat_no.supported === '1') {
                             await connection.sendFeatureSetCommand('notify_ok', '1')
                         }
+                        let feat_ep = await connection.sendFeatureGetCommand('extended_properties')
+                        if (feat_ep.supported === '1') {
+                            await connection.sendFeatureSetCommand('extended_properties', '1')
+                        }
 
                         // override features from launch.json
                         try {
