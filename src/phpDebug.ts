@@ -220,13 +220,14 @@ class PhpDebugSession extends vscode.DebugSession {
             const runtimeArgs = args.runtimeArgs || []
             const runtimeExecutable = args.runtimeExecutable || 'php'
             const programArgs = args.args || []
+            const program = args.program ? [args.program] : []
             const cwd = args.cwd || process.cwd()
             const env = args.env || process.env
             // launch in CLI mode
             if (args.externalConsole) {
                 const script = await Terminal.launchInTerminal(
                     cwd,
-                    [runtimeExecutable, ...runtimeArgs, args.program!, ...programArgs],
+                    [runtimeExecutable, ...runtimeArgs, ...program, ...programArgs],
                     env
                 )
                 if (script) {
@@ -236,7 +237,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     })
                 }
             } else {
-                const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program!, ...programArgs], {
+                const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, ...program, ...programArgs], {
                     cwd,
                     env,
                 })
