@@ -11,21 +11,27 @@
     },
     {
       //"debugServer": 4711, // Uncomment for debugging the adapter
-      "name": "Launch",
-      "request": "launch",
+      "name": "Launch currently open script",
       "type": "php",
+      "request": "launch",
       "program": "${file}",
-      "cwd": "${workspaceRoot}",
-      "externalConsole": false
+      "cwd": "${fileDirname}",
+      "port": 9000
     },
     {
       //"debugServer": 4711, // Uncomment for debugging the adapter
-      "name": "Launch server",
-      "request": "launch",
+      "name": "Launch Built-in web server",
       "type": "php",
-      "runtimeArgs": ["-S", "localhost:8000"],
+      "request": "launch",
+      "runtimeArgs": ["-dxdebug.mode=debug", "-dxdebug.start_with_request=yes", "-S", "localhost:0"],
+      "program": "",
       "cwd": "${workspaceRoot}",
-      "externalConsole": false
+      "port": 9003,
+      "serverReadyAction": {
+        "pattern": "Development Server \\(http://localhost:([0-9]+)\\) started",
+        "uriFormat": "http://localhost:%s",
+        "action": "openExternally"
+      }
     }
   ]
 }
