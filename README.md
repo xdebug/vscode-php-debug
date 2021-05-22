@@ -52,12 +52,16 @@ This extension is a debug adapter between VS Code and [Xdebug](https://xdebug.or
 
 ### VS Code Configuration
 
-In your project, go to the debugger and hit the little gear icon and choose _PHP_. A new launch configuration will be created for you with two configurations:
+In your project, go to the debugger and hit the little gear icon and choose _PHP_. A new launch configuration will be created for you with three configurations:
 
 - **Listen for Xdebug**
-  This setting will simply start listening on the specified port (by default 9000) for Xdebug. If you configured Xdebug like recommended above, everytime you make a request with a browser to your webserver or launch a CLI script Xdebug will connect and you can stop on breakpoints, exceptions etc.
+  This setting will simply start listening on the specified port (by default 9000) for Xdebug. If you configured Xdebug like recommended above, every time you make a request with a browser to your webserver or launch a CLI script Xdebug will connect and you can stop on breakpoints, exceptions etc.
 - **Launch currently open script**
   This setting is an example of CLI debugging. It will launch the currently opened script as a CLI, show all stdout/stderr output in the debug console and end the debug session once the script exits.
+- **Launch Built-in web server**
+  This configuration starts the PHP built-in web server on a random port and opens the browser with the `serverReadyAction` directive. The port is random (localhost:0) but can be changed to a desired fixed port (ex: localhost:8080). If a router script is needed, add it with `program` directive. Additional PHP/Xdebug directives trigger debugging on every page load.
+
+More general information on debugging with VS Code can be found on https://code.visualstudio.com/docs/editor/debugging.
 
 #### Supported launch.json settings:
 
