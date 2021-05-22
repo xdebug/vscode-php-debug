@@ -146,7 +146,9 @@
     "debuggers": [
       {
         "type": "php",
-        "languages": ["php"],
+        "languages": [
+          "php"
+        ],
         "label": "PHP",
         "program": "./out/phpDebug.js",
         "runtime": "node",
@@ -278,6 +280,25 @@
             "program": "${file}",
             "cwd": "${fileDirname}",
             "port": 9000
+          },
+          {
+            "name": "Launch Built-in web server",
+            "type": "php",
+            "request": "launch",
+            "runtimeArgs": [
+              "-dxdebug.mode=debug",
+              "-dxdebug.start_with_request=yes",
+              "-S",
+              "localhost:0"
+            ],
+            "program": "",
+            "cwd": "${workspaceRoot}",
+            "port": 9000,
+            "serverReadyAction": {
+              "pattern": "Development Server \\(http://localhost:([0-9]+)\\) started",
+              "uriFormat": "http://localhost:%s",
+              "action": "openExternally"
+            }
           }
         ],
         "configurationSnippets": [
@@ -301,6 +322,29 @@
               "program": "^\"${1:\\${file\\}}\"",
               "cwd": "^\"${2:\\${fileDirname\\}}\"",
               "port": 9000
+            }
+          },
+          {
+            "label": "PHP: Launch Built-in web server",
+            "description": "Start built-in PHP web server and open browser on debug start",
+            "body": {
+              "name": "Launch Built-in web server",
+              "type": "php",
+              "request": "launch",
+              "runtimeArgs": [
+                "-dxdebug.mode=debug",
+                "-dxdebug.start_with_request=yes",
+                "-S",
+                "localhost:${1:0}"
+              ],
+              "program": "",
+              "cwd": "^\"${2:\\${workspaceRoot\\}}\"",
+              "port": 9000,
+              "serverReadyAction": {
+                "pattern": "Development Server \\\\(http://localhost:([0-9]+)\\\\) started",
+                "uriFormat": "http://localhost:%s",
+                "action": "openExternally"
+              }
             }
           }
         ]
