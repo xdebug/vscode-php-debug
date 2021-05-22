@@ -213,7 +213,7 @@ class PhpDebugSession extends vscode.DebugSession {
         const launchScript = async () => {
             // check if program exists
             if (args.program) {
-                await new Promise((resolve, reject) =>
+                await new Promise<void>((resolve, reject) =>
                     fs.access(args.program!, fs.constants.F_OK, err => (err ? reject(err) : resolve()))
                 )
             }
