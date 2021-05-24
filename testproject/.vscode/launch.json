@@ -6,7 +6,7 @@
       "name": "Listen for Xdebug",
       "type": "php",
       "request": "launch",
-      "port": 9000,
+      "port": 9003,
       "log": true
     },
     {
@@ -16,7 +16,7 @@
       "request": "launch",
       "program": "${file}",
       "cwd": "${fileDirname}",
-      "port": 9000
+      "port": 9003
     },
     {
       //"debugServer": 4711, // Uncomment for debugging the adapter
@@ -26,7 +26,7 @@
       "runtimeArgs": ["-dxdebug.mode=debug", "-dxdebug.start_with_request=yes", "-S", "localhost:0"],
       "program": "",
       "cwd": "${workspaceRoot}",
-      "port": 9000,
+      "port": 9003,
       "serverReadyAction": {
         "pattern": "Development Server \\(http://localhost:([0-9]+)\\) started",
         "uriFormat": "http://localhost:%s",
