@@ -212,19 +212,22 @@ class PhpDebugSession extends vscode.DebugSession {
         /** launches the script as CLI */
         const launchScript = async () => {
             // check if program exists
-            await new Promise<void>((resolve, reject) =>
-                fs.access(args.program!, fs.constants.F_OK, err => (err ? reject(err) : resolve()))
-            )
+            if (args.program) {
+                await new Promise<void>((resolve, reject) =>
+                    fs.access(args.program!, fs.constants.F_OK, err => (err ? reject(err) : resolve()))
+                )
+            }
             const runtimeArgs = args.runtimeArgs || []
             const runtimeExecutable = args.runtimeExecutable || 'php'
             const programArgs = args.args || []
+            const program = args.program ? [args.program] : []
             const cwd = args.cwd || process.cwd()
             const env = args.env || process.env
             // launch in CLI mode
             if (args.externalConsole) {
                 const script = await Terminal.launchInTerminal(
                     cwd,
-                    [runtimeExecutable, ...runtimeArgs, args.program!, ...programArgs],
+                    [runtimeExecutable, ...runtimeArgs, ...program, ...programArgs],
                     env
                 )
                 if (script) {
@@ -234,7 +237,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     })
                 }
             } else {
-                const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, args.program!, ...programArgs], {
+                const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, ...program, ...programArgs], {
                     cwd,
                     env,
                 })
@@ -341,7 +344,7 @@ class PhpDebugSession extends vscode.DebugSession {
             if (!args.noDebug) {
                 await createServer()
             }
-            if (args.program) {
+            if (args.program || args.runtimeArgs) {
                 await launchScript()
             }
         } catch (error) {
