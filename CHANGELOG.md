@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - Option to start PHP built-in web server without router script.
 
+### Changed
+
+- Switched to Xdebug 3 default port 9003.
+
 ### Fixed
 
 - Internal Source Reference for virtual source files fixed - when stepping into eval()
