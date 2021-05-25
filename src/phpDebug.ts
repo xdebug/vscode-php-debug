@@ -586,8 +586,16 @@ class PhpDebugSession extends vscode.DebugSession {
                 let source: VSCodeDebugProtocol.Source
                 const urlObject = url.parse(status.fileUri)
                 if (urlObject.protocol === 'dbgp:') {
-                    const sourceReference = this._sourceIdCounter++
-                    this._sources.set(sourceReference, { connection, url: status.fileUri })
+                    let sourceReference
+                    const src = Array.from(this._sources).find(
+                        ([, v]) => v.url === status.fileUri && v.connection === connection
+                    )
+                    if (src) {
+                        sourceReference = src[0]
+                    } else {
+                        sourceReference = this._sourceIdCounter++
+                        this._sources.set(sourceReference, { connection, url: status.fileUri })
+                    }
                     // for eval code, we need to include .php extension to get syntax highlighting
                     source = { name: status.exception.name + '.php', sourceReference, origin: status.exception.name }
                     // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
@@ -608,11 +616,22 @@ class PhpDebugSession extends vscode.DebugSession {
                             let line = stackFrame.line
                             const urlObject = url.parse(stackFrame.fileUri)
                             if (urlObject.protocol === 'dbgp:') {
-                                const sourceReference = this._sourceIdCounter++
-                                this._sources.set(sourceReference, { connection, url: stackFrame.fileUri })
+                                let sourceReference
+                                const src = Array.from(this._sources).find(
+                                    ([, v]) => v.url === stackFrame.fileUri && v.connection === connection
+                                )
+                                if (src) {
+                                    sourceReference = src[0]
+                                } else {
+                                    sourceReference = this._sourceIdCounter++
+                                    this._sources.set(sourceReference, { connection, url: stackFrame.fileUri })
+                                }
                                 // for eval code, we need to include .php extension to get syntax highlighting
                                 source = {
-                                    name: stackFrame.type === 'eval' ? 'eval.php' : stackFrame.name,
+                                    name:
+                                        stackFrame.type === 'eval'
+                                            ? `eval ${stackFrame.fileUri.substr(7)}.php`
+                                            : stackFrame.name,
                                     sourceReference,
                                     origin: stackFrame.type,
                                 }
