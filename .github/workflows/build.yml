@@ -53,7 +53,7 @@ jobs:
 
             xdebug.remote_enable = 1,
             xdebug.remote_autostart = 1,
-            xdebug.client_port = 9003,
+            xdebug.remote_port = 9003,
             xdebug.remote_log = /tmp/xdebug.log
       - name: Run tests
         run: npm run cover
