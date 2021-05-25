@@ -34,7 +34,6 @@ This extension is a debug adapter between VS Code and [Xdebug](https://xdebug.or
    ```ini
    xdebug.mode = debug
    xdebug.start_with_request = yes
-   xdebug.client_port = 9000
    ```
 
    For Xdebug v2.x.x:
@@ -42,9 +41,10 @@ This extension is a debug adapter between VS Code and [Xdebug](https://xdebug.or
    ```ini
    xdebug.remote_enable = 1
    xdebug.remote_autostart = 1
+   xdebug.remote_port = 9003
    ```
 
-   There are other ways to tell Xdebug to connect to a remote debugger, like cookies, query parameters or browser extensions. I recommend `remote_autostart` (Xdebug v2)/`start_with_request` (Xdebug v3) because it "just works". There are also a variety of other options, like the port, please see the [Xdebug documentation on remote debugging](https://xdebug.org/docs/remote#starting) for more information. Please note that the default Xdebug port changed between Xdebug v2 to v3 from 9000 to 9003. The extension still defaults to 9000, so make sure your configuration in `launch.json` and `php.ini` match.
+   There are other ways to tell Xdebug to connect to a remote debugger, like cookies, query parameters or browser extensions. I recommend `remote_autostart` (Xdebug v2)/`start_with_request` (Xdebug v3) because it "just works". There are also a variety of other options, like the port, please see the [Xdebug documentation on remote debugging](https://xdebug.org/docs/remote#starting) for more information. Please note that the default Xdebug port changed between Xdebug v2 to v3 from 9000 to 9003.
 
 4. If you are doing web development, don't forget to restart your webserver to reload the settings.
 
@@ -55,7 +55,7 @@ This extension is a debug adapter between VS Code and [Xdebug](https://xdebug.or
 In your project, go to the debugger and hit the little gear icon and choose _PHP_. A new launch configuration will be created for you with three configurations:
 
 - **Listen for Xdebug**
-  This setting will simply start listening on the specified port (by default 9000) for Xdebug. If you configured Xdebug like recommended above, every time you make a request with a browser to your webserver or launch a CLI script Xdebug will connect and you can stop on breakpoints, exceptions etc.
+  This setting will simply start listening on the specified port (by default 9003) for Xdebug. If you configured Xdebug like recommended above, every time you make a request with a browser to your webserver or launch a CLI script Xdebug will connect and you can stop on breakpoints, exceptions etc.
 - **Launch currently open script**
   This setting is an example of CLI debugging. It will launch the currently opened script as a CLI, show all stdout/stderr output in the debug console and end the debug session once the script exits.
 - **Launch Built-in web server**
@@ -67,7 +67,7 @@ More general information on debugging with VS Code can be found on https://code.
 
 - `request`: Always `"launch"`
 - `hostname`: The address to bind to when listening for Xdebug (default: all IPv6 connections if available, else all IPv4 connections)
-- `port`: The port on which to listen for Xdebug (default: `9000`)
+- `port`: The port on which to listen for Xdebug (default: `9003`)
 - `stopOnEntry`: Whether to break at the beginning of the script (default: `false`)
 - `pathMappings`: A list of server paths mapping to the local source paths on your machine, see "Remote Host Debugging" below
 - `log`: Whether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
