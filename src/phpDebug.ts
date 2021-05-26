@@ -295,6 +295,12 @@ class PhpDebugSession extends vscode.DebugSession {
                         })
                         connection.on('error', disposeConnection)
                         connection.on('close', disposeConnection)
+                        connection.on('log', (text: string) => {
+                            if (this._args && this._args.log) {
+                                const log = `xd(${connection.id}) ${text}\n`
+                                this.sendEvent(new vscode.OutputEvent(log), true)
+                            }
+                        })
                         await connection.waitForInitPacket()
 
                         // support for breakpoints

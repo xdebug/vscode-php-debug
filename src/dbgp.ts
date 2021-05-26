@@ -83,6 +83,7 @@ export class DbgpConnection extends EventEmitter {
                         },
                     },
                 })
+                this.emit('log', `-> ${xml.replace(/[\0\n]/g, '')}`)
                 const document = parser.parseFromString(xml, 'application/xml')
                 this.emit('message', document)
                 // reset buffer
@@ -107,6 +108,7 @@ export class DbgpConnection extends EventEmitter {
     public write(command: Buffer): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             if (this._socket.writable) {
+                this.emit('log', `<- ${command.toString().replace(/[\0\n]/g, '')}`)
                 this._socket.write(command, () => {
                     resolve()
                 })

@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - Option to start PHP built-in web server without router script.
+- Extended logging with DBGp packets.
 
 ### Changed
 
