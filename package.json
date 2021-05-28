@@ -279,7 +279,14 @@
             "request": "launch",
             "program": "${file}",
             "cwd": "${fileDirname}",
-            "port": 9003
+            "port": 0,
+            "runtimeArgs": [
+              "-dxdebug.start_with_request=yes"
+            ],
+            "env": {
+              "XDEBUG_MODE": "debug,develop",
+              "XDEBUG_CONFIG": "client_port=${port}"
+            }
           },
           {
             "name": "Launch Built-in web server",
@@ -313,6 +320,16 @@
             }
           },
           {
+            "label": "PHP: Listen for Xdebug 2 (Legacy)",
+            "description": "Listen for incoming XDebug connections on legacy port",
+            "body": {
+              "name": "Listen for Xdebug 2 (Legacy)",
+              "type": "php",
+              "request": "launch",
+              "port": 9000
+            }
+          },
+          {
             "label": "PHP: Launch currently open script",
             "description": "Debug the currently open PHP script in CLI mode",
             "body": {
@@ -321,7 +338,33 @@
               "request": "launch",
               "program": "^\"${1:\\${file\\}}\"",
               "cwd": "^\"${2:\\${fileDirname\\}}\"",
-              "port": 9003
+              "port": 0,
+              "runtimeArgs": [
+                "-dxdebug.start_with_request=yes"
+              ],
+              "env": {
+                "XDEBUG_MODE": "debug,develop",
+                "XDEBUG_CONFIG": "^\"client_port=\\${port\\}\""
+              }
+            }
+          },
+          {
+            "label": "PHP: Launch currently open script with Xdebug 2 (Legacy)",
+            "description": "Debug the currently open PHP script in CLI mode",
+            "body": {
+              "name": "Launch currently open script with Xdebug 2 (Legacy)",
+              "type": "php",
+              "request": "launch",
+              "program": "^\"${1:\\${file\\}}\"",
+              "cwd": "^\"${2:\\${fileDirname\\}}\"",
+              "port": 0,
+              "runtimeArgs": [
+                "-dxdebug.remote_enable=yes",
+                "-dxdebug.remote_autostart=yes"
+              ],
+              "env": {
+                "XDEBUG_CONFIG": "^\"remote_port=\\${port\\}\""
+              }
             }
           },
           {

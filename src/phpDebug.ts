@@ -210,19 +210,21 @@ class PhpDebugSession extends vscode.DebugSession {
         }
         this._args = args
         /** launches the script as CLI */
-        const launchScript = async () => {
+        const launchScript = async (port: number) => {
             // check if program exists
             if (args.program) {
                 await new Promise<void>((resolve, reject) =>
                     fs.access(args.program!, fs.constants.F_OK, err => (err ? reject(err) : resolve()))
                 )
             }
-            const runtimeArgs = args.runtimeArgs || []
+            const runtimeArgs = (args.runtimeArgs || []).map(v => v.replace('${port}', port.toString()))
             const runtimeExecutable = args.runtimeExecutable || 'php'
             const programArgs = args.args || []
             const program = args.program ? [args.program] : []
             const cwd = args.cwd || process.cwd()
-            const env = args.env || process.env
+            const env = Object.fromEntries(
+                Object.entries(args.env || process.env).map(v => [v[0], v[1]?.replace('${port}', port.toString())])
+            )
             // launch in CLI mode
             if (args.externalConsole) {
                 const script = await Terminal.launchInTerminal(
@@ -260,7 +262,7 @@ class PhpDebugSession extends vscode.DebugSession {
         }
         /** sets up a TCP server to listen for Xdebug connections */
         const createServer = () =>
-            new Promise<void>((resolve, reject) => {
+            new Promise<number>((resolve, reject) => {
                 const server = (this._server = net.createServer())
                 server.on('connection', async (socket: net.Socket) => {
                     try {
@@ -342,16 +344,22 @@ class PhpDebugSession extends vscode.DebugSession {
                 })
                 server.on('error', (error: Error) => {
                     this.sendEvent(new vscode.OutputEvent(util.inspect(error) + '\n'))
-                    this.sendErrorResponse(response, <Error>error)
+                    reject(error)
                 })
-                server.listen(args.port || 9003, args.hostname, () => resolve())
+                server.on('listening', () => {
+                    const port = (server.address() as net.AddressInfo).port
+                    resolve(port)
+                })
+                const listenPort = args.port === undefined ? 9003 : args.port
+                server.listen(listenPort, args.hostname)
             })
         try {
+            let port = 0
             if (!args.noDebug) {
-                await createServer()
+                port = await createServer()
             }
             if (args.program || args.runtimeArgs) {
-                await launchScript()
+                await launchScript(port)
             }
         } catch (error) {
             this.sendErrorResponse(response, <Error>error)

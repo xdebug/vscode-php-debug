@@ -67,7 +67,7 @@ More general information on debugging with VS Code can be found on https://code.
 
 - `request`: Always `"launch"`
 - `hostname`: The address to bind to when listening for Xdebug (default: all IPv6 connections if available, else all IPv4 connections)
-- `port`: The port on which to listen for Xdebug (default: `9003`)
+- `port`: The port on which to listen for Xdebug (default: `9003`). If port is set to `0` a random port is chosen by the system and a placeholder `${port}` is replaced with the chosen port in `env` and `runtimeArgs`.
 - `stopOnEntry`: Whether to break at the beginning of the script (default: `false`)
 - `pathMappings`: A list of server paths mapping to the local source paths on your machine, see "Remote Host Debugging" below
 - `log`: Whether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
