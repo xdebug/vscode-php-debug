@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Changed
 
 - Switched to Xdebug 3 default port 9003.
+- Changed default exception breakpoint settings to all off.
 
 ### Fixed
 
