@@ -399,7 +399,7 @@ describe('PHP Debug Adapter', () => {
                 }),
                 client.waitForEvent('initialized'),
             ])
-            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 17 }] })
+            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
             const [, event] = await Promise.all([
                 client.configurationDoneRequest(),
                 client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>,
@@ -494,6 +494,38 @@ describe('PHP Debug Adapter', () => {
                 assert.lengthOf(arrayWithSpaceKeyItems, 1)
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'name', 'space key')
                 assert.propertyVal(arrayWithSpaceKeyItems[0], 'value', '1')
+            })
+
+            it('should report values with null correctly', async () => {
+                const arrayExtended = localVariables.find(variable => variable.name === '$arrayExtended')
+                assert.isDefined(arrayExtended)
+                assert.propertyVal(arrayExtended!, 'value', 'array(1)')
+                assert.property(arrayExtended!, 'variablesReference')
+                const arrayExtendedItems = (
+                    await client.variablesRequest({
+                        variablesReference: arrayExtended!.variablesReference,
+                    })
+                ).body.variables
+                assert.lengthOf(arrayExtendedItems, 1)
+                assert.propertyVal(arrayExtendedItems[0], 'name', 'a\0b')
+                assert.propertyVal(arrayExtendedItems[0], 'value', '"c\0d"')
+            })
+
+            it('should report values with unicode correctly', async () => {
+                const arrayExtended = localVariables.find(variable => variable.name === '$arrayExtended2')
+                assert.isDefined(arrayExtended)
+                assert.propertyVal(arrayExtended!, 'value', 'array(2)')
+                assert.property(arrayExtended!, 'variablesReference')
+                const arrayExtendedItems = (
+                    await client.variablesRequest({
+                        variablesReference: arrayExtended!.variablesReference,
+                    })
+                ).body.variables
+                assert.lengthOf(arrayExtendedItems, 2)
+                assert.propertyVal(arrayExtendedItems[0], 'name', 'Приветствие')
+                assert.propertyVal(arrayExtendedItems[0], 'value', '"КУ-КУ"')
+                assert.propertyVal(arrayExtendedItems[1], 'name', 'Прощание')
+                assert.propertyVal(arrayExtendedItems[1], 'value', '"Па-Ка"')
             })
         })
 

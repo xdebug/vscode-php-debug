@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - Option to start PHP built-in web server without router script.
 - Extended logging with DBGp packets.
+- Extended properties support. Always enable extended properties so fields are decoded in UTF-8.
 
 ### Changed
 
