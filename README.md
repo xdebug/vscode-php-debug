@@ -61,6 +61,8 @@ In your project, go to the debugger and hit the little gear icon and choose _PHP
 - **Launch Built-in web server**
   This configuration starts the PHP built-in web server on a random port and opens the browser with the `serverReadyAction` directive. The port is random (localhost:0) but can be changed to a desired fixed port (ex: localhost:8080). If a router script is needed, add it with `program` directive. Additional PHP/Xdebug directives trigger debugging on every page load.
 
+**Important note:** Make sure that your VS Code knows where your PHP.exe is (by default it doesn't). In settings.json you should have something like `"php.validate.executablePath": "C:\\xampp\\php\\php.exe"` (with your own path to PHP.exe).
+
 More general information on debugging with VS Code can be found on https://code.visualstudio.com/docs/editor/debugging.
 
 #### Supported launch.json settings:
