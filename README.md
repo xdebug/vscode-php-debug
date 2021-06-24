@@ -11,7 +11,7 @@ Manage pull requests and conduct code reviews in your IDE with full source-tree 
 
 ### Sponsor PHP Debug Adapter for Visual Studio Code
 
-If you find this extension usefull, if it helps you solve your problems and if you appreciate the support given here, consider sponsring our work.
+If you find this extension usefull, if it helps you solve your problems and if you appreciate the support given here, consider sponsoring our work.
 
 ## Installation
 
