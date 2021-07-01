@@ -76,7 +76,7 @@ interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArgume
     program?: string
     /** Optional arguments passed to the debuggee. */
     args?: string[]
-    /** Launch the debuggee in this working directory (specified as an absolute path). If omitted the debuggee is lauched in its own directory. */
+    /** Launch the debuggee in this working directory (specified as an absolute path). If omitted the debuggee is launched in its own directory. */
     cwd?: string
     /** Absolute path to the runtime executable to be used. Default is the runtime executable on the PATH. */
     runtimeExecutable?: string
@@ -104,9 +104,6 @@ class PhpDebugSession extends vscode.DebugSession {
      * The threadId key is equal to the id attribute of the connection.
      */
     private _connections = new Map<number, xdebug.Connection>()
-
-    /** A set of connections which are not yet running and are waiting for configurationDoneRequest */
-    private _waitingConnections = new Set<xdebug.Connection>()
 
     /** A counter for unique source IDs */
     private _sourceIdCounter = 1
@@ -146,6 +143,9 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** Breakpoint Manager to map VS Code to Xdebug breakpoints */
     private _breakpointManager = new BreakpointManager()
+
+    /** Breakpoint Adapters */
+    private _breakpointAdapters = new Map<xdebug.Connection, BreakpointAdapter>()
 
     public constructor() {
         super()
@@ -188,6 +188,8 @@ class PhpDebugSession extends vscode.DebugSession {
             supportTerminateDebuggee: true,
         }
         this.sendResponse(response)
+        // request breakpoints right away
+        this.sendEvent(new vscode.InitializedEvent())
     }
 
     protected attachRequest(
@@ -271,7 +273,6 @@ class PhpDebugSession extends vscode.DebugSession {
                             this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'), true)
                         }
                         this._connections.set(connection.id, connection)
-                        this._waitingConnections.add(connection)
                         const disposeConnection = (error?: Error) => {
                             if (this._connections.has(connection.id)) {
                                 if (args.log) {
@@ -288,7 +289,8 @@ class PhpDebugSession extends vscode.DebugSession {
                                 this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
                                 connection.close()
                                 this._connections.delete(connection.id)
-                                this._waitingConnections.delete(connection)
+                                this._statuses.delete(connection)
+                                this._breakpointAdapters.delete(connection)
                             }
                         }
                         connection.on('warning', (warning: string) => {
@@ -336,8 +338,19 @@ class PhpDebugSession extends vscode.DebugSession {
 
                         let bpa = new BreakpointAdapter(connection, this._breakpointManager)
                         bpa.on('dapEvent', event => this.sendEvent(event))
-                        // request breakpoints from VS Code
-                        await this.sendEvent(new vscode.InitializedEvent())
+                        this._breakpointAdapters.set(connection, bpa)
+                        // sync breakpoints to connection
+                        await bpa.process()
+                        let xdebugResponse: xdebug.StatusResponse
+                        // either tell VS Code we stopped on entry or run the script
+                        if (this._args.stopOnEntry) {
+                            // do one step to the first statement
+                            this._hasStoppedOnEntry = false
+                            xdebugResponse = await connection.sendStepIntoCommand()
+                        } else {
+                            xdebugResponse = await connection.sendRunCommand()
+                        }
+                        this._checkStatus(xdebugResponse)
                     } catch (error) {
                         this.sendEvent(
                             new vscode.OutputEvent((error instanceof Error ? error.message : error) + '\n', 'stderr')
@@ -383,9 +396,16 @@ class PhpDebugSession extends vscode.DebugSession {
             this._checkStatus(response)
         } else if (response.status === 'stopped') {
             this._connections.delete(connection.id)
+            this._statuses.delete(connection)
+            this._breakpointAdapters.delete(connection)
             this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
             connection.close()
         } else if (response.status === 'break') {
+            // First sync breakpoints
+            let bpa = this._breakpointAdapters.get(connection)
+            if (bpa) {
+                await bpa.process()
+            }
             // StoppedEvent reason can be 'step', 'breakpoint', 'exception' or 'pause'
             let stoppedEventReason: 'step' | 'breakpoint' | 'exception' | 'pause' | 'entry'
             let exceptionText: string | undefined
@@ -418,7 +438,6 @@ class PhpDebugSession extends vscode.DebugSession {
             )
             event.body.allThreadsStopped = false
             this.sendEvent(event)
-            this._breakpointManager.process()
         }
     }
 
@@ -530,35 +549,10 @@ class PhpDebugSession extends vscode.DebugSession {
         response: VSCodeDebugProtocol.ConfigurationDoneResponse,
         args: VSCodeDebugProtocol.ConfigurationDoneArguments
     ) {
-        let xdebugResponses: xdebug.StatusResponse[] = []
-        try {
-            xdebugResponses = await Promise.all<xdebug.StatusResponse>(
-                Array.from(this._waitingConnections).map(connection => {
-                    this._waitingConnections.delete(connection)
-                    // either tell VS Code we stopped on entry or run the script
-                    if (this._args.stopOnEntry) {
-                        // do one step to the first statement
-                        this._hasStoppedOnEntry = false
-                        return connection.sendStepIntoCommand()
-                    } else {
-                        return connection.sendRunCommand()
-                    }
-                })
-            )
-        } catch (error) {
-            this.sendErrorResponse(response, <Error>error)
-            for (const response of xdebugResponses) {
-                this._checkStatus(response)
-            }
-            return
-        }
         this.sendResponse(response)
-        for (const response of xdebugResponses) {
-            this._checkStatus(response)
-        }
     }
 
-    /** Executed after a successfull launch or attach request and after a ThreadEvent */
+    /** Executed after a successful launch or attach request and after a ThreadEvent */
     protected threadsRequest(response: VSCodeDebugProtocol.ThreadsResponse): void {
         // PHP doesn't have threads, but it may have multiple requests in parallel.
         // Think about a website that makes multiple, parallel AJAX requests to your PHP backend.
@@ -952,7 +946,8 @@ class PhpDebugSession extends vscode.DebugSession {
                     }
                     await connection.close()
                     this._connections.delete(id)
-                    this._waitingConnections.delete(connection)
+                    this._statuses.delete(connection)
+                    this._breakpointAdapters.delete(connection)
                 })
             )
             // If listening for connections, close server
