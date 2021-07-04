@@ -58,7 +58,7 @@ export class BreakpointManager extends EventEmitter {
             }
 
             let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
-                verified: false,
+                verified: this.listeners('add').length === 0,
                 line: sourceBreakpoint.line,
                 source: source,
                 id: this._nextId++,
@@ -93,7 +93,7 @@ export class BreakpointManager extends EventEmitter {
         filters.forEach(filter => {
             let xdebugBreakpoint: xdebug.Breakpoint = new xdebug.ExceptionBreakpoint(filter)
             let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
-                verified: false,
+                verified: this.listeners('add').length === 0,
                 id: this._nextId++,
             }
             this._exceptionBreakpoints.set(vscodeBreakpoint.id!, xdebugBreakpoint)
@@ -130,7 +130,7 @@ export class BreakpointManager extends EventEmitter {
             )
 
             let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
-                verified: false,
+                verified: this.listeners('add').length === 0,
                 id: this._nextId++,
             }
             this._callBreakpoints.set(vscodeBreakpoint.id!, xdebugBreakpoint)
@@ -153,6 +153,22 @@ export class BreakpointManager extends EventEmitter {
         // this will trigger a process on all adapters
         this.emit('process')
     }
+
+    public getAll(): Map<number, xdebug.Breakpoint> {
+        let toAdd = new Map<number, xdebug.Breakpoint>()
+        for (const [_, lbp] of this._lineBreakpoints) {
+            for (const [id, bp] of lbp) {
+                toAdd.set(id, bp)
+            }
+        }
+        for (const [id, bp] of this._exceptionBreakpoints) {
+            toAdd.set(id, bp)
+        }
+        for (const [id, bp] of this._callBreakpoints) {
+            toAdd.set(id, bp)
+        }
+        return toAdd
+    }
 }
 
 interface AdapterBreakpoint {
@@ -170,7 +186,7 @@ export declare interface BreakpointAdapter {
 
 /**
  * Listens to changes from BreakpointManager and delivers them their own Xdebug Connection.
- * If DBGp connection is busy, trach changes locally.
+ * If DBGp connection is busy, track changes locally.
  */
 export class BreakpointAdapter extends EventEmitter {
     private _connection: xdebug.Connection
@@ -179,18 +195,19 @@ export class BreakpointAdapter extends EventEmitter {
     private _queue: (() => void)[] = []
     private _executing = false
 
-    constructor(connecton: xdebug.Connection, breakpointManager: BreakpointManager) {
+    constructor(connection: xdebug.Connection, breakpointManager: BreakpointManager) {
         super()
-        this._connection = connecton
+        this._connection = connection
         this._breakpointManager = breakpointManager
+        this._add(breakpointManager.getAll())
         // listeners
         this._breakpointManager.on('add', this._add)
         this._breakpointManager.on('remove', this._remove)
-        this._breakpointManager.on('process', this._process)
+        this._breakpointManager.on('process', this.process)
         this._connection.on('close', (error?: Error) => {
             this._breakpointManager.off('add', this._add)
             this._breakpointManager.off('remove', this._remove)
-            this._breakpointManager.off('process', this._process)
+            this._breakpointManager.off('process', this.process)
         })
         this._connection.on('notify_breakpoint_resolved', this._notify)
     }
@@ -238,7 +255,17 @@ export class BreakpointAdapter extends EventEmitter {
         }
     }
 
-    protected _process = async (): Promise<void> => {
+    private _processPromise: Promise<void>
+
+    public process = (): Promise<void> => {
+        if (this._executing) {
+            return this._processPromise
+        }
+        this._processPromise = this.__process()
+        return this._processPromise
+    }
+
+    protected __process = async (): Promise<void> => {
         if (this._executing) {
             // Protect from re-entry
             return
@@ -254,7 +281,7 @@ export class BreakpointAdapter extends EventEmitter {
                 f()
             }
 
-            // do not execute netowrk operations until network channel available
+            // do not execute network operations until network channel available
             if (this._connection.isPendingExecuteCommand) {
                 return
             }
@@ -311,9 +338,9 @@ export class BreakpointAdapter extends EventEmitter {
             this._executing = false
         }
 
-        // If there were any concurent chanegs to the op-queue, rerun processing right away
+        // If there were any concurrent changes to the op-queue, rerun processing right away
         if (this._queue.length > 0) {
-            this._process()
+            return await this.__process()
         }
     }
 }

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.16.1]
+
+### Fixed
+
+- Do not request all breakpoints on every new Xdebug connection. Use internal BreakpointManager state.
+- Show breakpoints as verified when there are no connections.
+
 ## [1.16.0]
 
 ### Added

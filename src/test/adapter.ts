@@ -367,8 +367,7 @@ describe('PHP Debug Adapter', () => {
             const program = path.join(TEST_PROJECT, 'function.php')
 
             it('should stop on a function breakpoint', async () => {
-                await client.launch({ program })
-                await client.waitForEvent('initialized')
+                await Promise.all([client.launch({ program }), client.waitForEvent('initialized')])
                 const breakpoint = (
                     await client.setFunctionBreakpointsRequest({
                         breakpoints: [{ name: 'a_function' }],
