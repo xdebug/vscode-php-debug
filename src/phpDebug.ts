@@ -147,6 +147,12 @@ class PhpDebugSession extends vscode.DebugSession {
     /** Breakpoint Adapters */
     private _breakpointAdapters = new Map<xdebug.Connection, BreakpointAdapter>()
 
+    /** the promise that gets resolved once we receive the done request */
+    private _donePromise: Promise<void>
+
+    /** resolves the done promise */
+    private _donePromiseResolveFn: () => any
+
     public constructor() {
         super()
         this.setDebuggerColumnsStartAt1(true)
@@ -188,8 +194,6 @@ class PhpDebugSession extends vscode.DebugSession {
             supportTerminateDebuggee: true,
         }
         this.sendResponse(response)
-        // request breakpoints right away
-        this.sendEvent(new vscode.InitializedEvent())
     }
 
     protected attachRequest(
@@ -210,6 +214,15 @@ class PhpDebugSession extends vscode.DebugSession {
             args.pathMappings = pathMappings
         }
         this._args = args
+
+        this._donePromise = new Promise<void>((resolve, reject) => {
+            this._donePromiseResolveFn = resolve
+        })
+        // request breakpoints
+        this.sendEvent(new vscode.InitializedEvent())
+        // before starting the listening socket and script, wait for breakpoints to be loaded
+        await this._donePromise
+
         /** launches the script as CLI */
         const launchScript = async (port: number) => {
             // check if program exists
@@ -550,6 +563,7 @@ class PhpDebugSession extends vscode.DebugSession {
         args: VSCodeDebugProtocol.ConfigurationDoneArguments
     ) {
         this.sendResponse(response)
+        this._donePromiseResolveFn()
     }
 
     /** Executed after a successful launch or attach request and after a ThreadEvent */

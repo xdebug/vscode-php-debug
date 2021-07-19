@@ -936,7 +936,7 @@ export class Connection extends DbgpConnection {
         )
     }
 
-    /** Sends a context_get comand */
+    /** Sends a context_get command */
     public async sendContextGetCommand(context: Context): Promise<ContextGetResponse> {
         return new ContextGetResponse(
             await this._enqueueCommand('context_get', `-d ${context.stackFrame.level} -c ${context.id}`),
