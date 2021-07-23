@@ -76,7 +76,7 @@ More general information on debugging with VS Code can be found on https://code.
   For a full list of feature names that can be set please refer to the [Xdebug documentation](https://xdebug.org/docs-dbgp.php#feature-names).
   - `max_children`: max number of array or object children to initially retrieve
   - `max_data`: max amount of variable data to initially retrieve.
-  - `max_depth`: maximum depth that the debugger engine may return when sending arrays, hashs or object structures to the IDE.
+  - `max_depth`: maximum depth that the debugger engine may return when sending arrays, hashs or object structures to the IDE (there should be no need to change this as depth is retrieved incrementally, large value can cause IDE to hang).
   - `show_hidden`: This feature can get set by the IDE if it wants to have more detailed internal information on properties (eg. private members of classes, etc.) Zero means that hidden members are not shown to the IDE.
 
 Options specific to CLI debugging:
