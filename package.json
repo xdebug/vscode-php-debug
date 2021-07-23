@@ -76,7 +76,7 @@
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.2.3",
     "vsce": "^1.96.1",
-    "vscode-debugadapter-testsupport": "^1.44.0"
+    "vscode-debugadapter-testsupport": "^1.47.0"
   },
   "release": {
     "branches": [
