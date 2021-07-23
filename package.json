@@ -59,7 +59,7 @@
     "@types/minimatch": "^3.0.4",
     "@types/mocha": "^8.2.2",
     "@types/node": "^14.14.14",
-    "@types/relateurl": "^0.2.28",
+    "@types/relateurl": "^0.2.29",
     "@types/semver": "^7.3.7",
     "@types/urlencode": "^1.1.2",
     "@types/xmldom": "^0.1.30",
