@@ -627,47 +627,45 @@ class PhpDebugSession extends vscode.DebugSession {
                 response.body = { stackFrames: [{ id, name, source, line, column: 1 }] }
             } else {
                 response.body = {
-                    stackFrames: stack.map(
-                        (stackFrame): VSCodeDebugProtocol.StackFrame => {
-                            let source: VSCodeDebugProtocol.Source
-                            let line = stackFrame.line
-                            const urlObject = url.parse(stackFrame.fileUri)
-                            if (urlObject.protocol === 'dbgp:') {
-                                let sourceReference
-                                const src = Array.from(this._sources).find(
-                                    ([, v]) => v.url === stackFrame.fileUri && v.connection === connection
-                                )
-                                if (src) {
-                                    sourceReference = src[0]
-                                } else {
-                                    sourceReference = this._sourceIdCounter++
-                                    this._sources.set(sourceReference, { connection, url: stackFrame.fileUri })
-                                }
-                                // for eval code, we need to include .php extension to get syntax highlighting
-                                source = {
-                                    name:
-                                        stackFrame.type === 'eval'
-                                            ? `eval ${stackFrame.fileUri.substr(7)}.php`
-                                            : stackFrame.name,
-                                    sourceReference,
-                                    origin: stackFrame.type,
-                                }
-                                // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
-                                line++
+                    stackFrames: stack.map((stackFrame): VSCodeDebugProtocol.StackFrame => {
+                        let source: VSCodeDebugProtocol.Source
+                        let line = stackFrame.line
+                        const urlObject = url.parse(stackFrame.fileUri)
+                        if (urlObject.protocol === 'dbgp:') {
+                            let sourceReference
+                            const src = Array.from(this._sources).find(
+                                ([, v]) => v.url === stackFrame.fileUri && v.connection === connection
+                            )
+                            if (src) {
+                                sourceReference = src[0]
                             } else {
-                                // Xdebug paths are URIs, VS Code file paths
-                                const filePath = convertDebuggerPathToClient(urlObject, this._args.pathMappings)
-                                // "Name" of the source and the actual file path
-                                source = { name: path.basename(filePath), path: filePath }
+                                sourceReference = this._sourceIdCounter++
+                                this._sources.set(sourceReference, { connection, url: stackFrame.fileUri })
                             }
-                            // a new, unique ID for scopeRequests
-                            const stackFrameId = this._stackFrameIdCounter++
-                            // save the connection this stackframe belongs to and the level of the stackframe under the stacktrace id
-                            this._stackFrames.set(stackFrameId, stackFrame)
-                            // prepare response for VS Code (column is always 1 since Xdebug doesn't tell us the column)
-                            return { id: stackFrameId, name: stackFrame.name, source, line, column: 1 }
+                            // for eval code, we need to include .php extension to get syntax highlighting
+                            source = {
+                                name:
+                                    stackFrame.type === 'eval'
+                                        ? `eval ${stackFrame.fileUri.substr(7)}.php`
+                                        : stackFrame.name,
+                                sourceReference,
+                                origin: stackFrame.type,
+                            }
+                            // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
+                            line++
+                        } else {
+                            // Xdebug paths are URIs, VS Code file paths
+                            const filePath = convertDebuggerPathToClient(urlObject, this._args.pathMappings)
+                            // "Name" of the source and the actual file path
+                            source = { name: path.basename(filePath), path: filePath }
                         }
-                    ),
+                        // a new, unique ID for scopeRequests
+                        const stackFrameId = this._stackFrameIdCounter++
+                        // save the connection this stackframe belongs to and the level of the stackframe under the stacktrace id
+                        this._stackFrames.set(stackFrameId, stackFrame)
+                        // prepare response for VS Code (column is always 1 since Xdebug doesn't tell us the column)
+                        return { id: stackFrameId, name: stackFrame.name, source, line, column: 1 }
+                    }),
                 }
             }
         } catch (error) {
