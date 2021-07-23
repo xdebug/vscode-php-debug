@@ -62,7 +62,7 @@
     "@types/relateurl": "^0.2.28",
     "@types/semver": "^7.3.7",
     "@types/urlencode": "^1.1.2",
-    "@types/xmldom": "^0.1.30",
+    "@types/xmldom": "^0.1.31",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "husky": "^5.2.0",
