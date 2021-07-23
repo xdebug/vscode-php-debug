@@ -60,7 +60,7 @@
     "@types/mocha": "^9.0.0",
     "@types/node": "^14.14.14",
     "@types/relateurl": "^0.2.29",
-    "@types/semver": "^7.3.7",
+    "@types/semver": "^7.3.8",
     "@types/urlencode": "^1.1.2",
     "@types/xmldom": "^0.1.31",
     "chai": "^4.3.4",
