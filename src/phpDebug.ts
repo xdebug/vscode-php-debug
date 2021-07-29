@@ -218,10 +218,6 @@ class PhpDebugSession extends vscode.DebugSession {
         this._donePromise = new Promise<void>((resolve, reject) => {
             this._donePromiseResolveFn = resolve
         })
-        // request breakpoints
-        this.sendEvent(new vscode.InitializedEvent())
-        // before starting the listening socket and script, wait for breakpoints to be loaded
-        await this._donePromise
 
         /** launches the script as CLI */
         const launchScript = async (port: number) => {
@@ -349,6 +345,9 @@ class PhpDebugSession extends vscode.DebugSession {
 
                         this.sendEvent(new vscode.ThreadEvent('started', connection.id))
 
+                        // wait for all breakpoints
+                        await this._donePromise
+
                         let bpa = new BreakpointAdapter(connection, this._breakpointManager)
                         bpa.on('dapEvent', event => this.sendEvent(event))
                         this._breakpointAdapters.set(connection, bpa)
@@ -395,6 +394,8 @@ class PhpDebugSession extends vscode.DebugSession {
             return
         }
         this.sendResponse(response)
+        // request breakpoints
+        this.sendEvent(new vscode.InitializedEvent())
     }
 
     /**
