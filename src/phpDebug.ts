@@ -319,7 +319,9 @@ class PhpDebugSession extends vscode.DebugSession {
                         // support for breakpoints
                         let feat: xdebug.FeatureGetResponse
                         const supportedEngine =
-                            initPacket.engineName === 'Xdebug' && semver.gte(initPacket.engineVersion, '3.0.0')
+                            initPacket.engineName === 'Xdebug' &&
+                            semver.valid(initPacket.engineVersion, { loose: true }) &&
+                            semver.gte(initPacket.engineVersion, '3.0.0', { loose: true })
                         if (
                             supportedEngine ||
                             ((feat = await connection.sendFeatureGetCommand('resolved_breakpoints')) &&
