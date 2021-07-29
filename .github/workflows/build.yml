@@ -60,7 +60,7 @@ jobs:
       - name: Generate coverage report
         run: ./node_modules/.bin/nyc report --reporter=json
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
   release:
     runs-on: ubuntu-18.04
     needs: test
