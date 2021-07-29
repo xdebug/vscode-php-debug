@@ -19,6 +19,8 @@ export class InitPacket {
     connection: Connection
     /** the version of Xdebug */
     engineVersion: string
+    /** the name of the engine */
+    engineName: string
     /**
      * @param  {XMLDocument} document - An XML document to read from
      * @param  {Connection} connection
@@ -30,6 +32,7 @@ export class InitPacket {
         this.protocolVersion = documentElement.getAttribute('protocol_version')!
         this.ideKey = documentElement.getAttribute('idekey')!
         this.engineVersion = documentElement.getElementsByTagName('engine')[0].getAttribute('version')!
+        this.engineName = documentElement.getElementsByTagName('engine')[0].textContent ?? ''
         this.connection = connection
     }
 }

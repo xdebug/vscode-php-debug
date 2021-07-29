@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## Fixed
 
 - Fixed breakpoint and launch initialization order.
+- Optimize feature negotiation for known Xdebug version.
 
 ## [1.16.1]
 

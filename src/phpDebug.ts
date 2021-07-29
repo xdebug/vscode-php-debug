@@ -12,6 +12,7 @@ import { Terminal } from './terminal'
 import { convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
 import minimatch = require('minimatch')
 import { BreakpointManager, BreakpointAdapter } from './breakpoints'
+import * as semver from 'semver'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -313,19 +314,30 @@ class PhpDebugSession extends vscode.DebugSession {
                                 this.sendEvent(new vscode.OutputEvent(log), true)
                             }
                         })
-                        await connection.waitForInitPacket()
+                        const initPacket = await connection.waitForInitPacket()
 
                         // support for breakpoints
-                        let feat_rb = await connection.sendFeatureGetCommand('resolved_breakpoints')
-                        if (feat_rb.supported === '1') {
+                        let feat: xdebug.FeatureGetResponse
+                        const supportedEngine =
+                            initPacket.engineName === 'Xdebug' && semver.gte(initPacket.engineVersion, '3.0.0')
+                        if (
+                            supportedEngine ||
+                            ((feat = await connection.sendFeatureGetCommand('resolved_breakpoints')) &&
+                                feat.supported === '1')
+                        ) {
                             await connection.sendFeatureSetCommand('resolved_breakpoints', '1')
                         }
-                        let feat_no = await connection.sendFeatureGetCommand('notify_ok')
-                        if (feat_no.supported === '1') {
+                        if (
+                            supportedEngine ||
+                            ((feat = await connection.sendFeatureGetCommand('notify_ok')) && feat.supported === '1')
+                        ) {
                             await connection.sendFeatureSetCommand('notify_ok', '1')
                         }
-                        let feat_ep = await connection.sendFeatureGetCommand('extended_properties')
-                        if (feat_ep.supported === '1') {
+                        if (
+                            supportedEngine ||
+                            ((feat = await connection.sendFeatureGetCommand('extended_properties')) &&
+                                feat.supported === '1')
+                        ) {
                             await connection.sendFeatureSetCommand('extended_properties', '1')
                         }
 
