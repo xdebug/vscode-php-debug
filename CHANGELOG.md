@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.16.2]
+
+## Fixed
+
+- Fixed breakpoint and launch initialization order.
+- Optimize feature negotiation for known Xdebug version.
+
 ## [1.16.1]
 
 ### Fixed

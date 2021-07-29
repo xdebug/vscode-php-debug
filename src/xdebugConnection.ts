@@ -19,6 +19,8 @@ export class InitPacket {
     connection: Connection
     /** the version of Xdebug */
     engineVersion: string
+    /** the name of the engine */
+    engineName: string
     /**
      * @param  {XMLDocument} document - An XML document to read from
      * @param  {Connection} connection
@@ -30,6 +32,7 @@ export class InitPacket {
         this.protocolVersion = documentElement.getAttribute('protocol_version')!
         this.ideKey = documentElement.getAttribute('idekey')!
         this.engineVersion = documentElement.getElementsByTagName('engine')[0].getAttribute('version')!
+        this.engineName = documentElement.getElementsByTagName('engine')[0].textContent ?? ''
         this.connection = connection
     }
 }
@@ -936,7 +939,7 @@ export class Connection extends DbgpConnection {
         )
     }
 
-    /** Sends a context_get comand */
+    /** Sends a context_get command */
     public async sendContextGetCommand(context: Context): Promise<ContextGetResponse> {
         return new ContextGetResponse(
             await this._enqueueCommand('context_get', `-d ${context.stackFrame.level} -c ${context.id}`),

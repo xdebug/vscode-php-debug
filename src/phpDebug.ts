@@ -12,6 +12,7 @@ import { Terminal } from './terminal'
 import { convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
 import minimatch = require('minimatch')
 import { BreakpointManager, BreakpointAdapter } from './breakpoints'
+import * as semver from 'semver'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -147,6 +148,12 @@ class PhpDebugSession extends vscode.DebugSession {
     /** Breakpoint Adapters */
     private _breakpointAdapters = new Map<xdebug.Connection, BreakpointAdapter>()
 
+    /** the promise that gets resolved once we receive the done request */
+    private _donePromise: Promise<void>
+
+    /** resolves the done promise */
+    private _donePromiseResolveFn: () => any
+
     public constructor() {
         super()
         this.setDebuggerColumnsStartAt1(true)
@@ -188,8 +195,6 @@ class PhpDebugSession extends vscode.DebugSession {
             supportTerminateDebuggee: true,
         }
         this.sendResponse(response)
-        // request breakpoints right away
-        this.sendEvent(new vscode.InitializedEvent())
     }
 
     protected attachRequest(
@@ -210,6 +215,11 @@ class PhpDebugSession extends vscode.DebugSession {
             args.pathMappings = pathMappings
         }
         this._args = args
+
+        this._donePromise = new Promise<void>((resolve, reject) => {
+            this._donePromiseResolveFn = resolve
+        })
+
         /** launches the script as CLI */
         const launchScript = async (port: number) => {
             // check if program exists
@@ -304,19 +314,30 @@ class PhpDebugSession extends vscode.DebugSession {
                                 this.sendEvent(new vscode.OutputEvent(log), true)
                             }
                         })
-                        await connection.waitForInitPacket()
+                        const initPacket = await connection.waitForInitPacket()
 
                         // support for breakpoints
-                        let feat_rb = await connection.sendFeatureGetCommand('resolved_breakpoints')
-                        if (feat_rb.supported === '1') {
+                        let feat: xdebug.FeatureGetResponse
+                        const supportedEngine =
+                            initPacket.engineName === 'Xdebug' && semver.gte(initPacket.engineVersion, '3.0.0')
+                        if (
+                            supportedEngine ||
+                            ((feat = await connection.sendFeatureGetCommand('resolved_breakpoints')) &&
+                                feat.supported === '1')
+                        ) {
                             await connection.sendFeatureSetCommand('resolved_breakpoints', '1')
                         }
-                        let feat_no = await connection.sendFeatureGetCommand('notify_ok')
-                        if (feat_no.supported === '1') {
+                        if (
+                            supportedEngine ||
+                            ((feat = await connection.sendFeatureGetCommand('notify_ok')) && feat.supported === '1')
+                        ) {
                             await connection.sendFeatureSetCommand('notify_ok', '1')
                         }
-                        let feat_ep = await connection.sendFeatureGetCommand('extended_properties')
-                        if (feat_ep.supported === '1') {
+                        if (
+                            supportedEngine ||
+                            ((feat = await connection.sendFeatureGetCommand('extended_properties')) &&
+                                feat.supported === '1')
+                        ) {
                             await connection.sendFeatureSetCommand('extended_properties', '1')
                         }
 
@@ -335,6 +356,9 @@ class PhpDebugSession extends vscode.DebugSession {
                         }
 
                         this.sendEvent(new vscode.ThreadEvent('started', connection.id))
+
+                        // wait for all breakpoints
+                        await this._donePromise
 
                         let bpa = new BreakpointAdapter(connection, this._breakpointManager)
                         bpa.on('dapEvent', event => this.sendEvent(event))
@@ -382,6 +406,8 @@ class PhpDebugSession extends vscode.DebugSession {
             return
         }
         this.sendResponse(response)
+        // request breakpoints
+        this.sendEvent(new vscode.InitializedEvent())
     }
 
     /**
@@ -550,6 +576,7 @@ class PhpDebugSession extends vscode.DebugSession {
         args: VSCodeDebugProtocol.ConfigurationDoneArguments
     ) {
         this.sendResponse(response)
+        this._donePromiseResolveFn()
     }
 
     /** Executed after a successful launch or attach request and after a ThreadEvent */
