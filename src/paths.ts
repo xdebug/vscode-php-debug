@@ -141,7 +141,7 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
     return serverFileUri
 }
 
-function isWindowsUri(path: string): boolean {
+export function isWindowsUri(path: string): boolean {
     return /^file:\/\/\/[a-zA-Z]:\//.test(path)
 }
 

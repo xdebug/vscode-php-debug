@@ -13,6 +13,7 @@ import { convertClientPathToDebugger, convertDebuggerPathToClient } from './path
 import minimatch = require('minimatch')
 import { BreakpointManager, BreakpointAdapter } from './breakpoints'
 import * as semver from 'semver'
+import { LogPointManager } from './logpoint'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -148,6 +149,13 @@ class PhpDebugSession extends vscode.DebugSession {
     /** Breakpoint Adapters */
     private _breakpointAdapters = new Map<xdebug.Connection, BreakpointAdapter>()
 
+    /**
+     * The manager for logpoints. Since xdebug does not support anything like logpoints,
+     * it has to be managed by the extension/debug server. It does that by a Map referencing
+     * the log messages per file. Xdebug sees it as a regular breakpoint.
+     */
+    private _logPointManager = new LogPointManager()
+
     /** the promise that gets resolved once we receive the done request */
     private _donePromise: Promise<void>
 
@@ -170,6 +178,7 @@ class PhpDebugSession extends vscode.DebugSession {
             supportsEvaluateForHovers: false,
             supportsConditionalBreakpoints: true,
             supportsFunctionBreakpoints: true,
+            supportsLogPoints: true,
             exceptionBreakpointFilters: [
                 {
                     filter: 'Notice',
@@ -459,6 +468,24 @@ class PhpDebugSession extends vscode.DebugSession {
             } else {
                 stoppedEventReason = 'breakpoint'
             }
+            // Check for log points
+            if (this._logPointManager.hasLogPoint(response.fileUri, response.line)) {
+                const logMessage = await this._logPointManager.resolveExpressions(
+                    response.fileUri,
+                    response.line,
+                    async (expr: string): Promise<string> => {
+                        const evaluated = await connection.sendEvalCommand(expr)
+                        return formatPropertyValue(evaluated.result)
+                    }
+                )
+
+                this.sendEvent(new vscode.OutputEvent(logMessage + '\n', 'console'))
+                if (stoppedEventReason === 'breakpoint') {
+                    const responseCommand = await connection.sendRunCommand()
+                    await this._checkStatus(responseCommand)
+                    return
+                }
+            }
             const event: VSCodeDebugProtocol.StoppedEvent = new vscode.StoppedEvent(
                 stoppedEventReason,
                 connection.id,
@@ -533,6 +560,11 @@ class PhpDebugSession extends vscode.DebugSession {
             const fileUri = convertClientPathToDebugger(args.source.path!, this._args.pathMappings)
             const vscodeBreakpoints = this._breakpointManager.setBreakPoints(args.source, fileUri, args.breakpoints!)
             response.body = { breakpoints: vscodeBreakpoints }
+            // Process logpoints
+            this._logPointManager.clearFromFile(fileUri)
+            args.breakpoints!.filter(breakpoint => breakpoint.logMessage).forEach(breakpoint => {
+                this._logPointManager.addLogPoint(fileUri, breakpoint.line, breakpoint.logMessage!)
+            })
         } catch (error) {
             this.sendErrorResponse(response, error)
             return
