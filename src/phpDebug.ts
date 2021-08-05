@@ -178,7 +178,8 @@ class PhpDebugSession extends vscode.DebugSession {
             supportsEvaluateForHovers: false,
             supportsConditionalBreakpoints: true,
             supportsFunctionBreakpoints: true,
-            supportsLogPoints: true,            supportsHitConditionalBreakpoints: true,
+            supportsLogPoints: true,
+            supportsHitConditionalBreakpoints: true,
             exceptionBreakpointFilters: [
                 {
                     filter: 'Notice',

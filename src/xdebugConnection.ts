@@ -9,7 +9,7 @@ const ENCODING = 'iso-8859-1'
 export class InitPacket {
     /** The file that was requested as a file:// URI */
     fileUri: string
-    /** GDGP version (1.0) */
+    /** DBGP version (1.0) */
     protocolVersion: string
     /** language being debugged (PHP) */
     language: string
@@ -57,8 +57,8 @@ export class Response {
     /** The connection this response was received from */
     connection: Connection
     /**
-     * contructs a new Response object from an XML document.
-     * If there is an error child node, an exception is thrown with the appropiate code and message.
+     * constructs a new Response object from an XML document.
+     * If there is an error child node, an exception is thrown with the appropriate code and message.
      * @param  {XMLDocument} document - An XML document to read from
      * @param  {Connection} connection
      */
@@ -119,13 +119,13 @@ export class StatusResponse extends Response {
 }
 
 export type NotifyName = 'breakpoint_resolved'
-export type HitCondition = '>=' | '==' | '%';
+export type HitCondition = '>=' | '==' | '%'
 
 /** Abstract base class for all notify packets */
 export class Notify {
     /** Name of the notify */
     name: String
-    /** dynamically detects the type of notifyand returns the appropiate object */
+    /** dynamically detects the type of notify and returns the appropriate object */
     public static fromXml(document: XMLDocument, connection: Connection) {
         switch (<NotifyName>document.documentElement.getAttribute('name')!) {
             case 'breakpoint_resolved':
@@ -140,7 +140,7 @@ export class Notify {
     }
 }
 
-/** Class for breakpoint_resolved nofity */
+/** Class for breakpoint_resolved notify */
 export class BreakpointResolvedNotify extends Notify {
     /** breakpoint being resolved */
     breakpoint: Breakpoint
@@ -163,8 +163,10 @@ export abstract class Breakpoint {
     type: BreakpointType
     /** State of the breakpoint: enabled, disabled */
     state: BreakpointState
+    /** Flag to denote whether a breakpoint has been resolved */
+    resolved: BreakpointResolved
     /** A numeric value used together with the hit_condition to determine if the breakpoint should pause execution or be skipped. */
-    hitValue?: number;
+    hitValue?: number
     /**
      * A string indicating a condition to use to compare hit_count and hit_value.
      * The following values are legal:
@@ -172,10 +174,10 @@ export abstract class Breakpoint {
      * == break if hit_count is equal to hit_value
      * %  break if hit_count is a multiple of hit_value
      */
-    hitCondition?: HitCondition;
+    hitCondition?: HitCondition
     /** The connection this breakpoint is set on */
     connection: Connection
-    /** dynamically detects the type of breakpoint and returns the appropiate object */
+    /** dynamically detects the type of breakpoint and returns the appropriate object */
     public static fromXml(breakpointNode: Element, connection: Connection): Breakpoint {
         switch (breakpointNode.getAttribute('type')) {
             case 'exception':
@@ -204,15 +206,15 @@ export abstract class Breakpoint {
             this.state = <BreakpointState>breakpointNode.getAttribute('state')
             this.resolved = <BreakpointResolved>breakpointNode.getAttribute('resolved')
             if (breakpointNode.hasAttribute('hit_condition')) {
-                this.hitCondition = <HitCondition>breakpointNode.getAttribute('hit_condition');
+                this.hitCondition = <HitCondition>breakpointNode.getAttribute('hit_condition')
             }
             if (breakpointNode.hasAttribute('hit_value')) {
-                this.hitValue = parseInt(breakpointNode.getAttribute('hit_value')!);
+                this.hitValue = parseInt(breakpointNode.getAttribute('hit_value')!)
             }
         } else {
             this.type = arguments[0]
-            this.hitCondition = arguments[1];
-            this.hitValue = arguments[2];
+            this.hitCondition = arguments[1]
+            this.hitValue = arguments[2]
         }
     }
     /** Removes the breakpoint by sending a breakpoint_remove command */
@@ -229,7 +231,7 @@ export class LineBreakpoint extends Breakpoint {
     line: number
     /** constructs a line breakpoint from an XML node */
     constructor(breakpointNode: Element, connection: Connection)
-    /** contructs a line breakpoint for passing to sendSetBreakpointCommand */
+    /** constructs a line breakpoint for passing to sendSetBreakpointCommand */
     constructor(fileUri: string, line: number, hitCondition?: HitCondition, hitValue?: number)
     constructor() {
         if (typeof arguments[0] === 'object') {
@@ -255,7 +257,7 @@ export class CallBreakpoint extends Breakpoint {
     expression: string
     /** constructs a call breakpoint from an XML node */
     constructor(breakpointNode: Element, connection: Connection)
-    /** contructs a call breakpoint for passing to sendSetBreakpointCommand */
+    /** constructs a call breakpoint for passing to sendSetBreakpointCommand */
     constructor(fn: string, expression?: string, hitCondition?: HitCondition, hitValue?: number)
     constructor() {
         if (typeof arguments[0] === 'object') {
@@ -306,7 +308,7 @@ export class ConditionalBreakpoint extends Breakpoint {
     expression: string
     /** Constructs a breakpoint object from an XML node from a Xdebug response */
     constructor(breakpointNode: Element, connection: Connection)
-    /** Contructs a breakpoint object for passing to sendSetBreakpointCommand */
+    /** Constructs a breakpoint object for passing to sendSetBreakpointCommand */
     constructor(expression: string, fileUri: string, line?: number, hitCondition?: HitCondition, hitValue?: number)
     constructor() {
         if (typeof arguments[0] === 'object') {
@@ -376,7 +378,7 @@ export class StackFrame {
     fileUri: string
     /** The line number inside file where the stackframe was entered */
     line: number
-    /** The level (index) inside the stack trace at which the stack frame receides */
+    /** The level (index) inside the stack trace at which the stack frame resides */
     level: number
     /** The connection this stackframe belongs to */
     connection: Connection
@@ -676,7 +678,7 @@ export class Connection extends DbgpConnection {
     private _initPromise: Promise<InitPacket>
 
     /** resolves the init promise */
-    private _initPromiseResolveFn: (initPackt: InitPacket) => any
+    private _initPromiseResolveFn: (initPacket: InitPacket) => any
 
     /** rejects the init promise */
     private _initPromiseRejectFn: (err?: Error) => any
@@ -891,7 +893,7 @@ export class Connection extends DbgpConnection {
     /**
      * Sends a breakpoint_get command
      * @param {Breakpoint|number} breakpoint - an instance or id of a breakpoint
-     * @returns Promise.<BreakpointGetResonse>
+     * @returns Promise.<BreakpointGetResponse>
      */
     public async sendBreakpointGetCommand(breakpoint: Breakpoint | number): Promise<BreakpointGetResponse> {
         let breakpointId: number
