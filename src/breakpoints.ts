@@ -145,9 +145,28 @@ export class BreakpointManager extends EventEmitter {
         this._callBreakpoints.clear()
 
         vscodeBreakpoints = breakpoints.map(functionBreakpoint => {
+            let hitValue: number | undefined
+            let hitCondition: xdebug.HitCondition | undefined
+            if (functionBreakpoint.hitCondition) {
+                const match = functionBreakpoint.hitCondition.match(/^\s*(>=|==|%)?\s*(\d+)\s*$/)
+                if (match) {
+                    hitCondition = (match[1] as xdebug.HitCondition) || '=='
+                    hitValue = parseInt(match[2])
+                } else {
+                    let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
+                        verified: false,
+                        // id: this._nextId++,
+                        message:
+                            'Invalid hit condition. Specify a number, optionally prefixed with one of the operators >= (default), == or %',
+                    }
+                    return vscodeBreakpoint
+                }
+            }
             let xdebugBreakpoint: xdebug.Breakpoint = new xdebug.CallBreakpoint(
                 functionBreakpoint.name,
-                functionBreakpoint.condition
+                functionBreakpoint.condition,
+                hitCondition,
+                hitValue
             )
 
             let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
