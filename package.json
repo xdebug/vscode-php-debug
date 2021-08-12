@@ -51,7 +51,7 @@
     "vscode-debugadapter": "^1.47.0",
     "vscode-debugprotocol": "^1.47.0",
     "semver": "^7.3.5",
-    "xmldom": "^0.6.0"
+    "xmldom": "^0.7.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^12.1.4",
