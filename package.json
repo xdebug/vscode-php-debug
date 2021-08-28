@@ -40,7 +40,7 @@
     "url": "https://github.com/xdebug/vscode-php-debug/issues"
   },
   "dependencies": {
-    "file-url": "^3.0.0",
+    "file-url": "^4.0.0",
     "iconv-lite": "^0.6.3",
     "minimatch": "^3.0.4",
     "moment": "^2.29.1",
