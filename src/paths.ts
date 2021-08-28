@@ -80,6 +80,12 @@ export function convertDebuggerPathToClient(
     } else {
         localPath = (serverIsWindows ? path.win32 : path.posix).normalize(serverPath)
     }
+        
+    if (serverIsWindows && !isWindowsUri(localPath)) {
+        //Change all the backslashes to forward slashes if server is windows, and client is not.
+        let re = /\\/gi;
+        localPath = localPath.replace(re, "/");
+    }
     return localPath
 }
 
