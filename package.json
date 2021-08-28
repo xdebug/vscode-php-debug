@@ -21,7 +21,7 @@
     }
   ],
   "engines": {
-    "vscode": "^1.53.0",
+    "vscode": "^1.999.0",
     "node": "^14.0.0"
   },
   "icon": "images/logo.png",
