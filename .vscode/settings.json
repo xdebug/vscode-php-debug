@@ -1,5 +1,8 @@
 // Place your settings in this file to overwrite default and user settings.
 {
+  "search.exclude": {
+    "out": true // set this to false to include "out" folder in search results
+  },
   "javascript.validate.enable": false,
   "eslint.enable": false,
   "editor.insertSpaces": true,

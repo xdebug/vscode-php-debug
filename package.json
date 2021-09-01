@@ -65,6 +65,7 @@
     "@types/semver": "^7.3.8",
     "@types/urlencode": "^1.1.2",
     "@types/xmldom": "^0.1.31",
+    "@types/vscode": "^1.53.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "husky": "^7.0.2",
@@ -138,6 +139,10 @@
       "out/test/**/*.*"
     ]
   },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onDebugResolve:php"
+  ],
   "contributes": {
     "breakpoints": [
       {
