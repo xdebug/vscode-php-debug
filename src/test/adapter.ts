@@ -391,10 +391,47 @@ describe('PHP Debug Adapter', () => {
         })
 
         describe('hit count breakpoints', () => {
-            it('should stop when the hit count is gte than 3 with condition "3"')
-            it('should stop when the hit count is gte than 3 with condition ">=3"')
-            it('should stop when the hit count is equal to 3 with condition "==3"')
-            it('should stop on every 2nd hit with condition "%2"')
+            const program = path.join(TEST_PROJECT, 'hit.php')
+
+            async function testHits(condition: string, hits: string[]): Promise<void> {
+                client.launch({ program })
+                await client.waitForEvent('initialized')
+                const breakpoint = (
+                    await client.setBreakpointsRequest({
+                        breakpoints: [{ line: 4, hitCondition: condition }],
+                        source: { path: program },
+                    })
+                ).body.breakpoints[0]
+                await client.configurationDoneRequest()
+                await waitForBreakpointUpdate(breakpoint)
+                assert.strictEqual(breakpoint.verified, true)
+                for (const hitVal of hits) {
+                    const { threadId, frame } = await assertStoppedLocation('breakpoint', program, 4)
+                    const result = (
+                        await client.evaluateRequest({
+                            context: 'watch',
+                            frameId: frame.id,
+                            expression: '$i',
+                        })
+                    ).body.result
+                    assert.equal(result, hitVal)
+                    await client.continueRequest({ threadId })
+                }
+                await client.waitForEvent('terminated')
+            }
+
+            it('should stop when the hit count is gte than 3 with condition "3"', async () => {
+                await testHits('3', ['3'])
+            })
+            it('should stop when the hit count is gte than 3 with condition ">=3"', async () => {
+                await testHits('>=3', ['3', '4', '5'])
+            })
+            it('should stop when the hit count is equal to 3 with condition "==3"', async () => {
+                await testHits('==3', ['3'])
+            })
+            it('should stop on every 2nd hit with condition "%2"', async () => {
+                await testHits('%2', ['2', '4'])
+            })
         })
     })
 
