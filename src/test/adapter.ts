@@ -393,7 +393,7 @@ describe('PHP Debug Adapter', () => {
         describe('hit count breakpoints', () => {
             const program = path.join(TEST_PROJECT, 'hit.php')
 
-            async function testHits(condition: string, hits: string[]): Promise<void> {
+            async function testHits(condition: string, hits: string[], verified: boolean = true): Promise<void> {
                 client.launch({ program })
                 await client.waitForEvent('initialized')
                 const breakpoint = (
@@ -403,8 +403,15 @@ describe('PHP Debug Adapter', () => {
                     })
                 ).body.breakpoints[0]
                 await client.configurationDoneRequest()
-                await waitForBreakpointUpdate(breakpoint)
-                assert.strictEqual(breakpoint.verified, true)
+                if (verified) {
+                    await waitForBreakpointUpdate(breakpoint)
+                } else {
+                    assert.strictEqual(
+                        breakpoint.message,
+                        'Invalid hit condition. Specify a number, optionally prefixed with one of the operators >= (default), == or %'
+                    )
+                }
+                assert.strictEqual(breakpoint.verified, verified)
                 for (const hitVal of hits) {
                     const { threadId, frame } = await assertStoppedLocation('breakpoint', program, 4)
                     const result = (
@@ -420,7 +427,11 @@ describe('PHP Debug Adapter', () => {
                 await client.waitForEvent('terminated')
             }
 
-            async function testFunctionHits(condition: string, hits: string[]): Promise<void> {
+            async function testFunctionHits(
+                condition: string,
+                hits: string[],
+                verified: boolean = true
+            ): Promise<void> {
                 client.launch({ program })
                 await client.waitForEvent('initialized')
                 const breakpoint = (
@@ -429,8 +440,15 @@ describe('PHP Debug Adapter', () => {
                     })
                 ).body.breakpoints[0]
                 await client.configurationDoneRequest()
-                await waitForBreakpointUpdate(breakpoint)
-                assert.strictEqual(breakpoint.verified, true)
+                if (verified) {
+                    await waitForBreakpointUpdate(breakpoint)
+                } else {
+                    assert.strictEqual(
+                        breakpoint.message,
+                        'Invalid hit condition. Specify a number, optionally prefixed with one of the operators >= (default), == or %'
+                    )
+                }
+                assert.strictEqual(breakpoint.verified, verified)
                 for (const hitVal of hits) {
                     const { threadId, frame } = await assertStoppedLocation('breakpoint', program, 9)
                     const result = (
@@ -447,6 +465,9 @@ describe('PHP Debug Adapter', () => {
             }
 
             describe('hit count line breakpoints', () => {
+                it('should not stop for broken condition "a"', async () => {
+                    await testHits('a', [], false)
+                })
                 it('should stop when the hit count is gte than 3 with condition "3"', async () => {
                     await testHits('3', ['3'])
                 })
@@ -462,6 +483,9 @@ describe('PHP Debug Adapter', () => {
             })
 
             describe('hit count function breakpoints', () => {
+                it('should not stop for broken condition "a"', async () => {
+                    await testFunctionHits('a', [], false)
+                })
                 it('should stop when the hit count is gte than 3 with condition "3"', async () => {
                     await testFunctionHits('3', ['3'])
                 })
