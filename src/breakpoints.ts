@@ -47,14 +47,35 @@ export class BreakpointManager extends EventEmitter {
 
         vscodeBreakpoints = breakpoints.map(sourceBreakpoint => {
             let xdebugBreakpoint: xdebug.Breakpoint
+            let hitValue: number | undefined
+            let hitCondition: xdebug.HitCondition | undefined
+            if (sourceBreakpoint.hitCondition) {
+                const match = sourceBreakpoint.hitCondition.match(/^\s*(>=|==|%)?\s*(\d+)\s*$/)
+                if (match) {
+                    hitCondition = (match[1] as xdebug.HitCondition) || '=='
+                    hitValue = parseInt(match[2])
+                } else {
+                    let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
+                        verified: false,
+                        line: sourceBreakpoint.line,
+                        source: source,
+                        // id: this._nextId++,
+                        message:
+                            'Invalid hit condition. Specify a number, optionally prefixed with one of the operators >= (default), == or %',
+                    }
+                    return vscodeBreakpoint
+                }
+            }
             if (sourceBreakpoint.condition) {
                 xdebugBreakpoint = new xdebug.ConditionalBreakpoint(
                     sourceBreakpoint.condition,
                     fileUri,
-                    sourceBreakpoint.line
+                    sourceBreakpoint.line,
+                    hitCondition,
+                    hitValue
                 )
             } else {
-                xdebugBreakpoint = new xdebug.LineBreakpoint(fileUri, sourceBreakpoint.line)
+                xdebugBreakpoint = new xdebug.LineBreakpoint(fileUri, sourceBreakpoint.line, hitCondition, hitValue)
             }
 
             let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
@@ -124,9 +145,28 @@ export class BreakpointManager extends EventEmitter {
         this._callBreakpoints.clear()
 
         vscodeBreakpoints = breakpoints.map(functionBreakpoint => {
+            let hitValue: number | undefined
+            let hitCondition: xdebug.HitCondition | undefined
+            if (functionBreakpoint.hitCondition) {
+                const match = functionBreakpoint.hitCondition.match(/^\s*(>=|==|%)?\s*(\d+)\s*$/)
+                if (match) {
+                    hitCondition = (match[1] as xdebug.HitCondition) || '=='
+                    hitValue = parseInt(match[2])
+                } else {
+                    let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
+                        verified: false,
+                        // id: this._nextId++,
+                        message:
+                            'Invalid hit condition. Specify a number, optionally prefixed with one of the operators >= (default), == or %',
+                    }
+                    return vscodeBreakpoint
+                }
+            }
             let xdebugBreakpoint: xdebug.Breakpoint = new xdebug.CallBreakpoint(
                 functionBreakpoint.name,
-                functionBreakpoint.condition
+                functionBreakpoint.condition,
+                hitCondition,
+                hitValue
             )
 
             let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
