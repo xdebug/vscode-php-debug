@@ -70,7 +70,7 @@
     "husky": "^7.0.1",
     "mocha": "^9.0.2",
     "nyc": "^15.1.0",
-    "prettier": "2.3.2",
+    "prettier": "2.4.1",
     "semantic-release": "^17.4.4",
     "semantic-release-vsce": "^3.4.1",
     "tslint": "^5.20.1",
