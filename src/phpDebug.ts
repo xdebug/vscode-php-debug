@@ -878,7 +878,9 @@ class PhpDebugSession extends vscode.DebugSession {
                             presentationHint.attributes = presentationHint.attributes || []
                             presentationHint.attributes.push('static')
                         }
-                        // presentationHint.kind = 'property'
+                        if (property.facets.includes('virtual')) {
+                            presentationHint.kind = 'virtual'
+                        }
                     }
                     const variable: VSCodeDebugProtocol.Variable = {
                         name: property.name,
