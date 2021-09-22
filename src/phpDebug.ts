@@ -344,6 +344,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             ((feat = await connection.sendFeatureGetCommand('notify_ok')) && feat.supported === '1')
                         ) {
                             await connection.sendFeatureSetCommand('notify_ok', '1')
+                            // connection.on('notify_user', this._notify)
                         }
                         if (
                             supportedEngine ||

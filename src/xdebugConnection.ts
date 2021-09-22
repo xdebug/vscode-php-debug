@@ -118,7 +118,7 @@ export class StatusResponse extends Response {
     }
 }
 
-export type NotifyName = 'breakpoint_resolved'
+export type NotifyName = 'breakpoint_resolved' | 'user'
 export type HitCondition = '>=' | '==' | '%'
 
 /** Abstract base class for all notify packets */
@@ -130,6 +130,8 @@ export class Notify {
         switch (<NotifyName>document.documentElement.getAttribute('name')!) {
             case 'breakpoint_resolved':
                 return new BreakpointResolvedNotify(document, connection)
+            case 'user':
+                return new UserNotify(document, connection)
             default:
                 return new Notify(document)
         }
@@ -148,6 +150,32 @@ export class BreakpointResolvedNotify extends Notify {
     constructor(document: XMLDocument, connection: Connection) {
         super(document)
         this.breakpoint = Breakpoint.fromXml(<Element>document.documentElement.firstChild, connection)
+    }
+}
+
+/** Class for user notify */
+export class UserNotify extends Notify {
+    /** property of notify value */
+    property: EvalResultProperty
+    /** File URI of the notify event */
+    fileUri: string
+    /** Line of notify event */
+    line: number
+
+    /** Constructs a notify object from an XML node from a Xdebug response */
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document)
+        if (document.documentElement.hasChildNodes()) {
+            const property = Array.from(document.documentElement.childNodes).find(node => node.nodeName === 'property')
+            if (property !== undefined) {
+                this.property = new EvalResultProperty(<Element>property)
+            }
+            const location = <Element>Array.from(document.documentElement.childNodes).find(node => node.nodeName === 'xdebug:location')
+            if (location !== undefined) {
+                this.line = parseInt(location.getAttribute('lineno')!)
+                this.fileUri = location.getAttribute('filename')!
+            }
+        }
     }
 }
 
