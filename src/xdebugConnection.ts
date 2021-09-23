@@ -166,14 +166,16 @@ export class UserNotify extends Notify {
     constructor(document: XMLDocument, connection: Connection) {
         super(document)
         if (document.documentElement.hasChildNodes()) {
-            const property = Array.from(document.documentElement.childNodes).find(node => node.nodeName === 'property')
-            if (property !== undefined) {
-                this.property = new EvalResultProperty(<Element>property)
+            const properties = document.documentElement.getElementsByTagName('property')
+            if (properties.length > 0) {
+                this.property = new EvalResultProperty(properties[0])
+                // Name is required by DAP, but user notify does not set it
+                this.property.name = ''
             }
-            const location = <Element>Array.from(document.documentElement.childNodes).find(node => node.nodeName === 'xdebug:location')
-            if (location !== undefined) {
-                this.line = parseInt(location.getAttribute('lineno')!)
-                this.fileUri = location.getAttribute('filename')!
+            const locations = document.documentElement.getElementsByTagName('xdebug:location')
+            if (locations.length > 0) {
+                this.line = parseInt(locations[0].getAttribute('lineno')!)
+                this.fileUri = locations[0].getAttribute('filename')!
             }
         }
     }
@@ -513,7 +515,10 @@ export abstract class BaseProperty {
     /** provided facets */
     facets: ('public' | 'private' | 'protected' | 'static' | 'readonly' | string)[]
 
-    constructor(propertyNode: Element) {
+    constructor(propertyNode: Element | null) {
+        if (propertyNode === null) {
+            return
+        }
         if (propertyNode.hasAttribute('name')) {
             this.name = propertyNode.getAttribute('name')!
         } else if (propertyNode.getElementsByTagName('name').length > 0) {
@@ -592,6 +597,18 @@ function decodeTag(propertyNode: Element, tagName: string): string {
         return iconv.encode(tag.textContent!, encoding) + ''
     } else {
         return tag.textContent!
+    }
+}
+
+export class SyntheticProperty extends BaseProperty {
+    constructor(name: string, type: string, value: string, children: BaseProperty[]) {
+        super(null)
+        this.name = name
+        this.type = type
+        this.value = value
+        this.hasChildren = children.length > 0
+        this.numberOfChildren = children.length
+        this.children = children
     }
 }
 

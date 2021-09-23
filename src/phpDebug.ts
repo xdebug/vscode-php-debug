@@ -344,7 +344,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             ((feat = await connection.sendFeatureGetCommand('notify_ok')) && feat.supported === '1')
                         ) {
                             await connection.sendFeatureSetCommand('notify_ok', '1')
-                            // connection.on('notify_user', this._notify)
+                            connection.on('notify_user', notify => this.handleUserNotify(notify, connection))
                         }
                         if (
                             supportedEngine ||
@@ -550,6 +550,24 @@ class PhpDebugSession extends vscode.DebugSession {
             super.sendErrorResponse(response, code, error.message, dest)
         } else {
             super.sendErrorResponse(response, arguments[1], arguments[2], arguments[3], arguments[4])
+        }
+    }
+
+    protected handleUserNotify(notify: xdebug.UserNotify, connection: xdebug.Connection) {
+        if (notify.property !== undefined) {
+            const event: VSCodeDebugProtocol.OutputEvent = new vscode.OutputEvent('', 'stdout')
+            const property = new xdebug.SyntheticProperty('', 'object', formatPropertyValue(notify.property), [
+                notify.property,
+            ])
+            let variablesReference = this._variableIdCounter++
+            this._evalResultProperties.set(variablesReference, property)
+            event.body.variablesReference = variablesReference
+            if (notify.fileUri.startsWith('file://')) {
+                const filePath = convertDebuggerPathToClient(notify.fileUri, this._args.pathMappings)
+                event.body.source = { name: path.basename(filePath), path: filePath }
+                event.body.line = notify.line
+            }
+            this.sendEvent(event)
         }
     }
 
