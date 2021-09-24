@@ -253,6 +253,10 @@
                     "type": "integer",
                     "description": "max amount of variable data to initially retrieve"
                   },
+                  "max_depth": {
+                    "type": "integer",
+                    "description": "maximum depth that the debugger engine may return when sending arrays, hashes or object structures to the IDE"
+                  },
                   "show_hidden": {
                     "enum": [
                       0,
