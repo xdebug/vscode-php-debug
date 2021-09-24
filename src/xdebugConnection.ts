@@ -482,6 +482,8 @@ export abstract class BaseProperty {
     value: string
     /** children that were already included in the response */
     children: BaseProperty[]
+    /** provided facets */
+    facets: ('public' | 'private' | 'protected' | 'static' | 'readonly' | string)[]
 
     constructor(propertyNode: Element) {
         if (propertyNode.hasAttribute('name')) {
@@ -494,6 +496,9 @@ export abstract class BaseProperty {
             this.class = propertyNode.getAttribute('classname')!
         } else if (propertyNode.getElementsByTagName('classname').length > 0) {
             this.class = decodeTag(propertyNode, 'classname')
+        }
+        if (propertyNode.hasAttribute('facet')) {
+            this.facets = propertyNode.getAttribute('facet')!.split(' ')
         }
         this.hasChildren = !!parseInt(propertyNode.getAttribute('children')!)
         if (this.hasChildren) {

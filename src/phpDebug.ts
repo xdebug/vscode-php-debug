@@ -861,11 +861,33 @@ class PhpDebugSession extends vscode.DebugSession {
                     } else {
                         evaluateName = property.name
                     }
+                    let presentationHint: VSCodeDebugProtocol.VariablePresentationHint = {}
+                    if (property.facets?.length) {
+                        if (property.facets.includes('public')) {
+                            presentationHint.visibility = 'public'
+                        } else if (property.facets.includes('private')) {
+                            presentationHint.visibility = 'private'
+                        } else if (property.facets.includes('protected')) {
+                            presentationHint.visibility = 'protected'
+                        }
+                        if (property.facets.includes('readonly')) {
+                            presentationHint.attributes = presentationHint.attributes || []
+                            presentationHint.attributes.push('readOnly')
+                        }
+                        if (property.facets.includes('static')) {
+                            presentationHint.attributes = presentationHint.attributes || []
+                            presentationHint.attributes.push('static')
+                        }
+                        if (property.facets.includes('virtual')) {
+                            presentationHint.kind = 'virtual'
+                        }
+                    }
                     const variable: VSCodeDebugProtocol.Variable = {
                         name: property.name,
                         value: displayValue,
                         type: property.type,
                         variablesReference,
+                        presentationHint,
                         evaluateName,
                     }
                     return variable
