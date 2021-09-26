@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.19.0]
+
+## Added
+
+- Support for PHP 8.1 facets
+- Support for Xdebug 3.1 xdebug_notify()
+
 ## [1.18.0]
 
 - Added hit count breakpoint condition.
