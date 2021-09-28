@@ -45,12 +45,13 @@
     "minimatch": "^3.0.4",
     "moment": "^2.29.1",
     "relateurl": "^0.2.7",
+    "semver": "^7.3.5",
     "string-replace-async": "^2.0.0",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
     "vscode-debugadapter": "^1.47.0",
     "vscode-debugprotocol": "^1.47.0",
-    "semver": "^7.3.5",
+    "which": "^2.0.2",
     "xmldom": "^0.6.0"
   },
   "devDependencies": {
@@ -64,8 +65,9 @@
     "@types/relateurl": "^0.2.29",
     "@types/semver": "^7.3.8",
     "@types/urlencode": "^1.1.2",
-    "@types/xmldom": "^0.1.31",
     "@types/vscode": "^1.53.0",
+    "@types/which": "^2.0.1",
+    "@types/xmldom": "^0.1.31",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "husky": "^7.0.2",
@@ -402,6 +404,29 @@
           }
         ]
       }
-    ]
+    ],
+    "configuration": {
+      "title": "PHP",
+      "properties": {
+        "php.executablePath": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "The path to a PHP executable.",
+          "scope": "machine-overridable"
+        }
+      }
+    },
+    "capabilities": {
+      "untrustedWorkspaces": {
+        "supported": "limited",
+        "description": "%workspaceTrust%",
+        "restrictedConfigurations": [
+          "php.executablePath"
+        ]
+      }
+    }
   }
 }
