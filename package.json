@@ -427,6 +427,21 @@
           "php.executablePath"
         ]
       }
-    }
+    },
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "workbench.action.debug.start",
+          "when": "resourceLangId == php"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "workbench.action.debug.start",
+        "title": "Debug PHP",
+        "icon": "$(debug-alt-small)"
+      }
+    ]
   }
 }
