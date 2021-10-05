@@ -143,7 +143,8 @@
   },
   "main": "./out/extension.js",
   "activationEvents": [
-    "onDebugResolve:php"
+    "onDebugResolve:php",
+    "onCommand:php.debug.debugPhpFile"
   ],
   "contributes": {
     "breakpoints": [
@@ -431,16 +432,17 @@
     "menus": {
       "editor/title/run": [
         {
-          "command": "workbench.action.debug.start",
+          "command": "php.debug.debugPhpFile",
           "when": "resourceLangId == php"
         }
       ]
     },
     "commands": [
       {
-        "command": "workbench.action.debug.start",
+        "command": "php.debug.debugPhpFile",
         "title": "Debug PHP",
-        "icon": "$(debug-alt-small)"
+        "icon": "$(debug-alt-small)",
+        "enablement": "resourceLangId == php"
       }
     ]
   }

@@ -25,7 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
                             XDEBUG_MODE: 'debug,develop',
                             XDEBUG_CONFIG: 'client_port=${port}',
                         }
-                        debugConfiguration.stopOnEntry = true
+                        // debugConfiguration.stopOnEntry = true
                     }
                 }
                 if (debugConfiguration.program && !debugConfiguration.runtimeExecutable) {
@@ -56,6 +56,12 @@ export function activate(context: vscode.ExtensionContext) {
                 }
                 return debugConfiguration
             },
+        })
+    )
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('php.debug.debugPhpFile', async (uri: vscode.Uri) => {
+            vscode.debug.startDebugging(undefined, { type: '', name: '', request: '' })
         })
     )
 }
