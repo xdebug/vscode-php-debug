@@ -52,7 +52,7 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
 /**
  * This interface should always match the schema found in the mock-debug extension manifest.
  */
-interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArguments {
+export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArguments {
     /** The address to bind to for listening for Xdebug connections (default: all IPv6 connections if available, else all IPv4 connections) */
     hostname?: string
     /** The port where the adapter should listen for Xdebug connections (default: 9003) */

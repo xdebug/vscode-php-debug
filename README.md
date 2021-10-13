@@ -11,7 +11,7 @@ Manage pull requests and conduct code reviews in your IDE with full source-tree 
 
 ### Sponsor PHP Debug Adapter for Visual Studio Code
 
-If you find this extension usefull, if it helps you solve your problems and if you appreciate the support given here, consider sponsoring our work.
+If you find this extension useful, if it helps you solve your problems and if you appreciate the support given here, consider sponsoring our work.
 
 ## Installation
 
@@ -65,6 +65,8 @@ There are also configurations for Xdebug v2 (Legacy) installations.
 
 More general information on debugging with VS Code can be found on https://code.visualstudio.com/docs/editor/debugging.
 
+> _Note:_ You can even debug a script without `launch.json`. If no folder is open, and the VS Code status bar is purple, pressing `F5` will start the open script with Xdebug3 specific parameters. If the php executable is not in path, you can provide it with the setting `php.executablePath` or a fallback `php.validate.executablePath`. For debugging to work, Xdebug must still be correctly installed.
+
 #### Supported launch.json settings:
 
 - `request`: Always `"launch"`
@@ -78,7 +80,7 @@ More general information on debugging with VS Code can be found on https://code.
   For a full list of feature names that can be set please refer to the [Xdebug documentation](https://xdebug.org/docs-dbgp.php#feature-names).
   - `max_children`: max number of array or object children to initially retrieve
   - `max_data`: max amount of variable data to initially retrieve.
-  - `max_depth`: maximum depth that the debugger engine may return when sending arrays, hashs or object structures to the IDE (there should be no need to change this as depth is retrieved incrementally, large value can cause IDE to hang).
+  - `max_depth`: maximum depth that the debugger engine may return when sending arrays, hashes or object structures to the IDE (there should be no need to change this as depth is retrieved incrementally, large value can cause IDE to hang).
   - `show_hidden`: This feature can get set by the IDE if it wants to have more detailed internal information on properties (eg. private members of classes, etc.) Zero means that hidden members are not shown to the IDE.
 
 Options specific to CLI debugging:
