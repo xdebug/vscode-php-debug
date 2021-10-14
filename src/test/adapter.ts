@@ -4,6 +4,7 @@ import * as path from 'path'
 import { DebugClient } from 'vscode-debugadapter-testsupport'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import * as semver from 'semver'
+import * as net from 'net'
 chai.use(chaiAsPromised)
 const assert = chai.assert
 
@@ -28,6 +29,21 @@ describe('PHP Debug Adapter', () => {
             assert.equal(response.body!.supportsConditionalBreakpoints, true)
             assert.equal(response.body!.supportsFunctionBreakpoints, true)
         })
+    })
+
+    it('max connections', async () => {
+        await Promise.all([client.launch({ maxConnections: 1, log: true }), client.configurationSequence()])
+
+        let s1 = net.createConnection({ port: 9003 })
+        await client.assertOutput('console', 'new connection 1 from ')
+        net.createConnection({ port: 9003 })
+        let o = await client.waitForEvent('output')
+        assert.match(
+            o.body!.output,
+            /^new connection from .* - dropping due to max connection limit/,
+            'Second connection does not generate proper error output'
+        )
+        s1.destroy()
     })
 
     describe('launch as CLI', () => {

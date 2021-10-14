@@ -784,6 +784,7 @@ export class Connection extends DbgpConnection {
                 }
             }
         })
+        this.on('close', () => this._initPromiseRejectFn(new Error('connection closed')))
     }
 
     /** Returns a promise that gets resolved once the init packet arrives */

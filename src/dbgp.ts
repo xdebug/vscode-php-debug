@@ -121,6 +121,10 @@ export class DbgpConnection extends EventEmitter {
     /** closes the underlying socket */
     public close(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
+            if (this._socket.destroyed) {
+                resolve()
+                return
+            }
             this._socket.once('close', resolve)
             this._socket.end()
         })
