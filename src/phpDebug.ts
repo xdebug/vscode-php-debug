@@ -88,6 +88,8 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     env?: { [key: string]: string }
     /** If true launch the target in an external console. */
     externalConsole?: boolean
+    /** Maximum allowed parallel debugging sessions */
+    maxConnections?: number
 }
 
 class PhpDebugSession extends vscode.DebugSession {
@@ -288,21 +290,40 @@ class PhpDebugSession extends vscode.DebugSession {
                 server.on('connection', async (socket: net.Socket) => {
                     try {
                         // new Xdebug connection
+                        // first check if we have a limit on connections
+                        if (args.maxConnections ?? 0 > 0) {
+                            if (this._connections.size >= args.maxConnections!) {
+                                if (args.log) {
+                                    this.sendEvent(
+                                        new vscode.OutputEvent(
+                                            `new connection from ${socket.remoteAddress} - dropping due to max connection limit\n`
+                                        ),
+                                        true
+                                    )
+                                }
+                                socket.end()
+                                return
+                            }
+                        }
+
                         const connection = new xdebug.Connection(socket)
                         if (args.log) {
-                            this.sendEvent(new vscode.OutputEvent('new connection ' + connection.id + '\n'), true)
+                            this.sendEvent(
+                                new vscode.OutputEvent(
+                                    `new connection ${connection.id} from ${socket.remoteAddress}\n`
+                                ),
+                                true
+                            )
                         }
                         this._connections.set(connection.id, connection)
                         const disposeConnection = (error?: Error) => {
                             if (this._connections.has(connection.id)) {
                                 if (args.log) {
-                                    this.sendEvent(new vscode.OutputEvent('connection ' + connection.id + ' closed\n'))
+                                    this.sendEvent(new vscode.OutputEvent(`connection ${connection.id} closed\n`))
                                 }
                                 if (error) {
                                     this.sendEvent(
-                                        new vscode.OutputEvent(
-                                            'connection ' + connection.id + ': ' + error.message + '\n'
-                                        )
+                                        new vscode.OutputEvent(`connection ${connection.id}: ${error.message}\n`)
                                     )
                                 }
                                 this.sendEvent(new vscode.ContinuedEvent(connection.id, false))
