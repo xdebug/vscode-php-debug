@@ -275,6 +275,11 @@
                 },
                 "description": "Overrides for Xdebug remote debugging settings. See https://xdebug.org/docs-dbgp.php#feature-names",
                 "default": {}
+              },
+              "maxConnections": {
+                "type": "number",
+                "description": "The maximum allowed parallel debugging sessions",
+                "default": 0
               }
             }
           }

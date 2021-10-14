@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.21.0]
+
+- Support for maxConnections limiting how many parallel connections the debug adapter allows.
+
 ## [1.20.0]
 
 - Support no-folder debugging in (purple) VS Code.
