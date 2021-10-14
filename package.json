@@ -433,7 +433,7 @@
       "editor/title/run": [
         {
           "command": "php.debug.debugPhpFile",
-          "when": "resourceLangId == php"
+          "when": "resourceLangId == php && !inDiffEditor"
         }
       ]
     },
