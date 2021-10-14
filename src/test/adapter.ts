@@ -31,21 +31,6 @@ describe('PHP Debug Adapter', () => {
         })
     })
 
-    it('max connections', async () => {
-        await Promise.all([client.launch({ maxConnections: 1, log: true }), client.configurationSequence()])
-
-        let s1 = net.createConnection({ port: 9003 })
-        await client.assertOutput('console', 'new connection 1 from ')
-        net.createConnection({ port: 9003 })
-        let o = await client.waitForEvent('output')
-        assert.match(
-            o.body!.output,
-            /^new connection from .* - dropping due to max connection limit/,
-            'Second connection does not generate proper error output'
-        )
-        s1.destroy()
-    })
-
     describe('launch as CLI', () => {
         const program = path.join(TEST_PROJECT, 'hello_world.php')
 
@@ -700,6 +685,23 @@ describe('PHP Debug Adapter', () => {
             await Promise.all([client.launch({ program }), client.configurationSequence()])
             await client.assertOutput('stdout', 'stdout output 1\nstdout output 2')
             await client.assertOutput('stderr', 'stderr output 1\nstderr output 2')
+        })
+    })
+
+    describe('special adapter tests', () => {
+        it('max connections', async () => {
+            await Promise.all([client.launch({ maxConnections: 1, log: true }), client.configurationSequence()])
+
+            let s1 = net.createConnection({ port: 9003 })
+            await client.assertOutput('console', 'new connection 1 from ')
+            net.createConnection({ port: 9003 })
+            let o = await client.waitForEvent('output')
+            assert.match(
+                o.body!.output,
+                /^new connection from .* - dropping due to max connection limit/,
+                'Second connection does not generate proper error output'
+            )
+            s1.destroy()
         })
     })
 })
