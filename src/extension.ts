@@ -28,7 +28,10 @@ export function activate(context: vscode.ExtensionContext) {
                         // debugConfiguration.stopOnEntry = true
                     }
                 }
-                if (debugConfiguration.program && !debugConfiguration.runtimeExecutable) {
+                if (
+                    (debugConfiguration.program || debugConfiguration.runtimeArgs) &&
+                    !debugConfiguration.runtimeExecutable
+                ) {
                     // See if we have runtimeExecutable configured
                     const conf = vscode.workspace.getConfiguration('php')
                     const executablePath =
