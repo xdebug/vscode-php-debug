@@ -345,73 +345,89 @@ class PhpDebugSession extends vscode.DebugSession {
                                 this.sendEvent(new vscode.OutputEvent(log), true)
                             }
                         })
-                        const initPacket = await connection.waitForInitPacket()
-
-                        // support for breakpoints
-                        let feat: xdebug.FeatureGetResponse
-                        const supportedEngine =
-                            initPacket.engineName === 'Xdebug' &&
-                            semver.valid(initPacket.engineVersion, { loose: true }) &&
-                            semver.gte(initPacket.engineVersion, '3.0.0', { loose: true })
-                        if (
-                            supportedEngine ||
-                            ((feat = await connection.sendFeatureGetCommand('resolved_breakpoints')) &&
-                                feat.supported === '1')
-                        ) {
-                            await connection.sendFeatureSetCommand('resolved_breakpoints', '1')
-                        }
-                        if (
-                            supportedEngine ||
-                            ((feat = await connection.sendFeatureGetCommand('notify_ok')) && feat.supported === '1')
-                        ) {
-                            await connection.sendFeatureSetCommand('notify_ok', '1')
-                            connection.on('notify_user', notify => this.handleUserNotify(notify, connection))
-                        }
-                        if (
-                            supportedEngine ||
-                            ((feat = await connection.sendFeatureGetCommand('extended_properties')) &&
-                                feat.supported === '1')
-                        ) {
-                            await connection.sendFeatureSetCommand('extended_properties', '1')
-                        }
-
-                        // override features from launch.json
                         try {
-                            const xdebugSettings = args.xdebugSettings || {}
-                            await Promise.all(
-                                Object.keys(xdebugSettings).map(setting =>
-                                    connection.sendFeatureSetCommand(setting, xdebugSettings[setting])
+                            const initPacket = await connection.waitForInitPacket()
+
+                            // support for breakpoints
+                            let feat: xdebug.FeatureGetResponse
+                            const supportedEngine =
+                                initPacket.engineName === 'Xdebug' &&
+                                semver.valid(initPacket.engineVersion, { loose: true }) &&
+                                semver.gte(initPacket.engineVersion, '3.0.0', { loose: true })
+                            if (
+                                supportedEngine ||
+                                ((feat = await connection.sendFeatureGetCommand('resolved_breakpoints')) &&
+                                    feat.supported === '1')
+                            ) {
+                                await connection.sendFeatureSetCommand('resolved_breakpoints', '1')
+                            }
+                            if (
+                                supportedEngine ||
+                                ((feat = await connection.sendFeatureGetCommand('notify_ok')) && feat.supported === '1')
+                            ) {
+                                await connection.sendFeatureSetCommand('notify_ok', '1')
+                                connection.on('notify_user', notify => this.handleUserNotify(notify, connection))
+                            }
+                            if (
+                                supportedEngine ||
+                                ((feat = await connection.sendFeatureGetCommand('extended_properties')) &&
+                                    feat.supported === '1')
+                            ) {
+                                await connection.sendFeatureSetCommand('extended_properties', '1')
+                            }
+
+                            // override features from launch.json
+                            try {
+                                const xdebugSettings = args.xdebugSettings || {}
+                                await Promise.all(
+                                    Object.keys(xdebugSettings).map(setting =>
+                                        connection.sendFeatureSetCommand(setting, xdebugSettings[setting])
+                                    )
+                                )
+                            } catch (error) {
+                                throw new Error(
+                                    'Error applying xdebugSettings: ' + (error instanceof Error ? error.message : error)
+                                )
+                            }
+
+                            this.sendEvent(new vscode.ThreadEvent('started', connection.id))
+
+                            // wait for all breakpoints
+                            await this._donePromise
+
+                            let bpa = new BreakpointAdapter(connection, this._breakpointManager)
+                            bpa.on('dapEvent', event => this.sendEvent(event))
+                            this._breakpointAdapters.set(connection, bpa)
+                            // sync breakpoints to connection
+                            await bpa.process()
+                            let xdebugResponse: xdebug.StatusResponse
+                            // either tell VS Code we stopped on entry or run the script
+                            if (this._args.stopOnEntry) {
+                                // do one step to the first statement
+                                this._hasStoppedOnEntry = false
+                                xdebugResponse = await connection.sendStepIntoCommand()
+                            } else {
+                                xdebugResponse = await connection.sendRunCommand()
+                            }
+                            this._checkStatus(xdebugResponse)
+                        } catch (error) {
+                            this.sendEvent(
+                                new vscode.OutputEvent(
+                                    `Failed initializing connection ${connection.id}: ` +
+                                        (error instanceof Error ? error.message : error) +
+                                        '\n',
+                                    'stderr'
                                 )
                             )
-                        } catch (error) {
-                            throw new Error(
-                                'Error applying xdebugSettings: ' + (error instanceof Error ? error.message : error)
-                            )
+                            disposeConnection()
+                            socket.destroy()
                         }
-
-                        this.sendEvent(new vscode.ThreadEvent('started', connection.id))
-
-                        // wait for all breakpoints
-                        await this._donePromise
-
-                        let bpa = new BreakpointAdapter(connection, this._breakpointManager)
-                        bpa.on('dapEvent', event => this.sendEvent(event))
-                        this._breakpointAdapters.set(connection, bpa)
-                        // sync breakpoints to connection
-                        await bpa.process()
-                        let xdebugResponse: xdebug.StatusResponse
-                        // either tell VS Code we stopped on entry or run the script
-                        if (this._args.stopOnEntry) {
-                            // do one step to the first statement
-                            this._hasStoppedOnEntry = false
-                            xdebugResponse = await connection.sendStepIntoCommand()
-                        } else {
-                            xdebugResponse = await connection.sendRunCommand()
-                        }
-                        this._checkStatus(xdebugResponse)
                     } catch (error) {
                         this.sendEvent(
-                            new vscode.OutputEvent((error instanceof Error ? error.message : error) + '\n', 'stderr')
+                            new vscode.OutputEvent(
+                                'Error in socket server: ' + (error instanceof Error ? error.message : error) + '\n',
+                                'stderr'
+                            )
                         )
                         this.shutdown()
                     }
