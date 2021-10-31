@@ -3,7 +3,7 @@ import * as iconv from 'iconv-lite'
 import { DbgpConnection } from './dbgp'
 
 /** The encoding all Xdebug messages are encoded with */
-const ENCODING = 'iso-8859-1'
+const ENCODING = 'utf-8'
 
 /** The first packet we receive from Xdebug. Returned by waitForInitPacket() */
 export class InitPacket {

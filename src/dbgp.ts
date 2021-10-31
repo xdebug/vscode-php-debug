@@ -4,7 +4,7 @@ import * as iconv from 'iconv-lite'
 import { DOMParser } from 'xmldom'
 
 /** The encoding all Xdebug messages are encoded with */
-export const ENCODING = 'iso-8859-1'
+export const ENCODING = 'utf-8'
 
 /** The two states the connection switches between */
 enum ParsingState {
