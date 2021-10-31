@@ -784,7 +784,7 @@ export class Connection extends DbgpConnection {
                 }
             }
         })
-        this.on('close', () => this._initPromiseRejectFn(new Error('connection closed')))
+        this.on('close', () => this._initPromiseRejectFn(new Error('connection closed (on close)')))
     }
 
     /** Returns a promise that gets resolved once the init packet arrives */
@@ -847,7 +847,7 @@ export class Connection extends DbgpConnection {
 
     public close() {
         this._commandQueue = []
-        this._initPromiseRejectFn(new Error('connection closed'))
+        this._initPromiseRejectFn(new Error('connection closed (close)'))
         return super.close()
     }
 
