@@ -107,7 +107,13 @@ export class ProxyConnect extends EventEmitter {
 
     private _command(cmd: string, msg?: string) {
         this.emit('log_request', msg)
-        this._socket.connect(this._port, this._host, () => this._socket.end(cmd))
+        this._socket.connect(this._port, this._host, async () => {
+            this._socket.write(cmd)
+            await new Promise(resolve => setTimeout(resolve, 500))
+            if (!this._socket.destroyed) {
+                this._socket.write('\0')
+            }
+        })
     }
 
     /** Register/Couples ideKey to IP so the proxy knows who to send what */
