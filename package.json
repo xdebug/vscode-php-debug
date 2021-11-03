@@ -151,7 +151,7 @@
       "supported": "limited",
       "description": "%workspaceTrust%",
       "restrictedConfigurations": [
-        "php.executablePath"
+        "php.debug.executablePath"
       ]
     }
   },
@@ -280,7 +280,7 @@
                   "key": {
                     "type": "string",
                     "description": "A unique key that allows the proxy to match requests to your editor",
-                    "default": "${config:php-debug.idekey}"
+                    "default": "${config:php.debug.ideKey}"
                   },
                   "port": {
                     "type": "number",
@@ -458,7 +458,7 @@
     "configuration": {
       "title": "PHP Debug",
       "properties": {
-        "php.executablePath": {
+        "php.debug.executablePath": {
           "type": [
             "string",
             "null"
@@ -467,7 +467,7 @@
           "description": "The path to a PHP executable.",
           "scope": "machine-overridable"
         },
-        "php-debug.idekey": {
+        "php.debug.ideKey": {
           "type": "string",
           "default": "vsc",
           "description": "A unique key that allows the proxy to match requests to your editor. Only used when proxy configuration includes replacement.",
