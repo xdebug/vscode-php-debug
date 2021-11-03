@@ -8,7 +8,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 
-- DBGP Proxy support.
+- DBGp Proxy support.
+- `php.debug.ideKey` setting to set the Proxy IDE key globally.
+
+### Changed
+
+- Renamed `php.executablePath` setting to `php.debug.executablePath`.
 
 ## [1.21.1]
 
