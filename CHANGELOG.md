@@ -13,7 +13,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Changed
 
-- Renamed `php.executablePath` setting to `php.debug.executablePath`.
+- Renamed `php.executablePath` setting to `php.debug.executablePath` and do not fallback to `php.validate.executablePath`.
+- Untrusted workspace settings.
+- Default protocol encoding changed to utf-8.
 
 ## [1.21.1]
 
