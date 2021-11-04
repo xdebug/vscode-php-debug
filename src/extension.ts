@@ -33,9 +33,8 @@ export function activate(context: vscode.ExtensionContext) {
                     !debugConfiguration.runtimeExecutable
                 ) {
                     // See if we have runtimeExecutable configured
-                    const conf = vscode.workspace.getConfiguration('php')
-                    const executablePath =
-                        conf.get<string>('executablePath') || conf.get<string>('validate.executablePath')
+                    const conf = vscode.workspace.getConfiguration('php.debug')
+                    const executablePath = conf.get<string>('executablePath')
                     if (executablePath) {
                         debugConfiguration.runtimeExecutable = executablePath
                     }
@@ -45,15 +44,25 @@ export function activate(context: vscode.ExtensionContext) {
                             await which.default('php')
                         } catch (e) {
                             const selected = await vscode.window.showErrorMessage(
-                                'PHP executable not found. Install PHP and add it to your PATH or set the php.executablePath setting',
+                                'PHP executable not found. Install PHP and add it to your PATH or set the php.debug.executablePath setting',
                                 'Open settings'
                             )
                             if (selected === 'Open settings') {
                                 await vscode.commands.executeCommand('workbench.action.openGlobalSettings', {
-                                    query: 'php.executablePath',
+                                    query: 'php.debug.executablePath',
                                 })
                                 return undefined
                             }
+                        }
+                    }
+                }
+                if (debugConfiguration.proxy?.enable === true) {
+                    // Proxy configuration
+                    if (!debugConfiguration.proxy.key) {
+                        const conf = vscode.workspace.getConfiguration('php.debug')
+                        const ideKey = conf.get<string>('ideKey')
+                        if (ideKey) {
+                            debugConfiguration.proxy.key = ideKey
                         }
                     }
                 }

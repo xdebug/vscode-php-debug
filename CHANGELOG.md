@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.22.0]
+
+### Added
+
+- DBGp Proxy support.
+- `php.debug.ideKey` setting to set the Proxy IDE key globally.
+
+### Changed
+
+- Renamed `php.executablePath` setting to `php.debug.executablePath` and do not fallback to `php.validate.executablePath`.
+- Untrusted workspace settings.
+- Default protocol encoding changed to utf-8.
+
 ## [1.21.1]
 
 ### Fixed

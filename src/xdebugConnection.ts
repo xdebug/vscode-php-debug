@@ -1,9 +1,7 @@
 import * as net from 'net'
 import * as iconv from 'iconv-lite'
 import { DbgpConnection } from './dbgp'
-
-/** The encoding all Xdebug messages are encoded with */
-const ENCODING = 'iso-8859-1'
+import { ENCODING } from './dbgp'
 
 /** The first packet we receive from Xdebug. Returned by waitForInitPacket() */
 export class InitPacket {
@@ -784,7 +782,7 @@ export class Connection extends DbgpConnection {
                 }
             }
         })
-        this.on('close', () => this._initPromiseRejectFn(new Error('connection closed')))
+        this.on('close', () => this._initPromiseRejectFn(new Error('connection closed (on close)')))
     }
 
     /** Returns a promise that gets resolved once the init packet arrives */
@@ -847,7 +845,7 @@ export class Connection extends DbgpConnection {
 
     public close() {
         this._commandQueue = []
-        this._initPromiseRejectFn(new Error('connection closed'))
+        this._initPromiseRejectFn(new Error('connection closed (close)'))
         return super.close()
     }
 

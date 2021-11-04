@@ -65,7 +65,7 @@ There are also configurations for Xdebug v2 (Legacy) installations.
 
 More general information on debugging with VS Code can be found on https://code.visualstudio.com/docs/editor/debugging.
 
-> _Note:_ You can even debug a script without `launch.json`. If no folder is open, and the VS Code status bar is purple, pressing `F5` will start the open script with Xdebug3 specific parameters. If the php executable is not in path, you can provide it with the setting `php.executablePath` or a fallback `php.validate.executablePath`. For debugging to work, Xdebug must still be correctly installed.
+> _Note:_ You can even debug a script without `launch.json`. If no folder is open, and the VS Code status bar is purple, pressing `F5` will start the open script with Xdebug3 specific parameters. If the php executable is not in path, you can provide it with the setting `php.debug.executablePath`. For debugging to work, Xdebug must still be correctly installed.
 
 #### Supported launch.json settings:
 
@@ -77,6 +77,13 @@ More general information on debugging with VS Code can be found on https://code.
 - `log`: Whether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
 - `ignore`: An optional array of glob patterns that errors should be ignored from (for example `**/vendor/**/*.php`)
 - `maxConnections`: Accept only this number of parallel debugging sessions. Additional connections will be dropped and their execution will continue without debugging.
+- `proxy`: DBGp Proxy settings
+  - `enable`: To enable proxy registration set to `true` (default is `false).
+  - `host`: The address of the proxy. Supports host name, IP address, or Unix domain socket (default: 127.0.0.1).
+  - `port`: The port where the adapter will register with the the proxy (default: `9001`).
+  - `key`: A unique key that allows the proxy to match requests to your editor (default: `vsc`). The default is taken from VSCode settings `php.debug.idekey`.
+  - `timeout`: The number of milliseconds to wait before giving up on the connection to proxy (default: `3000`).
+  - `allowMultipleSessions`: If the proxy should forward multiple sessions/connections at the same time or not (default: `true`).
 - `xdebugSettings`: Allows you to override Xdebug's remote debugging settings to fine tuning Xdebug to your needs. For example, you can play with `max_children` and `max_depth` to change the max number of array and object children that are retrieved and the max depth in structures like arrays and objects. This can speed up the debugger on slow machines.
   For a full list of feature names that can be set please refer to the [Xdebug documentation](https://xdebug.org/docs-dbgp.php#feature-names).
   - `max_children`: max number of array or object children to initially retrieve
@@ -110,6 +117,7 @@ Options specific to CLI debugging:
 - Watches
 - Run as CLI
 - Run without debugging
+- DBGp Proxy registration and unregistration support
 
 ## Remote Host Debugging
 
@@ -126,6 +134,14 @@ To make VS Code map the files on the server to the right files on your local mac
 ```
 
 Please also note that setting any of the CLI debugging options will not work with remote host debugging, because the script is always launched locally. If you want to debug a CLI script on a remote host, you need to launch it manually from the command line.
+
+## Proxy support
+
+The debugger can register itself to a DBGp proxy with a IDE Key. The proxy will then forward to the IDE only those DBGp sessions that have this specified IDE key. This is helpful in a multiuser environment where developers cannot use the same DBGp port at the same time. Careful setup is needed that requests to the web server contain the matching IDE key.
+
+The official implementation of the [dbgpProxy](https://xdebug.org/docs/dbgpProxy).
+
+A _Xdebug helper_ browser extension is also recommended. There the request side IDE key can be easily configured.
 
 ## Troubleshooting
 

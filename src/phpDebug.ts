@@ -14,6 +14,7 @@ import minimatch = require('minimatch')
 import { BreakpointManager, BreakpointAdapter } from './breakpoints'
 import * as semver from 'semver'
 import { LogPointManager } from './logpoint'
+import { ProxyConnect } from './proxyConnect'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -71,6 +72,15 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     ignore?: string[]
     /** Xdebug configuration */
     xdebugSettings?: { [featureName: string]: string | number }
+    /** proxy connection configuration */
+    proxy?: {
+        allowMultipleSessions: boolean
+        enable: boolean
+        host: string
+        key: string
+        port: number
+        timeout: number
+    }
 
     // CLI options
 
@@ -157,6 +167,9 @@ class PhpDebugSession extends vscode.DebugSession {
      * the log messages per file. Xdebug sees it as a regular breakpoint.
      */
     private _logPointManager = new LogPointManager()
+
+    /** The proxy initialization and termination connection. */
+    private _proxyConnect: ProxyConnect
 
     /** the promise that gets resolved once we receive the done request */
     private _donePromise: Promise<void>
@@ -447,6 +460,9 @@ class PhpDebugSession extends vscode.DebugSession {
             let port = 0
             if (!args.noDebug) {
                 port = await createServer()
+                if (args.proxy?.enable === true) {
+                    await this.setupProxy(port)
+                }
             }
             if (args.program || args.runtimeArgs) {
                 await launchScript(port)
@@ -458,6 +474,26 @@ class PhpDebugSession extends vscode.DebugSession {
         this.sendResponse(response)
         // request breakpoints
         this.sendEvent(new vscode.InitializedEvent())
+    }
+
+    private async setupProxy(idePort: number): Promise<void> {
+        this._proxyConnect = new ProxyConnect(
+            this._args.proxy!.host,
+            this._args.proxy!.port,
+            idePort,
+            this._args.proxy!.allowMultipleSessions,
+            this._args.proxy!.key,
+            this._args.proxy!.timeout
+        )
+        const proxyConsole = (str: string) => this.sendEvent(new vscode.OutputEvent(str + '\n'), true)
+
+        this._proxyConnect.on('log_request', proxyConsole)
+        this._proxyConnect.on('log_response', proxyConsole)
+
+        this._proxyConnect.on('log_error', (error: Error) => {
+            this.sendEvent(new vscode.OutputEvent('PROXY ERROR: ' + error.message + '\n', 'stderr'))
+        })
+        return this._proxyConnect.sendProxyInitCommand()
     }
 
     /**
@@ -1095,6 +1131,10 @@ class PhpDebugSession extends vscode.DebugSession {
             // If launched as CLI, kill process
             if (this._phpProcess) {
                 this._phpProcess.kill()
+            }
+            // Unregister proxy
+            if (this._proxyConnect) {
+                await this._proxyConnect.sendProxyStopCommand()
             }
         } catch (error) {
             this.sendErrorResponse(response, error)
