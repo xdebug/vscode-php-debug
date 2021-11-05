@@ -25,7 +25,7 @@ describe('PHP Debug Adapter', () => {
         it('should return supported features', async () => {
             const response = await client.initializeRequest()
             assert.equal(response.body!.supportsConfigurationDoneRequest, true)
-            assert.equal(response.body!.supportsEvaluateForHovers, false)
+            assert.equal(response.body!.supportsEvaluateForHovers, true)
             assert.equal(response.body!.supportsConditionalBreakpoints, true)
             assert.equal(response.body!.supportsFunctionBreakpoints, true)
         })
