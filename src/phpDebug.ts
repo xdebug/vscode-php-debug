@@ -190,7 +190,7 @@ class PhpDebugSession extends vscode.DebugSession {
     ): void {
         response.body = {
             supportsConfigurationDoneRequest: true,
-            supportsEvaluateForHovers: false,
+            supportsEvaluateForHovers: true,
             supportsConditionalBreakpoints: true,
             supportsFunctionBreakpoints: true,
             supportsLogPoints: true,

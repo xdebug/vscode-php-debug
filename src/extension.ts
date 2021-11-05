@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode'
+import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken, TextDocument, Position, EvaluatableExpression } from 'vscode'
 import { LaunchRequestArguments } from './phpDebug'
 import * as which from 'which'
 
@@ -68,6 +68,19 @@ export function activate(context: vscode.ExtensionContext) {
                 }
                 return debugConfiguration
             },
+        })
+    )
+    context.subscriptions.push(
+        vscode.languages.registerEvaluatableExpressionProvider('php', {
+            async provideEvaluatableExpression(document: TextDocument, position: Position, token: CancellationToken): Promise<ProviderResult<EvaluatableExpression>> {
+                // see https://www.php.net/manual/en/language.variables.basics.php
+                //const wordRange = document.getWordRangeAtPosition(position, /\$([a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)((->(?1))|\[(\d+|'[^']+'|"[^"]+"|(?0))\])*/)
+                const wordRange = document.getWordRangeAtPosition(position, /\$[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*(->[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)*/)
+                if (wordRange) {
+                    return new EvaluatableExpression(wordRange)
+                }
+                return undefined // nothing evaluatable found under mouse
+            }
         })
     )
 
