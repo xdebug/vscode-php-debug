@@ -27,7 +27,7 @@ This extension is a debug adapter between VS Code and [Xdebug](https://xdebug.or
 
 2. [Configure PHP to use Xdebug](https://xdebug.org/docs/install#configure-php) by adding `zend_extension=path/to/xdebug` to your php.ini. The path of your php.ini is shown in your `phpinfo()` output under "Loaded Configuration File".
 
-3. Enable remote debugging in your `php.ini`:
+3. Enable remote debugging in your `xdebug.ini`:
 
    For Xdebug v3.x.x:
 
