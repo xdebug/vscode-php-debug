@@ -701,7 +701,10 @@ describe('PHP Debug Adapter', () => {
                 /^new connection from .* - dropping due to max connection limit/,
                 'Second connection does not generate proper error output'
             )
-            s1.destroy()
+            await new Promise(resolve => {
+                s1.on('close', resolve)
+                s1.end()
+            })
         })
     })
 })
