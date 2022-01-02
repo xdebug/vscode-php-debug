@@ -1197,15 +1197,34 @@ class PhpDebugSession extends vscode.DebugSession {
             if (!this._stackFrames.has(args.frameId)) {
                 throw new Error(`Unknown frameId ${args.frameId}`)
             }
-            const connection = this._stackFrames.get(args.frameId)!.connection
-            const { result } = await connection.sendEvalCommand(args.expression)
+            const stackFrame = this._stackFrames.get(args.frameId)!
+            const connection = stackFrame.connection
+            let result: xdebug.BaseProperty | null = null
+            if (args.context === 'hover') {
+                // try to get variable from property_get
+                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                const response = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
+                if (response.property) {
+                    result = response.property
+                }
+            } else {
+                const response = await connection.sendEvalCommand(args.expression)
+                if (response.result) {
+                    result = response.result
+                }
+            }
+
             if (result) {
                 const displayValue = formatPropertyValue(result)
                 let variablesReference: number
                 // if the property has children, generate a variable ID and save the property (including children) so VS Code can request them
                 if (result.hasChildren || result.type === 'array' || result.type === 'object') {
                     variablesReference = this._variableIdCounter++
-                    this._evalResultProperties.set(variablesReference, result)
+                    if (result instanceof xdebug.Property) {
+                        this._properties.set(variablesReference, result)
+                    } else {
+                        this._evalResultProperties.set(variablesReference, result)
+                    }
                 } else {
                     variablesReference = 0
                 }
