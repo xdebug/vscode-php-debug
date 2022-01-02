@@ -740,8 +740,53 @@ describe('PHP Debug Adapter', () => {
     })
 
     describe('evaluation', () => {
-        it('should return the eval result')
-        it('should return variable references for structured results')
+        it('should return the eval result', async () => {
+            const program = path.join(TEST_PROJECT, 'variables.php')
+
+            client.launch({
+                program,
+            })
+            await client.waitForEvent('initialized')
+            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
+            await client.configurationDoneRequest()
+            const { frame } = await assertStoppedLocation('breakpoint', program, 19)
+
+            const response = (
+                await client.evaluateRequest({
+                    context: 'hover',
+                    frameId: frame.id,
+                    expression: '$anInt',
+                })
+            ).body
+
+            assert.equal(response.result, '123')
+            assert.equal(response.variablesReference, 0)
+        })
+        it('should return variable references for structured results', async () => {
+            const program = path.join(TEST_PROJECT, 'variables.php')
+
+            client.launch({
+                program,
+            })
+            await client.waitForEvent('initialized')
+            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
+            await client.configurationDoneRequest()
+            const { frame } = await assertStoppedLocation('breakpoint', program, 19)
+
+            const response = (
+                await client.evaluateRequest({
+                    context: 'hover',
+                    frameId: frame.id,
+                    expression: '$anArray',
+                })
+            ).body
+
+            assert.equal(response.result, 'array(3)')
+            assert.notEqual(response.variablesReference, 0)
+            const vars = await client.variablesRequest({ variablesReference: response.variablesReference })
+            assert.deepEqual(vars.body.variables[0].name, '0')
+            assert.deepEqual(vars.body.variables[0].value, '1')
+        })
     })
 
     describe.skip('output events', () => {
