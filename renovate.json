@@ -53,6 +53,10 @@
     {
       "packagePatterns": ["^vscode-debug"],
       "groupName": "vscode-debug"
+    },
+    {
+      "matchPackageNames": ["vscode"],
+      "allowedVersions": "!/^1\\.999\\.0$/"
     }
   ]
 }
