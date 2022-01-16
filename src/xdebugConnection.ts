@@ -580,8 +580,8 @@ export class Property extends BaseProperty {
     /**
      * Sets the value of this property through a property_set command
      */
-    public set(value: string): Promise<PropertyGetResponse> {
-        return this.context.stackFrame.connection.sendPropertySetCommand(this, value);
+    public set(value: string): Promise<Response> {
+        return this.context.stackFrame.connection.sendPropertySetCommand(this, value)
     }
 
     /**
@@ -718,7 +718,7 @@ interface Command {
  * Escapes a value to pass it as an argument in an XDebug command
  */
 function escape(value: string): string {
-    return '"' + value.replace(/("|\\)/g, '\\$1') + '"';
+    return '"' + value.replace(/("|\\)/g, '\\$1') + '"'
 }
 
 /**
@@ -1040,11 +1040,10 @@ export class Connection extends DbgpConnection {
 
     /** Sends a property_get command */
     public async sendPropertyGetCommand(property: Property): Promise<PropertyGetResponse> {
-        const escapedFullName = '"' + property.fullName.replace(/("|\\)/g, '\\$1') + '"'
         return new PropertyGetResponse(
             await this._enqueueCommand(
                 'property_get',
-                `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${escapedFullName}`
+                `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${escape(property.fullName)}`
             ),
             property
         )
@@ -1052,11 +1051,14 @@ export class Connection extends DbgpConnection {
 
     /** Sends a property_set command */
     public async sendPropertySetCommand(property: Property, value: string): Promise<Response> {
-        return new Response(await this._enqueueCommand('property_set', [
-            '-d', property.context.stackFrame.level,
-            '-c', property.context.id,
-            '-n', escape(property.fullName)
-        ].join(' '), value), property.context.stackFrame.connection);
+        return new Response(
+            await this._enqueueCommand(
+                'property_set',
+                `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${escape(property.fullName)}`,
+                value
+            ),
+            property.context.stackFrame.connection
+        )
     }
 
     // ------------------------------- eval -----------------------------------------

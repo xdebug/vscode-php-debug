@@ -665,10 +665,10 @@ describe('PHP Debug Adapter', () => {
     })
 
     describe('setVariables', () => {
-        it('should set the value of an integer');
-        it('should set the value of a string');
-        it('should set the value of an nested property');
-    });
+        it('should set the value of an integer')
+        it('should set the value of a string')
+        it('should set the value of an nested property')
+    })
 
     describe('virtual sources', () => {
         it('should break on an exception inside eval code')
