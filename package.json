@@ -74,7 +74,7 @@
     "mocha": "^9.1.4",
     "nyc": "^15.1.0",
     "prettier": "2.5.1",
-    "semantic-release": "^19.0.0",
+    "semantic-release": "^19.0.2",
     "semantic-release-vsce": "^3.5.0",
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
