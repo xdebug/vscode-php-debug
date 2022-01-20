@@ -55,7 +55,7 @@
     "xmldom": "^0.6.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^16.0.2",
+    "@commitlint/cli": "^16.1.0",
     "@commitlint/config-conventional": "^16.0.0",
     "@types/chai": "4.3.0",
     "@types/chai-as-promised": "^7.1.4",
