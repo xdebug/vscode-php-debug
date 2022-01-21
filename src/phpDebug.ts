@@ -195,6 +195,7 @@ class PhpDebugSession extends vscode.DebugSession {
             supportsFunctionBreakpoints: true,
             supportsLogPoints: true,
             supportsHitConditionalBreakpoints: true,
+            supportsCompletionsRequest: true,
             exceptionBreakpointFilters: [
                 {
                     filter: 'Notice',
@@ -993,105 +994,123 @@ class PhpDebugSession extends vscode.DebugSession {
         this.sendResponse(response)
     }
 
-    protected async completionsRequest(response: VSCodeDebugProtocol.CompletionsResponse, args: VSCodeDebugProtocol.CompletionsArguments) {
+    protected async completionsRequest(
+        response: VSCodeDebugProtocol.CompletionsResponse,
+        args: VSCodeDebugProtocol.CompletionsArguments
+    ) {
         try {
             if (!args.frameId) {
-                throw new Error('No stack frame given');
+                throw new Error('No stack frame given')
             }
-            const lineIndex: number = args.line ? args.line - 1 : 0;
-            const lines: string[] = args.text.split('\n');
+            const lineIndex: number = args.line ? args.line - 1 : 0
+            const lines: string[] = args.text.split('\n')
             /** The text before the cursor */
-            const typed: string = [...lines.slice(0, Math.max(lineIndex - 1, 0)), lines[lineIndex].substring(0, args.column)].join('\n');
-            let i = typed.length;
-            let containerName: string;
-            let operator: string | undefined;
-            let query: string;
+            const typed: string = [
+                ...lines.slice(0, Math.max(lineIndex - 1, 0)),
+                lines[lineIndex].substring(0, args.column),
+            ].join('\n')
+            let i = typed.length
+            let containerName: string
+            let operator: string | undefined
+            let query: string
             while (true) {
-                const substr = typed.substring(0, i);
+                const substr = typed.substring(0, i)
                 if (/\[$/.test(substr)) {
                     // Numeric array index
-                    operator = '[';
+                    operator = '['
                 } else if (/\['$/.test(substr)) {
                     // String array index
-                    operator = `['`;
+                    operator = `['`
                 } else if (/->$/.test(substr)) {
-                    operator = '->';
+                    operator = '->'
                 } else if (i > 0) {
-                    i--;
-                    continue;
+                    i--
+                    continue
                 }
-                query = typed.substr(i).toLowerCase();
-                containerName = typed.substring(0, operator ? i - operator.length : i);
-                break;
+                query = typed.substr(i).toLowerCase()
+                containerName = typed.substring(0, operator ? i - operator.length : i)
+                break
             }
-            const frame = this._stackFrames.get(args.frameId);
-            const contexts = await frame.getContexts();
-            const targets: VSCodeDebugProtocol.CompletionItem[] = [];
+            const frame = this._stackFrames.get(args.frameId)!
+            const contexts = await frame.getContexts()
+            const targets: VSCodeDebugProtocol.CompletionItem[] = []
             if (!containerName || !operator) {
-                const responses = await Promise.all(contexts.map(context => context.getProperties()));
+                const responses = await Promise.all(contexts.map(context => context.getProperties()))
                 for (const properties of responses) {
                     for (const property of properties) {
                         if (property.name.toLowerCase().startsWith(query)) {
-                            const text = property.name[0] === '$' ? property.name.substr(1) : property.name;
-                            targets.push({label: property.name, text, type: 'variable', start: i, length: property.name.length});
+                            const text = property.name[0] === '$' ? property.name.substr(1) : property.name
+                            targets.push({
+                                label: property.name,
+                                text,
+                                type: 'variable',
+                                //start: i,
+                                length: property.name.length,
+                            })
                         }
                     }
                 }
             } else {
                 // Search all contexts
                 for (const context of contexts) {
-                    let response: xdebug.PropertyGetResponse | undefined;
+                    let response: xdebug.PropertyGetResponse | undefined
                     try {
-                        response = await frame.connection.sendPropertyGetCommand({context, fullName: containerName});
+                        response = await frame.connection.sendPropertyGetCommand({ context, fullName: containerName })
                     } catch (err) {
                         // ignore
                     }
                     if (response) {
                         for (const property of response.children) {
                             if (property.name.toLowerCase().startsWith(query)) {
-                                let type: VSCodeDebugProtocol.CompletionItemType | undefined;
-                                let text: string = property.name;
+                                let type: VSCodeDebugProtocol.CompletionItemType | undefined
+                                let text: string = property.name
                                 if (operator === '->') {
                                     // Object
-                                    type = 'property';
+                                    type = 'property'
                                 } else if (operator[0] === '[') {
                                     // Array
                                     if (parseInt(property.name) + '' === property.name) {
                                         // Numeric index
                                         if (operator[1] === `'`) {
-                                            continue;
+                                            continue
                                         }
-                                        type = 'value';
-                                        text += ']';
+                                        type = 'value'
+                                        text += ']'
                                     } else {
                                         // String index
                                         if (operator[1] !== `'`) {
                                             if (query) {
-                                                continue;
+                                                continue
                                             } else {
-                                                text = `'` + text;
+                                                text = `'` + text
                                             }
                                         }
-                                        type = 'text';
-                                        text += `']`;
+                                        type = 'text'
+                                        text += `']`
                                     }
                                 }
-                                targets.push({label: property.name, text, type, start: i, length: property.name.length });
+                                targets.push({
+                                    label: property.name,
+                                    text,
+                                    type,
+                                    //start: i,
+                                    length: property.name.length,
+                                })
                             }
                         }
                         // If we found the variable in one context (typically Locals), abort
-                        break;
+                        break
                     }
                 }
             }
-            response.body = {targets};
+            console.log(`completionsRequest ${args.text} (${args.column}:${args.line}) ${JSON.stringify(targets)}`)
+            response.body = { targets }
         } catch (err) {
-            this.sendErrorResponse(response, err);
-            return;
+            this.sendErrorResponse(response, err)
+            return
         }
-        this.sendResponse(response);
+        this.sendResponse(response)
     }
-
 
     protected async continueRequest(
         response: VSCodeDebugProtocol.ContinueResponse,
