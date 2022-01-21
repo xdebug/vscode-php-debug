@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.23.0]
+
+- When `env` is specified in launch configuration it will be merged the process environment.
+
 ## [1.22.0]
 
 ### Added
