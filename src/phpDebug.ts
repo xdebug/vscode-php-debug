@@ -259,7 +259,10 @@ class PhpDebugSession extends vscode.DebugSession {
             const program = args.program ? [args.program] : []
             const cwd = args.cwd || process.cwd()
             const env = Object.fromEntries(
-                Object.entries(args.env || process.env).map(v => [v[0], v[1]?.replace('${port}', port.toString())])
+                Object.entries({ ...process.env, ...args.env }).map(v => [
+                    v[0],
+                    v[1]?.replace('${port}', port.toString()),
+                ])
             )
             // launch in CLI mode
             if (args.externalConsole) {
