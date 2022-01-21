@@ -646,6 +646,7 @@ export class PropertyGetResponse extends Response {
      */
     constructor(document: XMLDocument, context: Context) {
         super(document, context.stackFrame.connection)
+<<<<<<< HEAD
         this.children = Array.from(document.documentElement.firstChild!.childNodes)
             .filter(node => node.nodeName === 'property')
             .map((propertyNode: Element) => new Property(propertyNode, context))
@@ -663,6 +664,11 @@ export class PropertyGetNameResponse extends Response {
     constructor(document: XMLDocument, context: Context) {
         super(document, context.stackFrame.connection)
         this.property = new Property(<Element>document.documentElement.firstChild!, context)
+=======
+        this.children = Array.from(document.documentElement.firstChild!.childNodes).map(
+            (propertyNode: Element) => new Property(propertyNode, context)
+        )
+>>>>>>> 95e0764 (Rebase and fix code changes.)
     }
 }
 
@@ -1067,7 +1073,12 @@ export class Connection extends DbgpConnection {
     // ------------------------------ property --------------------------------------
 
     /** Sends a property_get command */
+<<<<<<< HEAD
     public async sendPropertyGetCommand(property: Property, page: number = 0): Promise<PropertyGetResponse> {
+=======
+    public async sendPropertyGetCommand(property: {context: Context, fullName: string}): Promise<PropertyGetResponse> {
+        const escapedFullName = '"' + property.fullName.replace(/("|\\)/g, '\\$1') + '"'
+>>>>>>> 95e0764 (Rebase and fix code changes.)
         return new PropertyGetResponse(
             await this._enqueueCommand(
                 'property_get',
@@ -1076,6 +1087,7 @@ export class Connection extends DbgpConnection {
                 )}`
             ),
             property.context
+<<<<<<< HEAD
         )
     }
 
@@ -1100,6 +1112,8 @@ export class Connection extends DbgpConnection {
                 value
             ),
             property.context.stackFrame.connection
+=======
+>>>>>>> 95e0764 (Rebase and fix code changes.)
         )
     }
 
