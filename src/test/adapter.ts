@@ -665,9 +665,69 @@ describe('PHP Debug Adapter', () => {
     })
 
     describe('setVariables', () => {
-        it('should set the value of an integer')
-        it('should set the value of a string')
-        it('should set the value of an nested property')
+        const program = path.join(TEST_PROJECT, 'variables.php')
+
+        let localScope: DebugProtocol.Scope | undefined
+        let localVariables: DebugProtocol.Variable[]
+        let variables: { [name: string]: string } = Object.create(null)
+
+        beforeEach(async () => {
+            client.launch({ program })
+            await client.waitForEvent('initialized')
+            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
+            const [, event] = await Promise.all([
+                client.configurationDoneRequest(),
+                client.waitForEvent('stopped') as Promise<DebugProtocol.StoppedEvent>,
+            ])
+            const stackFrame = (await client.stackTraceRequest({ threadId: event.body.threadId! })).body.stackFrames[0]
+            const scopes = (await client.scopesRequest({ frameId: stackFrame.id })).body.scopes
+            localScope = scopes.find(scope => scope.name === 'Locals')
+        })
+
+        async function getLocals() {
+            localVariables = (await client.variablesRequest({ variablesReference: localScope!.variablesReference }))
+                .body.variables
+            variables = Object.create(null)
+            for (const variable of localVariables) {
+                variables[variable.name] = variable.value
+            }
+        }
+
+        it('should set the value of an integer', async () => {
+            await getLocals()
+            assert.propertyVal(variables, '$anInt', '123')
+            await client.setVariableRequest({
+                variablesReference: localScope!.variablesReference,
+                name: '$anInt',
+                value: '100',
+            })
+            await getLocals()
+            assert.propertyVal(variables, '$anInt', '100')
+        })
+        it('should set the value of a string', async () => {
+            await getLocals()
+            assert.propertyVal(variables, '$aString', '"123"')
+            await client.setVariableRequest({
+                variablesReference: localScope!.variablesReference,
+                name: '$aString',
+                value: '"aaaa"',
+            })
+            await getLocals()
+            assert.propertyVal(variables, '$aString', '"aaaa"')
+        })
+        it('should set the value of an nested property', async () => {
+            await getLocals()
+            let anArray = localVariables.find(variable => variable.name === '$anArray')
+            assert.propertyVal(anArray!, 'value', 'array(3)')
+            await client.setVariableRequest({
+                variablesReference: localScope!.variablesReference,
+                name: '$anArray',
+                value: 'array(1,2)',
+            })
+            await getLocals()
+            anArray = localVariables.find(variable => variable.name === '$anArray')
+            assert.propertyVal(anArray!, 'value', 'array(2)')
+        })
     })
 
     describe('virtual sources', () => {
