@@ -2,7 +2,7 @@
   "name": "php-debug",
   "displayName": "PHP Debug",
   "version": "0.0.0-development",
-  "publisher": "felixfbecker",
+  "publisher": "xdebug",
   "license": "MIT",
   "description": "Debug support for PHP with Xdebug",
   "keywords": [

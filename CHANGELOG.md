@@ -8,7 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - When `env` is specified in launch configuration it will be merged the process environment.
 - Set variable support.
-- Improved hover support
+- Improved hover support.
+- Update publisher id.
 
 ## [1.22.0]
 
