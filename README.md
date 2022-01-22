@@ -115,6 +115,7 @@ Options specific to CLI debugging:
 - Arrays & objects (including classname, private and static properties)
 - Debug console
 - Watches
+- Set variables
 - Run as CLI
 - Run without debugging
 - DBGp Proxy registration and unregistration support

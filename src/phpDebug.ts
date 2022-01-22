@@ -195,6 +195,7 @@ class PhpDebugSession extends vscode.DebugSession {
             supportsFunctionBreakpoints: true,
             supportsLogPoints: true,
             supportsHitConditionalBreakpoints: true,
+            supportsSetVariable: true,
             exceptionBreakpointFilters: [
                 {
                     filter: 'Notice',
@@ -891,6 +892,42 @@ class PhpDebugSession extends vscode.DebugSession {
         this.sendResponse(response)
     }
 
+    protected async setVariableRequest(
+        response: VSCodeDebugProtocol.SetVariableResponse,
+        args: VSCodeDebugProtocol.SetVariableArguments
+    ) {
+        try {
+            let properties: xdebug.Property[]
+            if (this._properties.has(args.variablesReference)) {
+                // variablesReference is a property
+                const container = this._properties.get(args.variablesReference)!
+                if (!container.hasChildren) {
+                    throw new Error('Cannot edit property without children')
+                }
+                if (container.children.length === container.numberOfChildren) {
+                    properties = container.children
+                } else {
+                    properties = await container.getChildren()
+                }
+            } else if (this._contexts.has(args.variablesReference)) {
+                const context = this._contexts.get(args.variablesReference)!
+                properties = await context.getProperties()
+            } else {
+                throw new Error('Unknown variable reference')
+            }
+            const property = properties.find(child => child.name === args.name)
+            if (!property) {
+                throw new Error('Property not found')
+            }
+            await property.set(args.value)
+            response.body = { value: args.value }
+        } catch (error) {
+            this.sendErrorResponse(response, error)
+            return
+        }
+        this.sendResponse(response)
+    }
+
     protected async variablesRequest(
         response: VSCodeDebugProtocol.VariablesResponse,
         args: VSCodeDebugProtocol.VariablesArguments
@@ -927,6 +964,8 @@ class PhpDebugSession extends vscode.DebugSession {
                     } else {
                         properties = []
                     }
+                    // SHOULD WE CACHE?
+                    property.children = <xdebug.Property[]>properties
                 } else if (this._evalResultProperties.has(variablesReference)) {
                     // the children of properties returned from an eval command are always inlined, so we simply resolve them
                     const property = this._evalResultProperties.get(variablesReference)!
