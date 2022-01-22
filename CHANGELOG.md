@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [1.23.0]
 
 - When `env` is specified in launch configuration it will be merged the process environment.
+- Set variable support.
 
 ## [1.22.0]
 
