@@ -640,13 +640,27 @@ export class PropertyGetResponse extends Response {
     children: Property[]
     /**
      * @param  {XMLDocument} document
-     * @param  {Property} property
+     * @param  {Context} context
      */
-    constructor(document: XMLDocument, property: Property) {
-        super(document, property.context.stackFrame.connection)
+    constructor(document: XMLDocument, context: Context) {
+        super(document, context.stackFrame.connection)
         this.children = Array.from(document.documentElement.firstChild!.childNodes).map(
-            (propertyNode: Element) => new Property(propertyNode, property.context)
+            (propertyNode: Element) => new Property(propertyNode, context)
         )
+    }
+}
+
+/** The response to a property_get by name command */
+export class PropertyGetNameResponse extends Response {
+    /** The property being resolved */
+    property: Property
+    /**
+     * @param  {XMLDocument} document
+     * @param  {Context} context
+     */
+    constructor(document: XMLDocument, context: Context) {
+        super(document, context.stackFrame.connection)
+        this.property = new Property(<Element>document.documentElement.firstChild!, context)
     }
 }
 
@@ -1045,7 +1059,19 @@ export class Connection extends DbgpConnection {
                 'property_get',
                 `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${escape(property.fullName)}`
             ),
-            property
+            property.context
+        )
+    }
+
+    /** Sends a property_get by name command */
+    public async sendPropertyGetNameCommand(name: String, context: Context): Promise<PropertyGetNameResponse> {
+        const escapedFullName = '"' + name.replace(/("|\\)/g, '\\$1') + '"'
+        return new PropertyGetNameResponse(
+            await this._enqueueCommand(
+                'property_get',
+                `-d ${context.stackFrame.level} -c ${context.id} -n ${escapedFullName}`
+            ),
+            context
         )
     }
 

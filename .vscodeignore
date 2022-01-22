@@ -25,3 +25,4 @@ tsconfig.json
 tslint.json
 renovate.json
 .github
+codecov.yml
