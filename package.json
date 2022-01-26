@@ -68,7 +68,7 @@
     "@types/vscode": "^1.63.1",
     "@types/which": "^2.0.1",
     "@types/xmldom": "^0.1.31",
-    "chai": "^4.3.4",
+    "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "husky": "^7.0.4",
     "mocha": "^9.1.4",
