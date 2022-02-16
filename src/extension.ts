@@ -96,4 +96,14 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.debug.startDebugging(undefined, { type: '', name: '', request: '' })
         })
     )
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('php.debug.startWithStopOnEntry', async (uri: vscode.Uri) => {
+            vscode.commands.executeCommand('workbench.action.debug.start', {
+                config: {
+                    stopOnEntry: true,
+                },
+            })
+        })
+    )
 }

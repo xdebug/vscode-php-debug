@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.24.0]
+
+- F10/F11 start debugging with stop on entry.
+
 ## [1.23.0]
 
 - When `env` is specified in launch configuration it will be merged the process environment.

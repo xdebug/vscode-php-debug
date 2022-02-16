@@ -144,7 +144,8 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onDebugResolve:php",
-    "onCommand:php.debug.debugPhpFile"
+    "onCommand:php.debug.debugPhpFile",
+    "onCommand:php.debug.startWithStopOnEntry"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
@@ -489,6 +490,23 @@
         "title": "Debug PHP",
         "icon": "$(debug-alt-small)",
         "enablement": "resourceLangId == php"
+      },
+      {
+        "command": "php.debug.startWithStopOnEntry",
+        "title": "Start Debugging and Stop on Entry",
+        "category": "Debug"
+      }
+    ],
+    "keybindings":[
+      {
+        "command": "php.debug.startWithStopOnEntry",
+        "key": "F10",
+        "when": "!inDebugMode && debugConfigurationType == 'php'"
+      },
+      {
+        "command": "php.debug.startWithStopOnEntry",
+        "key": "F11",
+        "when": "!inDebugMode && debugConfigurationType == 'php'"
       }
     ]
   }

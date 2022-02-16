@@ -109,6 +109,7 @@ Options specific to CLI debugging:
 - Function breakpoints
 - Step over, step in, step out
 - Break on entry
+- Start with Stop on entry (F10/F11)
 - Breaking on uncaught exceptions and errors / warnings / notices
 - Multiple, parallel requests
 - Stack traces, scope variables, superglobals, user defined constants
@@ -150,9 +151,10 @@ A _Xdebug helper_ browser extension is also recommended. There the request side 
 - If you think you found a bug, [open an issue](https://github.com/xdebug/vscode-php-debug/issues)
 - Make sure you have the latest version of this extension and Xdebug installed
 - Try out a simple PHP file to recreate the issue, for example from the [testproject](https://github.com/xdebug/vscode-php-debug/tree/main/testproject)
-- In your php.ini, set [`xdebug.remote_log = /path/to/logfile`](https://xdebug.org/docs/remote#remote_log)
+- Set `"log": true` in your launch.json and observe Debug Console panel
+- In your php.ini, set [`xdebug.log = /path/to/logfile`](https://xdebug.org/docs/step_debug#troubleshoot)
   (make sure your webserver has write permissions to the file)
-- Set `"log": true` in your launch.json
+- Reach out on Twitter [@damjancvetko](https://twitter.com/damjancvetko)
 
 ## Contributing
 
