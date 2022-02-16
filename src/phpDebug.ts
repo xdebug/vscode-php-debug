@@ -454,6 +454,9 @@ class PhpDebugSession extends vscode.DebugSession {
                     reject(error)
                 })
                 server.on('listening', () => {
+                    if (args.log) {
+                        this.sendEvent(new vscode.OutputEvent(`Listening on ${util.inspect(server.address())}\n`), true)
+                    }
                     const port = (server.address() as net.AddressInfo).port
                     resolve(port)
                 })
