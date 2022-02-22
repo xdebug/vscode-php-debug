@@ -123,7 +123,7 @@ Options specific to CLI debugging:
 
 ## Remote Host Debugging
 
-To debug a running application on a remote host, you need to tell Xdebug to connect to a different IP than `localhost`. This can either be done by setting [`xdebug.remote_host`](https://xdebug.org/docs/remote#remote_host) to your IP or by setting [`xdebug.discover_client_host = 1`](https://xdebug.org/docs/all_settings#discover_client_host) to make Xdebug always connect back to the machine who did the web request. The latter is the only setting that supports multiple users debugging the same server and "just works" for web projects. Again, please see the [Xdebug documentation](https://xdebug.org/docs/remote#communcation) on the subject for more information.
+To debug a running application on a remote host, you need to tell Xdebug to connect to a different IP than `localhost`. This can either be done by setting [`xdebug.client_host`](https://xdebug.org/docs/step_debug#client_host) to your IP or by setting [`xdebug.discover_client_host = 1`](https://xdebug.org/docs/all_settings#discover_client_host) to make Xdebug always connect back to the machine who did the web request. The latter is the only setting that supports multiple users debugging the same server and "just works" for web projects. Again, please see the [Xdebug documentation](https://xdebug.org/docs/remote#communcation) on the subject for more information.
 
 To make VS Code map the files on the server to the right files on your local machine, you have to set the `pathMappings` settings in your launch.json. Example:
 
