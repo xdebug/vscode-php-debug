@@ -571,7 +571,7 @@ export class Property extends BaseProperty {
         }
         this.context = context
         if (this.hasChildren) {
-            this.children = Array.from(propertyNode.childNodes).map(
+            this.children = Array.from((<Element>propertyNode).getElementsByTagName('property')).map(
                 (propertyNode: Element) => new Property(propertyNode, context)
             )
         }
@@ -644,9 +644,9 @@ export class PropertyGetResponse extends Response {
      */
     constructor(document: XMLDocument, context: Context) {
         super(document, context.stackFrame.connection)
-        this.children = Array.from(document.documentElement.firstChild!.childNodes).map(
-            (propertyNode: Element) => new Property(propertyNode, context)
-        )
+        this.children = Array.from(
+            (<Element>document.documentElement.firstChild!).getElementsByTagName('property')
+        ).map((propertyNode: Element) => new Property(propertyNode, context))
     }
 }
 
