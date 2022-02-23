@@ -670,7 +670,7 @@ export class EvalResultProperty extends BaseProperty {
     constructor(propertyNode: Element) {
         super(propertyNode)
         if (this.hasChildren) {
-            this.children = Array.from(propertyNode.childNodes).map(
+            this.children = Array.from(propertyNode.getElementsByTagName('property')).map(
                 (propertyNode: Element) => new EvalResultProperty(propertyNode)
             )
         }
