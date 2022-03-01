@@ -219,6 +219,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 },
             ],
             supportTerminateDebuggee: true,
+            supportsDelayedStackTraceLoading: false,
         }
         this.sendResponse(response)
     }
@@ -741,7 +742,7 @@ class PhpDebugSession extends vscode.DebugSession {
             if (!connection) {
                 throw new Error('Unknown thread ID')
             }
-            const { stack } = await connection.sendStackGetCommand()
+            let { stack } = await connection.sendStackGetCommand()
             // First delete the old stack trace info ???
             // this._stackFrames.clear();
             // this._properties.clear();
@@ -781,7 +782,16 @@ class PhpDebugSession extends vscode.DebugSession {
                 this._errorStackFrames.set(id, status)
                 response.body = { stackFrames: [{ id, name, source, line, column: 1 }] }
             } else {
+                const totalFrames = stack.length
+                if (args.levels !== undefined && args.levels > 0) {
+                    stack = stack.filter(
+                        stackFrame =>
+                            stackFrame.level >= (args.startFrame ?? 0) &&
+                            stackFrame.level < (args.startFrame ?? 0) + args.levels!
+                    )
+                }
                 response.body = {
+                    totalFrames,
                     stackFrames: stack.map((stackFrame): VSCodeDebugProtocol.StackFrame => {
                         let source: VSCodeDebugProtocol.Source
                         let line = stackFrame.line
