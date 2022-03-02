@@ -817,5 +817,24 @@ describe('PHP Debug Adapter', () => {
                 s1.end()
             })
         })
+        it('stack depth', async () => {
+            const program = path.join(TEST_PROJECT, 'stack.php')
+
+            await Promise.all([client.launch({ program }), client.configurationSequence()])
+            const event = (await client.waitForEvent('stopped')) as DebugProtocol.StoppedEvent
+            assert.propertyVal(event.body, 'reason', 'breakpoint')
+            const threadId = event.body.threadId!
+
+            const response = await client.stackTraceRequest({ threadId, levels: 1 })
+            assert.lengthOf(response.body.stackFrames, 1)
+            assert.equal(response.body.totalFrames, 4)
+            assert.equal(response.body.stackFrames[0].name, 'depth3')
+            const response2 = await client.stackTraceRequest({ threadId, startFrame: 1 /*, levels: 3*/ })
+            assert.lengthOf(response2.body.stackFrames, 3)
+            assert.equal(response2.body.totalFrames, 4)
+            assert.equal(response2.body.stackFrames[0].name, 'depth2')
+            assert.equal(response2.body.stackFrames[1].name, 'depth1')
+            assert.equal(response2.body.stackFrames[2].name, '{main}')
+        })
     })
 })
