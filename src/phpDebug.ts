@@ -783,13 +783,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 response.body = { stackFrames: [{ id, name, source, line, column: 1 }] }
             } else {
                 const totalFrames = stack.length
-                if (args.levels !== undefined && args.levels > 0) {
-                    stack = stack.filter(
-                        stackFrame =>
-                            stackFrame.level >= (args.startFrame ?? 0) &&
-                            stackFrame.level < (args.startFrame ?? 0) + args.levels!
-                    )
-                }
+                stack = stack.slice(args.startFrame, args.levels ? (args.startFrame ?? 0) + args.levels : undefined)
                 response.body = {
                     totalFrames,
                     stackFrames: stack.map((stackFrame): VSCodeDebugProtocol.StackFrame => {
