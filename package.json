@@ -70,6 +70,7 @@
     "@types/xmldom": "^0.1.31",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
+    "copyfiles": "^2.4.1",
     "husky": "^7.0.4",
     "mocha": "^9.2.0",
     "nyc": "^15.1.0",
@@ -104,8 +105,9 @@
     ]
   },
   "scripts": {
-    "build": "tsc -p .",
-    "watch": "tsc -w -p .",
+    "build": "npm run copyfiles && tsc -p .",
+    "watch": "npm run copyfiles && tsc -w -p .",
+    "copyfiles": "copyfiles -u 1 src/TerminalHelper.scpt src/terminateProcess.sh out",
     "start": "code testproject --extensionDevelopmentPath=.",
     "test": "mocha",
     "cover": "nyc mocha",
@@ -497,7 +499,7 @@
         "category": "Debug"
       }
     ],
-    "keybindings":[
+    "keybindings": [
       {
         "command": "php.debug.startWithStopOnEntry",
         "key": "F10",
