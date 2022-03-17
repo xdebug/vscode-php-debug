@@ -1192,7 +1192,6 @@ class PhpDebugSession extends vscode.DebugSession {
             return
         }
         this.sendResponse(response)
-        this.sendEvent(new vscode.TerminatedEvent())
         this.shutdown()
     }
 
