@@ -21,7 +21,7 @@
     }
   ],
   "engines": {
-    "vscode": "^1.63.2",
+    "vscode": "^1.66.1",
     "node": "^16.13.2"
   },
   "icon": "images/logo.png",
@@ -65,7 +65,7 @@
     "@types/relateurl": "^0.2.29",
     "@types/semver": "^7.3.9",
     "@types/urlencode": "^1.1.2",
-    "@types/vscode": "^1.63.1",
+    "@types/vscode": "^1.66.0",
     "@types/which": "^2.0.1",
     "@types/xmldom": "^0.1.31",
     "chai": "^4.3.6",
