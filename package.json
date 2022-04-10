@@ -235,6 +235,11 @@
                 "description": "Port on which to listen for Xdebug",
                 "default": 9003
               },
+              "socketPath": {
+                "type": "string",
+                "description": "Windows pipe or Unix domain socket to listen on for Xdebug (exclusive with port)",
+                "default": ""
+              },
               "serverSourceRoot": {
                 "type": "string",
                 "description": "Deprecated: The source root when debugging a remote host",

@@ -39,6 +39,9 @@ describe('PHP Debug Adapter', () => {
                 Promise.all([client.launch({ program: 'thisfiledoesnotexist.php' }), client.configurationSequence()])
             ))
 
+        it('should error on env without program', () =>
+            assert.isRejected(Promise.all([client.launch({ env: {} }), client.configurationSequence()])))
+
         it('should run program to the end', () =>
             Promise.all([
                 client.launch({ program }),
@@ -61,6 +64,33 @@ describe('PHP Debug Adapter', () => {
                 client.configurationSequence(),
                 client.waitForEvent('terminated'),
             ]))
+    })
+
+    describe('socket path listen', () => {
+        const program = path.join(TEST_PROJECT, 'hello_world.php')
+
+        it('should error on port and socketPath', () =>
+            assert.isRejected(
+                Promise.all([client.launch({ port: 9003, socketPath: 'test' }), client.configurationSequence()])
+            ))
+        ;(process.platform === 'win32' ? it : it.skip)('should listen on windows pipe', async () => {
+            await Promise.all([
+                client.launch({ program, socketPath: '\\\\?\\pipe\\test' }),
+                client.configurationSequence(),
+            ])
+            await client.disconnectRequest()
+        })
+        ;(process.platform === 'win32' ? it.skip : it)('should listen on unix pipe', () => {
+            Promise.all([
+                client.launch({
+                    program,
+                    socketPath: '/tmp/test',
+                    runtimeArgs: ['-dxdebug.client_host=unix:///tmp/text'],
+                }),
+                client.configurationSequence(),
+                client.waitForEvent('terminated'),
+            ])
+        })
     })
 
     describe('continuation commands', () => {

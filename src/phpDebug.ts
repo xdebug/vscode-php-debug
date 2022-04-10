@@ -59,6 +59,8 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     hostname?: string
     /** The port where the adapter should listen for Xdebug connections (default: 9003) */
     port?: number
+    /** Windows pipe or Unix domain socket to listen on for Xdebug (exclusive with port) */
+    socketPath?: string
     /** Automatically stop target after launch. If not specified, target does not stop. */
     stopOnEntry?: boolean
     /** The source root on the server when doing remote debugging on a different host */
@@ -249,7 +251,7 @@ class PhpDebugSession extends vscode.DebugSession {
         })
 
         /** launches the script as CLI */
-        const launchScript = async (port: number) => {
+        const launchScript = async (port: number | string) => {
             // check if program exists
             if (args.program) {
                 await new Promise<void>((resolve, reject) =>
@@ -306,7 +308,7 @@ class PhpDebugSession extends vscode.DebugSession {
         }
         /** sets up a TCP server to listen for Xdebug connections */
         const createServer = () =>
-            new Promise<number>((resolve, reject) => {
+            new Promise<number | string>((resolve, reject) => {
                 const server = (this._server = net.createServer())
                 server.on('connection', async (socket: net.Socket) => {
                     try {
@@ -461,17 +463,35 @@ class PhpDebugSession extends vscode.DebugSession {
                     if (args.log) {
                         this.sendEvent(new vscode.OutputEvent(`Listening on ${util.inspect(server.address())}\n`), true)
                     }
-                    const port = (server.address() as net.AddressInfo).port
-                    resolve(port)
+                    if (typeof server.address() === 'string') {
+                        resolve(<string>server.address())
+                    } else {
+                        const port = (server.address() as net.AddressInfo).port
+                        resolve(port)
+                    }
                 })
-                const listenPort = args.port === undefined ? 9003 : args.port
-                server.listen(listenPort, args.hostname)
+                if (args.port !== undefined && args.socketPath !== undefined) {
+                    throw new Error('Cannot have port and socketPath set at the same time')
+                }
+                if (args.socketPath !== undefined) {
+                    server.listen(args.socketPath)
+                } else {
+                    const listenPort = args.port === undefined ? 9003 : args.port
+                    server.listen(listenPort, args.hostname)
+                }
             })
         try {
-            let port = 0
+            // Some checks
+            if (args.env !== undefined && args.program === undefined && args.runtimeArgs === undefined) {
+                throw new Error('Cannot set env without running a program (or ')
+            }
+            if (args.socketPath !== undefined && args.proxy?.enable === true) {
+                throw new Error('Proxy does not support socket path listen, only port.')
+            }
+            let port = <number | string>0
             if (!args.noDebug) {
                 port = await createServer()
-                if (args.proxy?.enable === true) {
+                if (typeof port === 'number' && args.proxy?.enable === true) {
                     await this.setupProxy(port)
                 }
             }
