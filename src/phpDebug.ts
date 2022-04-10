@@ -276,7 +276,8 @@ class PhpDebugSession extends vscode.DebugSession {
                 )
                 if (script) {
                     // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                    script.on('exit', () => {
+                    script.on('exit', (code: number | null) => {
+                        this.sendEvent(new vscode.ExitedEvent(code ?? 0))
                         this.sendEvent(new vscode.TerminatedEvent())
                     })
                 }
@@ -293,7 +294,8 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendEvent(new vscode.OutputEvent(data + '', 'stderr'))
                 })
                 // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                script.on('exit', () => {
+                script.on('exit', (code: number | null) => {
+                    this.sendEvent(new vscode.ExitedEvent(code ?? 0))
                     this.sendEvent(new vscode.TerminatedEvent())
                 })
                 script.on('error', (error: Error) => {
