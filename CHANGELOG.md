@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.26.0]
+
+- Support for Unix Domain sockets #777
+- Improve ExitedEvent notification #763
+- Improve Debug Console (Eval) handling of nested vars #764
+- Fixed missing TerminalHelper script #762
+
 ## [1.25.0]
 
 - Implement delayed stack loading with startFrame and levels argument to StackTrace Request
