@@ -72,7 +72,7 @@
     "chai-as-promised": "^7.1.1",
     "copyfiles": "^2.4.1",
     "husky": "^7.0.4",
-    "mocha": "^9.2.0",
+    "mocha": "^9.2.2",
     "nyc": "^15.1.0",
     "prettier": "2.5.1",
     "semantic-release": "^19.0.2",
