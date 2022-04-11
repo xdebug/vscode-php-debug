@@ -227,7 +227,7 @@
               },
               "hostname": {
                 "type": "string",
-                "description": "Address to bind to when listening for Xdebug",
+                "description": "Address to bind to when listening for Xdebug or Unix domain socket (start with unix://)",
                 "default": "::"
               },
               "port": {
