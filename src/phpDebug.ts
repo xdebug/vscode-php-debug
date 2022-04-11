@@ -55,12 +55,10 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
  * This interface should always match the schema found in the mock-debug extension manifest.
  */
 export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArguments {
-    /** The address to bind to for listening for Xdebug connections (default: all IPv6 connections if available, else all IPv4 connections) */
+    /** The address to bind to for listening for Xdebug connections (default: all IPv6 connections if available, else all IPv4 connections) or unix socket */
     hostname?: string
     /** The port where the adapter should listen for Xdebug connections (default: 9003) */
     port?: number
-    /** Windows pipe or Unix domain socket to listen on for Xdebug (exclusive with port) */
-    socketPath?: string
     /** Automatically stop target after launch. If not specified, target does not stop. */
     stopOnEntry?: boolean
     /** The source root on the server when doing remote debugging on a different host */
@@ -470,11 +468,17 @@ class PhpDebugSession extends vscode.DebugSession {
                         resolve(port)
                     }
                 })
-                if (args.port !== undefined && args.socketPath !== undefined) {
+                if (
+                    args.port !== undefined &&
+                    (args.hostname?.toLowerCase()?.startsWith('unix://') === true ||
+                        args.hostname?.startsWith('\\\\') === true)
+                ) {
                     throw new Error('Cannot have port and socketPath set at the same time')
                 }
-                if (args.socketPath !== undefined) {
-                    server.listen(args.socketPath)
+                if (args.hostname?.toLowerCase()?.startsWith('unix://') === true) {
+                    server.listen(args.hostname.substring(7))
+                } else if (args.hostname?.startsWith('\\\\') === true) {
+                    server.listen(args.hostname)
                 } else {
                     const listenPort = args.port === undefined ? 9003 : args.port
                     server.listen(listenPort, args.hostname)
@@ -485,7 +489,11 @@ class PhpDebugSession extends vscode.DebugSession {
             if (args.env !== undefined && args.program === undefined && args.runtimeArgs === undefined) {
                 throw new Error('Cannot set env without running a program (or ')
             }
-            if (args.socketPath !== undefined && args.proxy?.enable === true) {
+            if (
+                (args.hostname?.toLowerCase()?.startsWith('unix://') === true ||
+                    args.hostname?.startsWith('\\\\') === true) &&
+                args.proxy?.enable === true
+            ) {
                 throw new Error('Proxy does not support socket path listen, only port.')
             }
             let port = <number | string>0

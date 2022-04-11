@@ -227,18 +227,13 @@
               },
               "hostname": {
                 "type": "string",
-                "description": "Address to bind to when listening for Xdebug",
+                "description": "Address to bind to when listening for Xdebug or Unix domain socket (start with unix://)",
                 "default": "::"
               },
               "port": {
                 "type": "number",
                 "description": "Port on which to listen for Xdebug",
                 "default": 9003
-              },
-              "socketPath": {
-                "type": "string",
-                "description": "Windows pipe or Unix domain socket to listen on for Xdebug (exclusive with port)",
-                "default": ""
               },
               "serverSourceRoot": {
                 "type": "string",

@@ -71,11 +71,11 @@ describe('PHP Debug Adapter', () => {
 
         it('should error on port and socketPath', () =>
             assert.isRejected(
-                Promise.all([client.launch({ port: 9003, socketPath: 'test' }), client.configurationSequence()])
+                Promise.all([client.launch({ port: 9003, hostname: 'unix:///test' }), client.configurationSequence()])
             ))
         ;(process.platform === 'win32' ? it : it.skip)('should listen on windows pipe', async () => {
             await Promise.all([
-                client.launch({ program, socketPath: '\\\\?\\pipe\\test' }),
+                client.launch({ program, hostname: '\\\\?\\pipe\\test' }),
                 client.configurationSequence(),
             ])
             await client.disconnectRequest()
@@ -84,7 +84,7 @@ describe('PHP Debug Adapter', () => {
             Promise.all([
                 client.launch({
                     program,
-                    socketPath: '/tmp/test',
+                    hostname: 'unix:///tmp/test',
                     runtimeArgs: ['-dxdebug.client_host=unix:///tmp/text'],
                 }),
                 client.configurationSequence(),
