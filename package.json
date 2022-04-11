@@ -21,7 +21,7 @@
     }
   ],
   "engines": {
-    "vscode": "^1.63.2",
+    "vscode": "^1.66.1",
     "node": "^16.13.2"
   },
   "icon": "images/logo.png",
@@ -42,10 +42,10 @@
   "dependencies": {
     "file-url": "^3.0.0",
     "iconv-lite": "^0.6.3",
-    "minimatch": "^3.0.4",
+    "minimatch": "^3.1.2",
     "moment": "^2.29.2",
     "relateurl": "^0.2.7",
-    "semver": "^7.3.5",
+    "semver": "^7.3.6",
     "string-replace-async": "^2.0.0",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
@@ -55,8 +55,8 @@
     "xmldom": "^0.6.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^16.1.0",
-    "@commitlint/config-conventional": "^16.0.0",
+    "@commitlint/cli": "^16.2.3",
+    "@commitlint/config-conventional": "^16.2.1",
     "@types/chai": "4.3.0",
     "@types/chai-as-promised": "^7.1.5",
     "@types/minimatch": "^3.0.5",
@@ -65,17 +65,18 @@
     "@types/relateurl": "^0.2.29",
     "@types/semver": "^7.3.9",
     "@types/urlencode": "^1.1.2",
-    "@types/vscode": "^1.63.1",
+    "@types/vscode": "^1.66.0",
     "@types/which": "^2.0.1",
     "@types/xmldom": "^0.1.31",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
+    "copyfiles": "^2.4.1",
     "husky": "^7.0.4",
-    "mocha": "^9.2.0",
+    "mocha": "^9.2.2",
     "nyc": "^15.1.0",
     "prettier": "2.5.1",
     "semantic-release": "^19.0.2",
-    "semantic-release-vsce": "^5.0.7",
+    "semantic-release-vsce": "^5.0.10",
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.5.5",
@@ -104,8 +105,9 @@
     ]
   },
   "scripts": {
-    "build": "tsc -p .",
-    "watch": "tsc -w -p .",
+    "build": "npm run copyfiles && tsc -p .",
+    "watch": "npm run copyfiles && tsc -w -p .",
+    "copyfiles": "copyfiles -u 1 src/TerminalHelper.scpt src/terminateProcess.sh out",
     "start": "code testproject --extensionDevelopmentPath=.",
     "test": "mocha",
     "cover": "nyc mocha",
@@ -497,7 +499,7 @@
         "category": "Debug"
       }
     ],
-    "keybindings":[
+    "keybindings": [
       {
         "command": "php.debug.startWithStopOnEntry",
         "key": "F10",
