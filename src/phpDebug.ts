@@ -15,6 +15,7 @@ import { BreakpointManager, BreakpointAdapter } from './breakpoints'
 import * as semver from 'semver'
 import { LogPointManager } from './logpoint'
 import { ProxyConnect } from './proxyConnect'
+import { randomUUID } from 'crypto'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -275,7 +276,8 @@ class PhpDebugSession extends vscode.DebugSession {
                 )
                 if (script) {
                     // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                    script.on('exit', () => {
+                    script.on('exit', (code: number | null) => {
+                        this.sendEvent(new vscode.ExitedEvent(code ?? 0))
                         this.sendEvent(new vscode.TerminatedEvent())
                     })
                 }
@@ -292,7 +294,8 @@ class PhpDebugSession extends vscode.DebugSession {
                     this.sendEvent(new vscode.OutputEvent(data + '', 'stderr'))
                 })
                 // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
-                script.on('exit', () => {
+                script.on('exit', (code: number | null) => {
+                    this.sendEvent(new vscode.ExitedEvent(code ?? 0))
                     this.sendEvent(new vscode.TerminatedEvent())
                 })
                 script.on('error', (error: Error) => {
@@ -1211,6 +1214,14 @@ class PhpDebugSession extends vscode.DebugSession {
                 // try to get variable from property_get
                 const ctx = await stackFrame.getContexts() // TODO CACHE THIS
                 const response = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
+                if (response.property) {
+                    result = response.property
+                }
+            } else if (args.context === 'repl') {
+                const uuid = randomUUID()
+                await connection.sendEvalCommand(`$GLOBALS['eval_cache']['${uuid}']=${args.expression}`)
+                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                const response = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx[1])
                 if (response.property) {
                     result = response.property
                 }
