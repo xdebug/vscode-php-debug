@@ -55,6 +55,8 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
  * This interface should always match the schema found in the mock-debug extension manifest.
  */
 export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchRequestArguments {
+    /** Name of the configuration */
+    name?: string
     /** The address to bind to for listening for Xdebug connections (default: all IPv6 connections if available, else all IPv4 connections) or unix socket */
     hostname?: string
     /** The port where the adapter should listen for Xdebug connections (default: 9003) */
@@ -487,7 +489,9 @@ class PhpDebugSession extends vscode.DebugSession {
         try {
             // Some checks
             if (args.env !== undefined && args.program === undefined && args.runtimeArgs === undefined) {
-                throw new Error('Cannot set env without running a program (or ')
+                throw new Error(
+                    `Cannot set env without running a program.\nPlease remove env from [${args.name}] configuration.`
+                )
             }
             if (
                 (args.hostname?.toLowerCase()?.startsWith('unix://') === true ||
