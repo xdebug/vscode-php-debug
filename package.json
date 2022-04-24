@@ -43,7 +43,7 @@
     "file-url": "^3.0.0",
     "iconv-lite": "^0.6.3",
     "minimatch": "^3.1.2",
-    "moment": "^2.29.2",
+    "moment": "^2.29.3",
     "relateurl": "^0.2.7",
     "semver": "^7.3.6",
     "string-replace-async": "^2.0.0",
