@@ -1,5 +1,5 @@
-import { DebugProtocol as VSCodeDebugProtocol } from 'vscode-debugprotocol'
-import * as vscode from 'vscode-debugadapter'
+import { DebugProtocol as VSCodeDebugProtocol } from '@vscode/debugprotocol'
+import * as vscode from '@vscode/debugadapter'
 import { EventEmitter } from 'events'
 import * as xdebug from './xdebugConnection'
 import * as util from 'util'

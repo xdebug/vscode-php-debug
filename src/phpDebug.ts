@@ -1,5 +1,5 @@
-import * as vscode from 'vscode-debugadapter'
-import { DebugProtocol as VSCodeDebugProtocol } from 'vscode-debugprotocol'
+import * as vscode from '@vscode/debugadapter'
+import { DebugProtocol as VSCodeDebugProtocol } from '@vscode/debugprotocol'
 import * as net from 'net'
 import * as xdebug from './xdebugConnection'
 import moment = require('moment')
