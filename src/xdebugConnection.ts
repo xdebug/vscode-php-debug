@@ -588,11 +588,11 @@ export class Property extends BaseProperty {
      * Returns the child properties of this property by doing another property_get
      * @returns Promise.<Property[]>
      */
-    public async getChildren(): Promise<Property[]> {
+    public async getChildren(page: number = 0): Promise<Property[]> {
         if (!this.hasChildren) {
             throw new Error('This property has no children')
         }
-        return (await this.context.stackFrame.connection.sendPropertyGetCommand(this)).children
+        return (await this.context.stackFrame.connection.sendPropertyGetCommand(this, page)).children
     }
 }
 
@@ -1053,11 +1053,13 @@ export class Connection extends DbgpConnection {
     // ------------------------------ property --------------------------------------
 
     /** Sends a property_get command */
-    public async sendPropertyGetCommand(property: Property): Promise<PropertyGetResponse> {
+    public async sendPropertyGetCommand(property: Property, page: number = 0): Promise<PropertyGetResponse> {
         return new PropertyGetResponse(
             await this._enqueueCommand(
                 'property_get',
-                `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${escape(property.fullName)}`
+                `-d ${property.context.stackFrame.level} -c ${property.context.id} -p ${page} -n ${escape(
+                    property.fullName
+                )}`
             ),
             property.context
         )
