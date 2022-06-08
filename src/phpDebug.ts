@@ -377,6 +377,10 @@ class PhpDebugSession extends vscode.DebugSession {
                                 initPacket.engineName === 'Xdebug' &&
                                 semver.valid(initPacket.engineVersion, { loose: true }) &&
                                 semver.gte(initPacket.engineVersion, '3.0.0', { loose: true })
+                            const supportedEngine32 =
+                                initPacket.engineName === 'Xdebug' &&
+                                semver.valid(initPacket.engineVersion, { loose: true }) &&
+                                semver.gte(initPacket.engineVersion, '3.2.0', { loose: true })
                             if (
                                 supportedEngine ||
                                 ((feat = await connection.sendFeatureGetCommand('resolved_breakpoints')) &&
@@ -397,6 +401,13 @@ class PhpDebugSession extends vscode.DebugSession {
                                     feat.supported === '1')
                             ) {
                                 await connection.sendFeatureSetCommand('extended_properties', '1')
+                            }
+                            if (
+                                supportedEngine32 ||
+                                ((feat = await connection.sendFeatureGetCommand('breakpoint_include_return_value')) &&
+                                    feat.supported === '1')
+                            ) {
+                                await connection.sendFeatureSetCommand('breakpoint_include_return_value', '1')
                             }
 
                             // override features from launch.json
