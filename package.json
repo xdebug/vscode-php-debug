@@ -24,6 +24,9 @@
     "vscode": "^1.66.1",
     "node": "^16.14.2"
   },
+  "sponsor": {
+    "url": "https://github.com/sponsors/zobo"
+  },
   "icon": "images/logo.png",
   "galleryBanner": {
     "color": "#6682BA",
@@ -80,7 +83,7 @@
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.6.3",
-    "vsce": "^2.7.0",
+    "vsce": "^2.9.1",
     "vscode-debugadapter-testsupport": "^1.51.0"
   },
   "release": {
