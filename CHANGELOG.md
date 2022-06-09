@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [1.27.0]
 
 - Variable paging with VSCode indexedVariables.
+- Enable return value stepping with breakpoint_include_return_value.
 
 ## [1.26.1]
 
