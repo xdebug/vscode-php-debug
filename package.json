@@ -52,8 +52,8 @@
     "string-replace-async": "^2.0.0",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
-    "vscode-debugadapter": "^1.51.0",
-    "vscode-debugprotocol": "^1.51.0",
+    "@vscode/debugadapter": "^1.51.1",
+    "@vscode/debugprotocol": "^1.55.1",
     "which": "^2.0.2",
     "xmldom": "^0.6.0"
   },
@@ -84,7 +84,7 @@
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.6.3",
     "vsce": "^2.9.1",
-    "vscode-debugadapter-testsupport": "^1.51.0"
+    "@vscode/debugadapter-testsupport": "^1.55.1"
   },
   "release": {
     "branches": [

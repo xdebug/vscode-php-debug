@@ -1,8 +1,8 @@
 import * as chai from 'chai'
 import chaiAsPromised = require('chai-as-promised')
 import * as path from 'path'
-import { DebugClient } from 'vscode-debugadapter-testsupport'
-import { DebugProtocol } from 'vscode-debugprotocol'
+import { DebugClient } from '@vscode/debugadapter-testsupport'
+import { DebugProtocol } from '@vscode/debugprotocol'
 import * as semver from 'semver'
 import * as net from 'net'
 chai.use(chaiAsPromised)

@@ -1,5 +1,5 @@
-import * as vscode from 'vscode-debugadapter'
-import { DebugProtocol as VSCodeDebugProtocol } from 'vscode-debugprotocol'
+import * as vscode from '@vscode/debugadapter'
+import { DebugProtocol as VSCodeDebugProtocol } from '@vscode/debugprotocol'
 import * as net from 'net'
 import * as xdebug from './xdebugConnection'
 import moment = require('moment')
@@ -377,6 +377,10 @@ class PhpDebugSession extends vscode.DebugSession {
                                 initPacket.engineName === 'Xdebug' &&
                                 semver.valid(initPacket.engineVersion, { loose: true }) &&
                                 semver.gte(initPacket.engineVersion, '3.0.0', { loose: true })
+                            const supportedEngine32 =
+                                initPacket.engineName === 'Xdebug' &&
+                                semver.valid(initPacket.engineVersion, { loose: true }) &&
+                                semver.gte(initPacket.engineVersion, '3.2.0', { loose: true })
                             if (
                                 supportedEngine ||
                                 ((feat = await connection.sendFeatureGetCommand('resolved_breakpoints')) &&
@@ -398,15 +402,25 @@ class PhpDebugSession extends vscode.DebugSession {
                             ) {
                                 await connection.sendFeatureSetCommand('extended_properties', '1')
                             }
+                            if (
+                                supportedEngine32 ||
+                                ((feat = await connection.sendFeatureGetCommand('breakpoint_include_return_value')) &&
+                                    feat.supported === '1')
+                            ) {
+                                await connection.sendFeatureSetCommand('breakpoint_include_return_value', '1')
+                            }
 
                             // override features from launch.json
                             try {
                                 const xdebugSettings = args.xdebugSettings || {}
+                                // Required defaults for indexedVariables
+                                xdebugSettings.max_children = xdebugSettings.max_children || 100
                                 await Promise.all(
                                     Object.keys(xdebugSettings).map(setting =>
                                         connection.sendFeatureSetCommand(setting, xdebugSettings[setting])
                                     )
                                 )
+                                args.xdebugSettings = xdebugSettings
                             } catch (error) {
                                 throw new Error(
                                     'Error applying xdebugSettings: ' + (error instanceof Error ? error.message : error)
@@ -1001,7 +1015,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         if (property.children.length === property.numberOfChildren) {
                             properties = property.children
                         } else {
-                            properties = await property.getChildren()
+                            properties = await property.getChildren((args.start ?? 0) / 100)
                         }
                     } else {
                         properties = []
@@ -1065,6 +1079,9 @@ class PhpDebugSession extends vscode.DebugSession {
                         variablesReference,
                         presentationHint,
                         evaluateName,
+                    }
+                    if (this._args.xdebugSettings?.max_children === 100) {
+                        variable.indexedVariables = property.numberOfChildren
                     }
                     return variable
                 })

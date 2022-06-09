@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.27.0]
+
+- Variable paging with VSCode indexedVariables.
+- Enable return value stepping with breakpoint_include_return_value.
+
 ## [1.26.1]
 
 - Fixed typo in error message for unexpected env. Extended error message with more detail.
