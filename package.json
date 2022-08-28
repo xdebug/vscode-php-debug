@@ -52,7 +52,7 @@
     "string-replace-async": "^2.0.0",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
-    "@vscode/debugadapter": "^1.51.1",
+    "@vscode/debugadapter": "^1.57.0",
     "@vscode/debugprotocol": "^1.55.1",
     "which": "^2.0.2",
     "xmldom": "^0.6.0"
