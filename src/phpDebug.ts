@@ -2,7 +2,7 @@ import * as vscode from '@vscode/debugadapter'
 import { DebugProtocol as VSCodeDebugProtocol } from '@vscode/debugprotocol'
 import * as net from 'net'
 import * as xdebug from './xdebugConnection'
-import moment = require('moment')
+import moment from 'moment'
 import * as url from 'url'
 import * as childProcess from 'child_process'
 import * as path from 'path'
@@ -10,7 +10,7 @@ import * as util from 'util'
 import * as fs from 'fs'
 import { Terminal } from './terminal'
 import { convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
-import minimatch = require('minimatch')
+import minimatch from 'minimatch'
 import { BreakpointManager, BreakpointAdapter } from './breakpoints'
 import * as semver from 'semver'
 import { LogPointManager } from './logpoint'
@@ -19,8 +19,9 @@ import { randomUUID } from 'crypto'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
-        moment.locale(JSON.parse(process.env['VSCODE_NLS_CONFIG']).locale)
-    } catch (e) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+        moment.locale(JSON.parse(process.env.VSCODE_NLS_CONFIG).locale)
+    } catch {
         // ignore
     }
 }
@@ -31,7 +32,7 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
     if (property.hasChildren || property.type === 'array' || property.type === 'object') {
         if (property.type === 'array') {
             // for arrays, show the length, like a var_dump would do
-            displayValue = 'array(' + (property.hasChildren ? property.numberOfChildren : 0) + ')'
+            displayValue = `array(${property.hasChildren ? property.numberOfChildren : 0})`
         } else if (property.type === 'object' && property.class) {
             // for objects, show the class name as type (if specified)
             displayValue = property.class
@@ -43,9 +44,9 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
         // for null, uninitialized, resource, etc. show the type
         displayValue = property.value || property.type === 'string' ? property.value : property.type
         if (property.type === 'string') {
-            displayValue = '"' + displayValue + '"'
+            displayValue = `"${displayValue}"`
         } else if (property.type === 'bool') {
-            displayValue = !!parseInt(displayValue) + ''
+            displayValue = Boolean(parseInt(displayValue, 10)).toString()
         }
     }
     return displayValue
@@ -180,7 +181,7 @@ class PhpDebugSession extends vscode.DebugSession {
     /** resolves the done promise */
     private _donePromiseResolveFn: () => any
 
-    public constructor() {
+    constructor() {
         super()
         this.setDebuggerColumnsStartAt1(true)
         this.setDebuggerLinesStartAt1(true)
@@ -230,12 +231,15 @@ class PhpDebugSession extends vscode.DebugSession {
     protected attachRequest(
         response: VSCodeDebugProtocol.AttachResponse,
         args: VSCodeDebugProtocol.AttachRequestArguments
-    ) {
+    ): void {
         this.sendErrorResponse(response, new Error('Attach requests are not supported'))
         this.shutdown()
     }
 
-    protected async launchRequest(response: VSCodeDebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
+    protected async launchRequest(
+        response: VSCodeDebugProtocol.LaunchResponse,
+        args: LaunchRequestArguments
+    ): Promise<void> {
         if (args.localSourceRoot && args.serverSourceRoot) {
             let pathMappings: { [index: string]: string } = {}
             if (args.pathMappings) {
@@ -251,7 +255,7 @@ class PhpDebugSession extends vscode.DebugSession {
         })
 
         /** launches the script as CLI */
-        const launchScript = async (port: number | string) => {
+        const launchScript = async (port: number | string): Promise<void> => {
             // check if program exists
             if (args.program) {
                 await new Promise<void>((resolve, reject) =>
@@ -290,10 +294,10 @@ class PhpDebugSession extends vscode.DebugSession {
                 })
                 // redirect output to debug console
                 script.stdout.on('data', (data: Buffer) => {
-                    this.sendEvent(new vscode.OutputEvent(data + '', 'stdout'))
+                    this.sendEvent(new vscode.OutputEvent(data.toString(), 'stdout'))
                 })
                 script.stderr.on('data', (data: Buffer) => {
-                    this.sendEvent(new vscode.OutputEvent(data + '', 'stderr'))
+                    this.sendEvent(new vscode.OutputEvent(data.toString(), 'stderr'))
                 })
                 // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
                 script.on('exit', (code: number | null) => {
@@ -307,9 +311,10 @@ class PhpDebugSession extends vscode.DebugSession {
             }
         }
         /** sets up a TCP server to listen for Xdebug connections */
-        const createServer = () =>
+        const createServer = (): Promise<number | string> =>
             new Promise<number | string>((resolve, reject) => {
                 const server = (this._server = net.createServer())
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises
                 server.on('connection', async (socket: net.Socket) => {
                     try {
                         // new Xdebug connection
@@ -319,7 +324,9 @@ class PhpDebugSession extends vscode.DebugSession {
                                 if (args.log) {
                                     this.sendEvent(
                                         new vscode.OutputEvent(
-                                            `new connection from ${socket.remoteAddress} - dropping due to max connection limit\n`
+                                            `new connection from ${
+                                                socket.remoteAddress || 'unknown'
+                                            } - dropping due to max connection limit\n`
                                         ),
                                         true
                                     )
@@ -333,13 +340,13 @@ class PhpDebugSession extends vscode.DebugSession {
                         if (args.log) {
                             this.sendEvent(
                                 new vscode.OutputEvent(
-                                    `new connection ${connection.id} from ${socket.remoteAddress}\n`
+                                    `new connection ${connection.id} from ${socket.remoteAddress || 'unknown'}\n`
                                 ),
                                 true
                             )
                         }
                         this._connections.set(connection.id, connection)
-                        const disposeConnection = (error?: Error) => {
+                        const disposeConnection = (error?: Error): void => {
                             if (this._connections.has(connection.id)) {
                                 if (args.log) {
                                     this.sendEvent(new vscode.OutputEvent(`connection ${connection.id} closed\n`))
@@ -351,7 +358,13 @@ class PhpDebugSession extends vscode.DebugSession {
                                 }
                                 this.sendEvent(new vscode.ContinuedEvent(connection.id, false))
                                 this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
-                                connection.close()
+                                connection
+                                    .close()
+                                    .catch(err =>
+                                        this.sendEvent(
+                                            new vscode.OutputEvent(`connection ${connection.id}: ${err as string}\n`)
+                                        )
+                                    )
                                 this._connections.delete(connection.id)
                                 this._statuses.delete(connection)
                                 this._breakpointAdapters.delete(connection)
@@ -425,7 +438,9 @@ class PhpDebugSession extends vscode.DebugSession {
                                 args.xdebugSettings = xdebugSettings
                             } catch (error) {
                                 throw new Error(
-                                    'Error applying xdebugSettings: ' + (error instanceof Error ? error.message : error)
+                                    `Error applying xdebugSettings: ${String(
+                                        error instanceof Error ? error.message : error
+                                    )}`
                                 )
                             }
 
@@ -448,13 +463,13 @@ class PhpDebugSession extends vscode.DebugSession {
                             } else {
                                 xdebugResponse = await connection.sendRunCommand()
                             }
-                            this._checkStatus(xdebugResponse)
+                            await this._checkStatus(xdebugResponse)
                         } catch (error) {
                             this.sendEvent(
                                 new vscode.OutputEvent(
-                                    `Failed initializing connection ${connection.id}: ` +
-                                        (error instanceof Error ? error.message : error) +
-                                        '\n',
+                                    `Failed initializing connection ${connection.id}: ${
+                                        error instanceof Error ? error.message : (error as string)
+                                    }\n`,
                                     'stderr'
                                 )
                             )
@@ -464,7 +479,9 @@ class PhpDebugSession extends vscode.DebugSession {
                     } catch (error) {
                         this.sendEvent(
                             new vscode.OutputEvent(
-                                'Error in socket server: ' + (error instanceof Error ? error.message : error) + '\n',
+                                `Error in socket server: ${
+                                    error instanceof Error ? error.message : (error as string)
+                                }\n`,
                                 'stderr'
                             )
                         )
@@ -506,7 +523,9 @@ class PhpDebugSession extends vscode.DebugSession {
             // Some checks
             if (args.env !== undefined && args.program === undefined && args.runtimeArgs === undefined) {
                 throw new Error(
-                    `Cannot set env without running a program.\nPlease remove env from [${args.name}] configuration.`
+                    `Cannot set env without running a program.\nPlease remove env from [${
+                        args.name || 'unknown'
+                    }] configuration.`
                 )
             }
             if (
@@ -527,7 +546,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 await launchScript(port)
             }
         } catch (error) {
-            this.sendErrorResponse(response, <Error>error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         this.sendResponse(response)
@@ -565,13 +584,13 @@ class PhpDebugSession extends vscode.DebugSession {
         this._statuses.set(connection, response)
         if (response.status === 'stopping') {
             const response = await connection.sendStopCommand()
-            this._checkStatus(response)
+            await this._checkStatus(response)
         } else if (response.status === 'stopped') {
             this._connections.delete(connection.id)
             this._statuses.delete(connection)
             this._breakpointAdapters.delete(connection)
             this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
-            connection.close()
+            await connection.close()
         } else if (response.status === 'break') {
             // First sync breakpoints
             const bpa = this._breakpointAdapters.get(connection)
@@ -598,7 +617,7 @@ class PhpDebugSession extends vscode.DebugSession {
             } else if (this._args.stopOnEntry && !this._hasStoppedOnEntry) {
                 stoppedEventReason = 'entry'
                 this._hasStoppedOnEntry = true
-            } else if (response.command.indexOf('step') === 0) {
+            } else if (response.command.startsWith('step')) {
                 stoppedEventReason = 'step'
             } else {
                 stoppedEventReason = 'breakpoint'
@@ -633,7 +652,7 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** Logs all requests before dispatching */
     protected dispatchRequest(request: VSCodeDebugProtocol.Request): void {
-        if (this._args && this._args.log) {
+        if (this._args?.log) {
             const log = `-> ${request.command}Request\n${util.inspect(request, { depth: Infinity })}\n\n`
             super.sendEvent(new vscode.OutputEvent(log))
         }
@@ -641,7 +660,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     public sendEvent(event: VSCodeDebugProtocol.Event, bypassLog: boolean = false): void {
-        if (this._args && this._args.log && !bypassLog) {
+        if (this._args?.log && !bypassLog) {
             const log = `<- ${event.event}Event\n${util.inspect(event, { depth: Infinity })}\n\n`
             super.sendEvent(new vscode.OutputEvent(log))
         }
@@ -649,7 +668,7 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     public sendResponse(response: VSCodeDebugProtocol.Response): void {
-        if (this._args && this._args.log) {
+        if (this._args?.log) {
             const log = `<- ${response.command}Response\n${util.inspect(response, { depth: Infinity })}\n\n`
             super.sendEvent(new vscode.OutputEvent(log))
         }
@@ -682,7 +701,13 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             super.sendErrorResponse(response, code, error.message, dest)
         } else {
-            super.sendErrorResponse(response, arguments[1], arguments[2], arguments[3], arguments[4])
+            super.sendErrorResponse(
+                response,
+                arguments[1] as number,
+                arguments[2] as string,
+                arguments[3],
+                arguments[4] as vscode.ErrorDestination
+            )
         }
     }
 
@@ -705,10 +730,10 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     /** This is called for each source file that has breakpoints with all the breakpoints in that file and whenever these change. */
-    protected async setBreakPointsRequest(
+    protected setBreakPointsRequest(
         response: VSCodeDebugProtocol.SetBreakpointsResponse,
         args: VSCodeDebugProtocol.SetBreakpointsArguments
-    ) {
+    ): void {
         try {
             const fileUri = convertClientPathToDebugger(args.source.path!, this._args.pathMappings)
             const vscodeBreakpoints = this._breakpointManager.setBreakPoints(args.source, fileUri, args.breakpoints!)
@@ -719,7 +744,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 this._logPointManager.addLogPoint(fileUri, breakpoint.line, breakpoint.logMessage!)
             })
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         this.sendResponse(response)
@@ -727,30 +752,30 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     /** This is called once after all line breakpoints have been set and whenever the breakpoints settings change */
-    protected async setExceptionBreakPointsRequest(
+    protected setExceptionBreakPointsRequest(
         response: VSCodeDebugProtocol.SetExceptionBreakpointsResponse,
         args: VSCodeDebugProtocol.SetExceptionBreakpointsArguments
-    ) {
+    ): void {
         try {
             const vscodeBreakpoints = this._breakpointManager.setExceptionBreakPoints(args.filters)
             response.body = { breakpoints: vscodeBreakpoints }
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         this.sendResponse(response)
         this._breakpointManager.process()
     }
 
-    protected async setFunctionBreakPointsRequest(
+    protected setFunctionBreakPointsRequest(
         response: VSCodeDebugProtocol.SetFunctionBreakpointsResponse,
         args: VSCodeDebugProtocol.SetFunctionBreakpointsArguments
-    ) {
+    ): void {
         try {
             const vscodeBreakpoints = this._breakpointManager.setFunctionBreakPointsRequest(args.breakpoints)
             response.body = { breakpoints: vscodeBreakpoints }
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         this.sendResponse(response)
@@ -758,10 +783,10 @@ class PhpDebugSession extends vscode.DebugSession {
     }
 
     /** Executed after all breakpoints have been set by VS Code */
-    protected async configurationDoneRequest(
+    protected configurationDoneRequest(
         response: VSCodeDebugProtocol.ConfigurationDoneResponse,
         args: VSCodeDebugProtocol.ConfigurationDoneArguments
-    ) {
+    ): void {
         this.sendResponse(response)
         this._donePromiseResolveFn()
     }
@@ -788,7 +813,7 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async stackTraceRequest(
         response: VSCodeDebugProtocol.StackTraceResponse,
         args: VSCodeDebugProtocol.StackTraceArguments
-    ) {
+    ): Promise<void> {
         try {
             const connection = this._connections.get(args.threadId)
             if (!connection) {
@@ -880,7 +905,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 }
             }
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         this.sendResponse(response)
@@ -889,7 +914,7 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async sourceRequest(
         response: VSCodeDebugProtocol.SourceResponse,
         args: VSCodeDebugProtocol.SourceArguments
-    ) {
+    ): Promise<void> {
         try {
             if (!this._sources.has(args.sourceReference)) {
                 throw new Error(`Unknown sourceReference ${args.sourceReference}`)
@@ -902,7 +927,7 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             response.body = { content: source, mimeType: 'application/x-php' }
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         this.sendResponse(response)
@@ -911,7 +936,7 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async scopesRequest(
         response: VSCodeDebugProtocol.ScopesResponse,
         args: VSCodeDebugProtocol.ScopesArguments
-    ) {
+    ): Promise<void> {
         try {
             let scopes: vscode.Scope[] = []
             if (this._errorStackFrames.has(args.frameId)) {
@@ -945,7 +970,7 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             response.body = { scopes }
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         this.sendResponse(response)
@@ -954,7 +979,7 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async setVariableRequest(
         response: VSCodeDebugProtocol.SetVariableResponse,
         args: VSCodeDebugProtocol.SetVariableArguments
-    ) {
+    ): Promise<void> {
         try {
             let properties: xdebug.Property[]
             if (this._properties.has(args.variablesReference)) {
@@ -981,7 +1006,7 @@ class PhpDebugSession extends vscode.DebugSession {
             await property.set(args.value)
             response.body = { value: args.value }
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         this.sendResponse(response)
@@ -990,7 +1015,7 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async variablesRequest(
         response: VSCodeDebugProtocol.VariablesResponse,
         args: VSCodeDebugProtocol.VariablesArguments
-    ) {
+    ): Promise<void> {
         try {
             const variablesReference = args.variablesReference
             let variables: VSCodeDebugProtocol.Variable[]
@@ -999,10 +1024,10 @@ class PhpDebugSession extends vscode.DebugSession {
                 const status = this._errorScopes.get(variablesReference)!
                 variables = [
                     new vscode.Variable('type', status.exception.name),
-                    new vscode.Variable('message', '"' + status.exception.message + '"'),
+                    new vscode.Variable('message', `"${status.exception.message}"`),
                 ]
                 if (status.exception.code !== undefined) {
-                    variables.push(new vscode.Variable('code', status.exception.code + ''))
+                    variables.push(new vscode.Variable('code', status.exception.code.toString()))
                 }
             } else {
                 // it is a real scope
@@ -1091,7 +1116,7 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             response.body = { variables }
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         this.sendResponse(response)
@@ -1100,52 +1125,55 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async continueRequest(
         response: VSCodeDebugProtocol.ContinueResponse,
         args: VSCodeDebugProtocol.ContinueArguments
-    ) {
+    ): Promise<void> {
         let connection: xdebug.Connection | undefined
         try {
             connection = this._connections.get(args.threadId)
             if (!connection) {
-                return this.sendErrorResponse(response, new Error('Unknown thread ID ' + args.threadId))
+                return this.sendErrorResponse(response, new Error(`Unknown thread ID ${args.threadId}`))
             }
             response.body = {
                 allThreadsContinued: false,
             }
             this.sendResponse(response)
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         try {
             const xdebugResponse = await connection.sendRunCommand()
-            this._checkStatus(xdebugResponse)
+            await this._checkStatus(xdebugResponse)
         } catch (error) {
             this.sendEvent(
                 new vscode.OutputEvent(
-                    'continueRequest thread ID ' + args.threadId + ' error: ' + error.message + '\n'
+                    `continueRequest thread ID ${args.threadId} error: ${(error as Error).message}\n`
                 ),
                 true
             )
         }
     }
 
-    protected async nextRequest(response: VSCodeDebugProtocol.NextResponse, args: VSCodeDebugProtocol.NextArguments) {
+    protected async nextRequest(
+        response: VSCodeDebugProtocol.NextResponse,
+        args: VSCodeDebugProtocol.NextArguments
+    ): Promise<void> {
         let connection: xdebug.Connection | undefined
         try {
             connection = this._connections.get(args.threadId)
             if (!connection) {
-                return this.sendErrorResponse(response, new Error('Unknown thread ID ' + args.threadId))
+                return this.sendErrorResponse(response, new Error(`Unknown thread ID ${args.threadId}`))
             }
             this.sendResponse(response)
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         try {
             const xdebugResponse = await connection.sendStepOverCommand()
-            this._checkStatus(xdebugResponse)
+            await this._checkStatus(xdebugResponse)
         } catch (error) {
             this.sendEvent(
-                new vscode.OutputEvent('nextRequest thread ID ' + args.threadId + ' error: ' + error.message + '\n'),
+                new vscode.OutputEvent(`nextRequest thread ID ${args.threadId} error: ${(error as Error).message}\n`),
                 true
             )
         }
@@ -1154,24 +1182,24 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async stepInRequest(
         response: VSCodeDebugProtocol.StepInResponse,
         args: VSCodeDebugProtocol.StepInArguments
-    ) {
+    ): Promise<void> {
         let connection: xdebug.Connection | undefined
         try {
             connection = this._connections.get(args.threadId)
             if (!connection) {
-                return this.sendErrorResponse(response, new Error('Unknown thread ID ' + args.threadId))
+                return this.sendErrorResponse(response, new Error(`Unknown thread ID ${args.threadId}`))
             }
             this.sendResponse(response)
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         try {
             const xdebugResponse = await connection.sendStepIntoCommand()
-            this._checkStatus(xdebugResponse)
+            await this._checkStatus(xdebugResponse)
         } catch (error) {
             this.sendEvent(
-                new vscode.OutputEvent('stepInRequest thread ID ' + args.threadId + ' error: ' + error.message + '\n'),
+                new vscode.OutputEvent(`stepInRequest thread ID ${args.threadId} error: ${(error as Error).message}\n`),
                 true
             )
         }
@@ -1180,37 +1208,42 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async stepOutRequest(
         response: VSCodeDebugProtocol.StepOutResponse,
         args: VSCodeDebugProtocol.StepOutArguments
-    ) {
+    ): Promise<void> {
         let connection: xdebug.Connection | undefined
         try {
             connection = this._connections.get(args.threadId)
             if (!connection) {
-                return this.sendErrorResponse(response, new Error('Unknown thread ID ' + args.threadId))
+                return this.sendErrorResponse(response, new Error(`Unknown thread ID ${args.threadId}`))
             }
             this.sendResponse(response)
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         try {
             const xdebugResponse = await connection.sendStepOutCommand()
-            this._checkStatus(xdebugResponse)
+            await this._checkStatus(xdebugResponse)
         } catch (error) {
             this.sendEvent(
-                new vscode.OutputEvent('stepOutRequest thread ID ' + args.threadId + ' error: ' + error.message + '\n'),
+                new vscode.OutputEvent(
+                    `stepOutRequest thread ID ${args.threadId} error: ${(error as Error).message}\n`
+                ),
                 true
             )
         }
     }
 
-    protected pauseRequest(response: VSCodeDebugProtocol.PauseResponse, args: VSCodeDebugProtocol.PauseArguments) {
+    protected pauseRequest(
+        response: VSCodeDebugProtocol.PauseResponse,
+        args: VSCodeDebugProtocol.PauseArguments
+    ): void {
         this.sendErrorResponse(response, new Error('Pausing the execution is not supported by Xdebug'))
     }
 
     protected async disconnectRequest(
         response: VSCodeDebugProtocol.DisconnectResponse,
         args: VSCodeDebugProtocol.DisconnectArguments
-    ) {
+    ): Promise<void> {
         try {
             await Promise.all(
                 Array.from(this._connections).map(async ([id, connection]) => {
@@ -1241,7 +1274,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 await this._proxyConnect.sendProxyStopCommand()
             }
         } catch (error) {
-            this.sendErrorResponse(response, error)
+            this.sendErrorResponse(response, error as Error)
             return
         }
         this.sendResponse(response)
@@ -1251,7 +1284,7 @@ class PhpDebugSession extends vscode.DebugSession {
     protected async evaluateRequest(
         response: VSCodeDebugProtocol.EvaluateResponse,
         args: VSCodeDebugProtocol.EvaluateArguments
-    ) {
+    ): Promise<void> {
         try {
             if (!args.frameId) {
                 throw new Error('Cannot evaluate code without a connection')
@@ -1304,7 +1337,7 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             this.sendResponse(response)
         } catch (error) {
-            response.message = error.message
+            response.message = (error as Error).message
             response.success = false
             this.sendResponse(response)
         }

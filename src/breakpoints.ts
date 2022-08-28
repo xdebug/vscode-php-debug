@@ -243,10 +243,12 @@ export class BreakpointAdapter extends EventEmitter {
         // listeners
         this._breakpointManager.on('add', this._add)
         this._breakpointManager.on('remove', this._remove)
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         this._breakpointManager.on('process', this.process)
         this._connection.on('close', (error?: Error) => {
             this._breakpointManager.off('add', this._add)
             this._breakpointManager.off('remove', this._remove)
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             this._breakpointManager.off('process', this.process)
         })
         this._connection.on('notify_breakpoint_resolved', this._notify)
@@ -341,7 +343,7 @@ export class BreakpointAdapter extends EventEmitter {
                     try {
                         const ret = await this._connection.sendBreakpointSetCommand(abp.xdebugBreakpoint!)
                         this._map.set(id, { xdebugId: ret.breakpointId, state: '' })
-                        const extra: any = {}
+                        const extra: { line?: number } = {}
                         if (
                             ret.resolved === 'resolved' &&
                             (abp.xdebugBreakpoint!.type === 'line' || abp.xdebugBreakpoint!.type === 'conditional')

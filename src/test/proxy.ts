@@ -20,7 +20,7 @@ describe('ProxyConnect', () => {
 
     beforeEach(() => {
         testSocket = new Socket()
-        testSocket.connect = (...param: any[]): Socket => {
+        testSocket.connect = (...param): Socket => {
             return testSocket
         }
         conn = new ProxyConnect(host, port, 9000, true, undefined, 3000, testSocket)
@@ -29,7 +29,7 @@ describe('ProxyConnect', () => {
 
     it('should timeout', (done: Mocha.Done) => {
         assert.exists(conn)
-        conn.sendProxyInitCommand().catch(err => {
+        conn.sendProxyInitCommand().catch((err: Error) => {
             assert.equal(err.message, msgs.timeout)
             done()
         })
@@ -38,7 +38,7 @@ describe('ProxyConnect', () => {
 
     it('should fail if proxy is unreachable', (done: Mocha.Done) => {
         assert.exists(conn)
-        conn.sendProxyInitCommand().catch(err => {
+        conn.sendProxyInitCommand().catch((err: Error) => {
             assert.equal(err.message, msgs.resolve)
             done()
         })
@@ -47,7 +47,7 @@ describe('ProxyConnect', () => {
 
     it('should throw an error for duplicate IDE key', (done: Mocha.Done) => {
         assert.exists(conn)
-        conn.sendProxyInitCommand().catch(err => {
+        conn.sendProxyInitCommand().catch((err: Error) => {
             assert.equal(err.message, msgs.duplicateKey)
             done()
         })
@@ -62,7 +62,9 @@ describe('ProxyConnect', () => {
             done()
         })
 
-        conn.sendProxyInitCommand()
+        conn.sendProxyInitCommand().catch((err: Error) => {
+            done(err)
+        })
     })
 
     it('should be registered', (done: Mocha.Done) => {
@@ -71,12 +73,14 @@ describe('ProxyConnect', () => {
             done()
         })
 
-        conn.sendProxyInitCommand()
+        conn.sendProxyInitCommand().catch((err: Error) => {
+            done(err)
+        })
         testSocket.emit('data', _xml('init', 1))
         testSocket.emit('close', false)
     })
 
-    it('should request deregistration', async (done: Mocha.Done) => {
+    it('should request deregistration', (done: Mocha.Done) => {
         conn.on('log_request', (str: string) => {
             assert.equal(str, msgs.deregisterInfo)
             done()
@@ -84,25 +88,31 @@ describe('ProxyConnect', () => {
         testSocket.emit('data', _xml('init', 1))
         testSocket.emit('close', false)
 
-        await conn.sendProxyStopCommand()
+        conn.sendProxyStopCommand().catch((err: Error) => {
+            done(err)
+        })
     })
 
-    it('should be deregistered', async (done: Mocha.Done) => {
+    it('should be deregistered', (done: Mocha.Done) => {
         conn.on('log_response', (str: string) => {
             assert.equal(str, msgs.deregisterSuccess)
             done()
         })
         testSocket.emit('data', _xml('stop', 1))
         testSocket.emit('close', false)
-        await conn.sendProxyStopCommand()
+        conn.sendProxyStopCommand().catch((err: Error) => {
+            done(err)
+        })
     })
 
     it('should throw an error for nonexistent IDE key', (done: Mocha.Done) => {
-        conn.sendProxyInitCommand()
+        conn.sendProxyInitCommand().catch((err: Error) => {
+            done(err)
+        })
         testSocket.emit('data', _xml('init', 1))
         testSocket.emit('close', false)
 
-        conn.sendProxyStopCommand().catch(err => {
+        conn.sendProxyStopCommand().catch((err: Error) => {
             assert.equal(msgs.nonexistentKey, err.message)
             done()
         })

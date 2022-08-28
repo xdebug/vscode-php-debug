@@ -107,12 +107,17 @@ export class ProxyConnect extends EventEmitter {
 
     private _command(cmd: string, msg?: string) {
         this.emit('log_request', msg)
-        this._socket.connect(this._port, this._host, async () => {
+        this._socket.connect(this._port, this._host, () => {
             this._socket.write(cmd)
-            await new Promise(resolve => setTimeout(resolve, 500))
-            if (!this._socket.destroyed) {
-                this._socket.write('\0')
-            }
+            new Promise(resolve => setTimeout(resolve, 500))
+                .then(() => {
+                    if (!this._socket.destroyed) {
+                        this._socket.write('\0')
+                    }
+                })
+                .catch(err => {
+                    this._rejectFn?.(new Error(err as string))
+                })
         })
     }
 
@@ -172,7 +177,9 @@ export class ProxyConnect extends EventEmitter {
                 this._rejectFn?.(new Error(this.msgs.defaultError))
             }
         } catch (error) {
-            this._rejectFn?.(new Error(`Proxy read error ${error}`))
+            this._rejectFn?.(
+                new Error(`Proxy read error ${error instanceof Error ? error.message : error as string}`)
+            )
         }
     }
 }

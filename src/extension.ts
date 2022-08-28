@@ -72,6 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
     )
     context.subscriptions.push(
         vscode.languages.registerEvaluatableExpressionProvider('php', {
+            // eslint-disable-next-line @typescript-eslint/require-await
             async provideEvaluatableExpression(
                 document: vscode.TextDocument,
                 position: vscode.Position,
@@ -93,13 +94,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('php.debug.debugPhpFile', async (uri: vscode.Uri) => {
-            vscode.debug.startDebugging(undefined, { type: '', name: '', request: '' })
+            await vscode.debug.startDebugging(undefined, { type: '', name: '', request: '' })
         })
     )
 
     context.subscriptions.push(
         vscode.commands.registerCommand('php.debug.startWithStopOnEntry', async (uri: vscode.Uri) => {
-            vscode.commands.executeCommand('workbench.action.debug.start', {
+            await vscode.commands.executeCommand('workbench.action.debug.start', {
                 config: {
                     stopOnEntry: true,
                 },

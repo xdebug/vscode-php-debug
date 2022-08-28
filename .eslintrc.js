@@ -27,6 +27,7 @@ module.exports = {
         //'plugin:jsdoc/recommended',
         'plugin:@typescript-eslint/eslint-recommended',
         'plugin:@typescript-eslint/recommended',
+        'plugin:@typescript-eslint/recommended-requiring-type-checking',
         'prettier',
         /*
         'plugin:react/recommended',
@@ -64,6 +65,7 @@ module.exports = {
         'no-redeclare': 'off',
         'prefer-rest-params': 'off',
         '@typescript-eslint/no-inferrable-types': ['error', { ignoreParameters: true }],
+        '@typescript-eslint/no-non-null-assertion': 'off',
         /*
         "@typescript-eslint/indent": "off",
         "@typescript-eslint/member-delimiter-style": [
