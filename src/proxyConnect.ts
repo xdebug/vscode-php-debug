@@ -178,7 +178,7 @@ export class ProxyConnect extends EventEmitter {
             }
         } catch (error) {
             this._rejectFn?.(
-                new Error(`Proxy read error ${error instanceof Error ? error.message : error as string}`)
+                new Error(`Proxy read error ${error instanceof Error ? error.message : (error as string)}`)
             )
         }
     }
