@@ -43,6 +43,9 @@
     "url": "https://github.com/xdebug/vscode-php-debug/issues"
   },
   "dependencies": {
+    "@vscode/debugadapter": "^1.57.0",
+    "@vscode/debugprotocol": "^1.55.1",
+    "@xmldom/xmldom": "^0.8.2",
     "file-url": "^3.0.0",
     "iconv-lite": "^0.6.3",
     "minimatch": "^5.1.0",
@@ -52,10 +55,7 @@
     "string-replace-async": "^2.0.0",
     "url-relative": "^1.0.0",
     "urlencode": "^1.1.0",
-    "@vscode/debugadapter": "^1.57.0",
-    "@vscode/debugprotocol": "^1.55.1",
-    "which": "^2.0.2",
-    "xmldom": "^0.6.0"
+    "which": "^2.0.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^16.3.0",
@@ -70,7 +70,7 @@
     "@types/urlencode": "^1.1.2",
     "@types/vscode": "^1.66.0",
     "@types/which": "^2.0.1",
-    "@types/xmldom": "^0.1.31",
+    "@vscode/debugadapter-testsupport": "^1.57.0",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "copyfiles": "^2.4.1",
@@ -83,8 +83,7 @@
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.6.3",
-    "vsce": "^2.9.1",
-    "@vscode/debugadapter-testsupport": "^1.57.0"
+    "vsce": "^2.9.1"
   },
   "release": {
     "branches": [

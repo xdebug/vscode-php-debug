@@ -1,5 +1,5 @@
 import { Socket } from 'net'
-import { DOMParser } from 'xmldom'
+import { DOMParser } from '@xmldom/xmldom'
 import { EventEmitter } from 'events'
 import { decode } from 'iconv-lite'
 import { ENCODING } from './dbgp'
