@@ -39,8 +39,8 @@ export class ProxyConnect extends EventEmitter {
     private _timeout: number
     public msgs: ProxyMessages
     private _isRegistered = false
-    private _resolveFn: (() => any) | null
-    private _rejectFn: ((error?: Error) => any) | null
+    private _resolveFn: (() => void) | null
+    private _rejectFn: ((error?: Error) => void) | null
     private _chunksDataLength: number
     private _chunks: Buffer[]
 
@@ -60,7 +60,7 @@ export class ProxyConnect extends EventEmitter {
         this._port = port
         this._idePort = idePort
         this._timeout = timeout
-        this._socket = !!socket ? socket : new Socket()
+        this._socket = socket ? socket : new Socket()
         this._chunksDataLength = 0
         this._chunks = []
         this._resolveFn = null

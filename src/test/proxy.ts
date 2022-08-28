@@ -3,10 +3,12 @@ import { ProxyConnect, ProxyMessages } from '../proxyConnect'
 import { encode } from 'iconv-lite'
 import { ENCODING } from '../dbgp'
 import { Socket } from 'net'
+import { describe, it, beforeEach } from 'mocha'
+import * as Mocha from 'mocha'
 
 describe('ProxyConnect', () => {
     function _xml(cmd: string, success: number, msg = '', id = 0): Buffer {
-        let err = `<proxy${cmd} success="${success}"><error id="${id}"><message>${msg}</message></error></proxy${cmd}>`
+        const err = `<proxy${cmd} success="${success}"><error id="${id}"><message>${msg}</message></error></proxy${cmd}>`
         return encode(`<?xml version="1.0" encoding="UTF-8"?>\n${err}`, ENCODING)
     }
 

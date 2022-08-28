@@ -19,7 +19,7 @@ export class BreakpointManager extends EventEmitter {
     private _exceptionBreakpoints = new Map<number, xdebug.Breakpoint>()
     private _callBreakpoints = new Map<number, xdebug.Breakpoint>()
 
-    private _nextId: number = 1
+    private _nextId = 1
 
     protected sourceKey(source: VSCodeDebugProtocol.Source): string {
         return source.path!
@@ -30,9 +30,9 @@ export class BreakpointManager extends EventEmitter {
         fileUri: string,
         breakpoints: VSCodeDebugProtocol.SourceBreakpoint[]
     ): VSCodeDebugProtocol.Breakpoint[] {
-        let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[]
+        // let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[]
         let toAdd = new Map<number, xdebug.Breakpoint>()
-        let toRemove: number[] = []
+        const toRemove: number[] = []
 
         const sourceKey = this.sourceKey(source)
 
@@ -45,7 +45,7 @@ export class BreakpointManager extends EventEmitter {
         const sourceBreakpoints = new Map<number, xdebug.Breakpoint>()
         this._lineBreakpoints.set(sourceKey, sourceBreakpoints)
 
-        vscodeBreakpoints = breakpoints.map(sourceBreakpoint => {
+        const vscodeBreakpoints = breakpoints.map(sourceBreakpoint => {
             let xdebugBreakpoint: xdebug.Breakpoint
             let hitValue: number | undefined
             let hitCondition: xdebug.HitCondition | undefined
@@ -55,7 +55,7 @@ export class BreakpointManager extends EventEmitter {
                     hitCondition = (match[1] as xdebug.HitCondition) || '=='
                     hitValue = parseInt(match[2])
                 } else {
-                    let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
+                    const vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
                         verified: false,
                         line: sourceBreakpoint.line,
                         source: source,
@@ -78,7 +78,7 @@ export class BreakpointManager extends EventEmitter {
                 xdebugBreakpoint = new xdebug.LineBreakpoint(fileUri, sourceBreakpoint.line, hitCondition, hitValue)
             }
 
-            let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
+            const vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
                 verified: this.listeners('add').length === 0,
                 line: sourceBreakpoint.line,
                 source: source,
@@ -103,17 +103,17 @@ export class BreakpointManager extends EventEmitter {
     }
 
     public setExceptionBreakPoints(filters: string[]): VSCodeDebugProtocol.Breakpoint[] {
-        let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[] = []
+        const vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[] = []
         let toAdd = new Map<number, xdebug.Breakpoint>()
-        let toRemove: number[] = []
+        const toRemove: number[] = []
 
         // always remove all breakpoints
         this._exceptionBreakpoints.forEach((_, key) => toRemove.push(key))
         this._exceptionBreakpoints.clear()
 
         filters.forEach(filter => {
-            let xdebugBreakpoint: xdebug.Breakpoint = new xdebug.ExceptionBreakpoint(filter)
-            let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
+            const xdebugBreakpoint: xdebug.Breakpoint = new xdebug.ExceptionBreakpoint(filter)
+            const vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
                 verified: this.listeners('add').length === 0,
                 id: this._nextId++,
             }
@@ -138,7 +138,7 @@ export class BreakpointManager extends EventEmitter {
     ): VSCodeDebugProtocol.Breakpoint[] {
         let vscodeBreakpoints: VSCodeDebugProtocol.Breakpoint[] = []
         let toAdd = new Map<number, xdebug.Breakpoint>()
-        let toRemove: number[] = []
+        const toRemove: number[] = []
 
         // always remove all breakpoints
         this._callBreakpoints.forEach((_, key) => toRemove.push(key))
@@ -153,7 +153,7 @@ export class BreakpointManager extends EventEmitter {
                     hitCondition = (match[1] as xdebug.HitCondition) || '=='
                     hitValue = parseInt(match[2])
                 } else {
-                    let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
+                    const vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
                         verified: false,
                         // id: this._nextId++,
                         message:
@@ -162,14 +162,14 @@ export class BreakpointManager extends EventEmitter {
                     return vscodeBreakpoint
                 }
             }
-            let xdebugBreakpoint: xdebug.Breakpoint = new xdebug.CallBreakpoint(
+            const xdebugBreakpoint: xdebug.Breakpoint = new xdebug.CallBreakpoint(
                 functionBreakpoint.name,
                 functionBreakpoint.condition,
                 hitCondition,
                 hitValue
             )
 
-            let vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
+            const vscodeBreakpoint: VSCodeDebugProtocol.Breakpoint = {
                 verified: this.listeners('add').length === 0,
                 id: this._nextId++,
             }
@@ -195,7 +195,7 @@ export class BreakpointManager extends EventEmitter {
     }
 
     public getAll(): Map<number, xdebug.Breakpoint> {
-        let toAdd = new Map<number, xdebug.Breakpoint>()
+        const toAdd = new Map<number, xdebug.Breakpoint>()
         for (const [_, lbp] of this._lineBreakpoints) {
             for (const [id, bp] of lbp) {
                 toAdd.set(id, bp)
@@ -262,7 +262,7 @@ export class BreakpointAdapter extends EventEmitter {
         breakpointIds.forEach(id => {
             this._queue.push(() => {
                 if (this._map.has(id)) {
-                    let bp = this._map.get(id)!
+                    const bp = this._map.get(id)!
                     if (!bp.xdebugId) {
                         // has not been set
                         this._map.delete(id)
@@ -339,14 +339,14 @@ export class BreakpointAdapter extends EventEmitter {
             for (const [id, abp] of this._map) {
                 if (abp.state === 'add') {
                     try {
-                        let ret = await this._connection.sendBreakpointSetCommand(abp.xdebugBreakpoint!)
+                        const ret = await this._connection.sendBreakpointSetCommand(abp.xdebugBreakpoint!)
                         this._map.set(id, { xdebugId: ret.breakpointId, state: '' })
-                        let extra: any = {}
+                        const extra: any = {}
                         if (
                             ret.resolved === 'resolved' &&
                             (abp.xdebugBreakpoint!.type === 'line' || abp.xdebugBreakpoint!.type === 'conditional')
                         ) {
-                            let bp = await this._connection.sendBreakpointGetCommand(ret.breakpointId)
+                            const bp = await this._connection.sendBreakpointGetCommand(ret.breakpointId)
                             extra.line = (<xdebug.LineBreakpoint | xdebug.ConditionalBreakpoint>bp.breakpoint).line
                         }
                         // TODO copy original breakpoint object

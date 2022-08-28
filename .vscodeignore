@@ -22,7 +22,7 @@ ISSUE_TEMPLATE.md
 package-lock.json
 travis-php.ini
 tsconfig.json
-tslint.json
+.eslintrc.js
 renovate.json
 .github
 codecov.yml

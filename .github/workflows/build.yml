@@ -37,7 +37,7 @@ jobs:
       - name: Prettier
         run: npm run prettier-check
       - name: Lint
-        run: npm run tslint
+        run: npm run eslint
       - name: Build VS Code extension
         run: npm run build
       - name: Setup PHP

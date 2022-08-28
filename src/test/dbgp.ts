@@ -2,6 +2,7 @@ import { DbgpConnection, ENCODING } from '../dbgp'
 import { Socket } from 'net'
 import * as iconv from 'iconv-lite'
 import { assert } from 'chai'
+import { describe, it, beforeEach } from 'mocha'
 
 describe('DbgpConnection', () => {
     function makePacket(message: string): Buffer {

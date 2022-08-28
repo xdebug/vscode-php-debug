@@ -5,6 +5,7 @@ import { DebugClient } from '@vscode/debugadapter-testsupport'
 import { DebugProtocol } from '@vscode/debugprotocol'
 import * as semver from 'semver'
 import * as net from 'net'
+import { describe, it, beforeEach, afterEach } from 'mocha'
 chai.use(chaiAsPromised)
 const assert = chai.assert
 
@@ -135,7 +136,7 @@ describe('PHP Debug Adapter', () => {
 
         async function waitForBreakpointUpdate(breakpoint: DebugProtocol.Breakpoint): Promise<void> {
             while (true) {
-                let event = (await client.waitForEvent('breakpoint')) as DebugProtocol.BreakpointEvent
+                const event = (await client.waitForEvent('breakpoint')) as DebugProtocol.BreakpointEvent
                 if (event.body.breakpoint.id === breakpoint.id) {
                     for (const [key, value] of Object.entries(event.body.breakpoint)) {
                         ;(breakpoint as any)[key] = value
@@ -833,10 +834,10 @@ describe('PHP Debug Adapter', () => {
         it('max connections', async () => {
             await Promise.all([client.launch({ maxConnections: 1, log: true }), client.configurationSequence()])
 
-            let s1 = net.createConnection({ port: 9003 })
+            const s1 = net.createConnection({ port: 9003 })
             await client.assertOutput('console', 'new connection 1 from ')
             net.createConnection({ port: 9003 })
-            let o = await client.waitForEvent('output')
+            const o = await client.waitForEvent('output')
             assert.match(
                 o.body!.output,
                 /^new connection from .* - dropping due to max connection limit/,
@@ -859,7 +860,7 @@ describe('PHP Debug Adapter', () => {
             assert.lengthOf(response.body.stackFrames, 1)
             assert.equal(response.body.totalFrames, 4)
             assert.equal(response.body.stackFrames[0].name, 'depth3')
-            const response2 = await client.stackTraceRequest({ threadId, startFrame: 1 /*, levels: 3*/ })
+            const response2 = await client.stackTraceRequest({ threadId, startFrame: 1 /* , levels: 3*/ })
             assert.lengthOf(response2.body.stackFrames, 3)
             assert.equal(response2.body.totalFrames, 4)
             assert.equal(response2.body.stackFrames[0].name, 'depth2')

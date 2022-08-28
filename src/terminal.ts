@@ -1,4 +1,4 @@
-/*---------------------------------------------------------------------------------------------
+/* ---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
@@ -180,7 +180,7 @@ class LinuxTerminalService extends DefaultTerminalService {
                 '-x',
                 'bash',
                 '-c',
-                `\'\'${bashCommand}\'\'`, // wrapping argument in two sets of ' because node is so "friendly" that it removes one set...
+                `''${bashCommand}''`, // wrapping argument in two sets of ' because node is so "friendly" that it removes one set...
             ]
 
             // merge environment variables into a copy of the process.env
@@ -264,7 +264,7 @@ class MacTerminalService extends DefaultTerminalService {
 // ---- private utilities ----
 
 function extendObject<T>(objectCopy: T, object: T): T {
-    for (let key in object) {
+    for (const key in object) {
         if (Object.prototype.hasOwnProperty.call(object, key)) {
             ;(<any>objectCopy)[key] = (<any>object)[key]
         }

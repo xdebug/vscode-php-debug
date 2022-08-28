@@ -57,6 +57,7 @@ export class Response {
     /**
      * constructs a new Response object from an XML document.
      * If there is an error child node, an exception is thrown with the appropriate code and message.
+     *
      * @param  {XMLDocument} document - An XML document to read from
      * @param  {Connection} connection
      */
@@ -122,7 +123,7 @@ export type HitCondition = '>=' | '==' | '%'
 /** Abstract base class for all notify packets */
 export class Notify {
     /** Name of the notify */
-    name: String
+    name: string
     /** dynamically detects the type of notify and returns the appropriate object */
     public static fromXml(document: XMLDocument, connection: Connection) {
         switch (<NotifyName>document.documentElement.getAttribute('name')!) {
@@ -471,6 +472,7 @@ export class Context {
     }
     /**
      * Returns the properties (variables) inside this context by doing a context_get command
+     *
      * @returns Promise.<Property[]>
      */
     public async getProperties(): Promise<Property[]> {
@@ -586,6 +588,7 @@ export class Property extends BaseProperty {
 
     /**
      * Returns the child properties of this property by doing another property_get
+     *
      * @returns Promise.<Property[]>
      */
     public async getChildren(page: number = 0): Promise<Property[]> {
@@ -934,6 +937,7 @@ export class Connection extends DbgpConnection {
 
     /**
      * Sends a breakpoint_set command that sets a breakpoint.
+     *
      * @param {Breakpoint} breakpoint - an instance of LineBreakpoint, ConditionalBreakpoint or ExceptionBreakpoint
      * @returns Promise.<BreakpointSetResponse>
      */
@@ -970,6 +974,7 @@ export class Connection extends DbgpConnection {
 
     /**
      * Sends a breakpoint_get command
+     *
      * @param {Breakpoint|number} breakpoint - an instance or id of a breakpoint
      * @returns Promise.<BreakpointGetResponse>
      */
@@ -1066,7 +1071,7 @@ export class Connection extends DbgpConnection {
     }
 
     /** Sends a property_get by name command */
-    public async sendPropertyGetNameCommand(name: String, context: Context): Promise<PropertyGetNameResponse> {
+    public async sendPropertyGetNameCommand(name: string, context: Context): Promise<PropertyGetNameResponse> {
         const escapedFullName = '"' + name.replace(/("|\\)/g, '\\$1') + '"'
         return new PropertyGetNameResponse(
             await this._enqueueCommand(

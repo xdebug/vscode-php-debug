@@ -393,7 +393,9 @@ class PhpDebugSession extends vscode.DebugSession {
                                 ((feat = await connection.sendFeatureGetCommand('notify_ok')) && feat.supported === '1')
                             ) {
                                 await connection.sendFeatureSetCommand('notify_ok', '1')
-                                connection.on('notify_user', notify => this.handleUserNotify(notify, connection))
+                                connection.on('notify_user', (notify: xdebug.UserNotify) =>
+                                    this.handleUserNotify(notify, connection)
+                                )
                             }
                             if (
                                 supportedEngine ||
@@ -432,7 +434,7 @@ class PhpDebugSession extends vscode.DebugSession {
                             // wait for all breakpoints
                             await this._donePromise
 
-                            let bpa = new BreakpointAdapter(connection, this._breakpointManager)
+                            const bpa = new BreakpointAdapter(connection, this._breakpointManager)
                             bpa.on('dapEvent', event => this.sendEvent(event))
                             this._breakpointAdapters.set(connection, bpa)
                             // sync breakpoints to connection
@@ -555,6 +557,7 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /**
      * Checks the status of a StatusResponse and notifies VS Code accordingly
+     *
      * @param {xdebug.StatusResponse} response
      */
     private async _checkStatus(response: xdebug.StatusResponse): Promise<void> {
@@ -571,7 +574,7 @@ class PhpDebugSession extends vscode.DebugSession {
             connection.close()
         } else if (response.status === 'break') {
             // First sync breakpoints
-            let bpa = this._breakpointAdapters.get(connection)
+            const bpa = this._breakpointAdapters.get(connection)
             if (bpa) {
                 await bpa.process()
             }
@@ -671,7 +674,7 @@ class PhpDebugSession extends vscode.DebugSession {
             const dest = arguments[2] as vscode.ErrorDestination
             let code: number
             if (typeof error.code === 'number') {
-                code = error.code as number
+                code = error.code
             } else if (typeof error.errno === 'number') {
                 code = error.errno
             } else {
@@ -689,7 +692,7 @@ class PhpDebugSession extends vscode.DebugSession {
             const property = new xdebug.SyntheticProperty('', 'object', formatPropertyValue(notify.property), [
                 notify.property,
             ])
-            let variablesReference = this._variableIdCounter++
+            const variablesReference = this._variableIdCounter++
             this._evalResultProperties.set(variablesReference, property)
             event.body.variablesReference = variablesReference
             if (notify.fileUri.startsWith('file://')) {
@@ -1051,7 +1054,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     } else {
                         evaluateName = property.name
                     }
-                    let presentationHint: VSCodeDebugProtocol.VariablePresentationHint = {}
+                    const presentationHint: VSCodeDebugProtocol.VariablePresentationHint = {}
                     if (property.facets?.length) {
                         if (property.facets.includes('public')) {
                             presentationHint.visibility = 'public'
