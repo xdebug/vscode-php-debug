@@ -1,7 +1,7 @@
 import * as net from 'net'
 import { EventEmitter } from 'events'
 import * as iconv from 'iconv-lite'
-import { DOMParser } from 'xmldom'
+import { DOMParser } from '@xmldom/xmldom'
 
 /** The encoding all Xdebug messages are encoded with */
 export const ENCODING = 'utf-8'
