@@ -100,6 +100,7 @@ Options specific to CLI debugging:
 - `runtimeArgs`: Additional arguments to pass to the PHP binary
 - `externalConsole`: Launches the script in an external console window instead of the debug console (default: `false`)
 - `env`: Environment variables to pass to the script
+- `envFile`: Optional path to a file containing environment variable definitions
 
 ## Features
 
