@@ -7,6 +7,10 @@ describe('EnvFile', () => {
         const ret = getConfiguredEnvironment({ env: { TEST: 'TEST' } })
         assert.deepEqual(ret, { TEST: 'TEST' })
     })
+    it('should work with missing envfile', () => {
+        const ret = getConfiguredEnvironment({ env: { TEST: 'TEST' }, envFile: 'NONEXISTINGFILE' })
+        assert.deepEqual(ret, { TEST: 'TEST' })
+    })
     it('should merge envfile', () => {
         const ret = getConfiguredEnvironment({ env: { TEST: 'TEST' }, envFile: 'testproject/envfile' })
         assert.deepEqual(ret, { TEST: 'TEST', TEST1: 'VALUE1', Test2: 'Value2' })
