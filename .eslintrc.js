@@ -66,6 +66,7 @@ module.exports = {
         'prefer-rest-params': 'off',
         '@typescript-eslint/no-inferrable-types': ['error', { ignoreParameters: true }],
         '@typescript-eslint/no-non-null-assertion': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
         /*
         "@typescript-eslint/indent": "off",
         "@typescript-eslint/member-delimiter-style": [
