@@ -46,6 +46,7 @@
     "@vscode/debugadapter": "^1.57.0",
     "@vscode/debugprotocol": "^1.55.1",
     "@xmldom/xmldom": "^0.8.2",
+    "dotenv": "^16.0.1",
     "file-url": "^3.0.0",
     "iconv-lite": "^0.6.3",
     "minimatch": "^5.1.0",
@@ -229,6 +230,10 @@
                 },
                 "description": "Environment variables passed to the program.",
                 "default": {}
+              },
+              "envFile": {
+                "type": "string",
+                "description": "Absolute path to a file containing environment variable definitions."
               },
               "hostname": {
                 "type": "string",

@@ -16,6 +16,7 @@ import * as semver from 'semver'
 import { LogPointManager } from './logpoint'
 import { ProxyConnect } from './proxyConnect'
 import { randomUUID } from 'crypto'
+import { getConfiguredEnvironment } from './envfile'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -100,6 +101,8 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     runtimeArgs?: string[]
     /** Optional environment variables to pass to the debuggee. The string valued properties of the 'environmentVariables' are used as key/value pairs. */
     env?: { [key: string]: string }
+    /** Absolute path to a file containing environment variable definitions. */
+    envFile?: string
     /** If true launch the target in an external console. */
     externalConsole?: boolean
     /** Maximum allowed parallel debugging sessions */
@@ -268,7 +271,7 @@ class PhpDebugSession extends vscode.DebugSession {
             const program = args.program ? [args.program] : []
             const cwd = args.cwd || process.cwd()
             const env = Object.fromEntries(
-                Object.entries({ ...process.env, ...args.env }).map(v => [
+                Object.entries({ ...process.env, ...getConfiguredEnvironment(args) }).map(v => [
                     v[0],
                     v[1]?.replace('${port}', port.toString()),
                 ])
