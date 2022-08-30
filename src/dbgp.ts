@@ -31,7 +31,7 @@ export class DbgpConnection extends EventEmitter {
         socket.on('close', () => this.emit('close'))
     }
 
-    private _handleDataChunk(data: Buffer) {
+    private _handleDataChunk(data: Buffer): void {
         // Anatomy of packets: [data length] [NULL] [xml] [NULL]
         // are we waiting for the data length or for the response?
         if (this._parsingState === ParsingState.DataLength) {
@@ -42,7 +42,10 @@ export class DbgpConnection extends EventEmitter {
                 const lastPiece = data.slice(0, nullByteIndex)
                 this._chunks.push(lastPiece)
                 this._chunksDataLength += lastPiece.length
-                this._dataLength = parseInt(iconv.decode(Buffer.concat(this._chunks, this._chunksDataLength), ENCODING))
+                this._dataLength = parseInt(
+                    iconv.decode(Buffer.concat(this._chunks, this._chunksDataLength), ENCODING),
+                    10
+                )
                 // reset buffered chunks
                 this._chunks = []
                 this._chunksDataLength = 0
@@ -76,10 +79,10 @@ export class DbgpConnection extends EventEmitter {
                             this.emit('warning', warning)
                         },
                         error: error => {
-                            this.emit('error', error instanceof Error ? error : new Error(error))
+                            this.emit('error', error instanceof Error ? error : new Error(error as string))
                         },
                         fatalError: error => {
-                            this.emit('error', error instanceof Error ? error : new Error(error))
+                            this.emit('error', error instanceof Error ? error : new Error(error as string))
                         },
                     },
                 })
@@ -120,7 +123,7 @@ export class DbgpConnection extends EventEmitter {
 
     /** closes the underlying socket */
     public close(): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<void>(resolve => {
             if (this._socket.destroyed) {
                 resolve()
                 return

@@ -1,10 +1,11 @@
 import * as chai from 'chai'
-import chaiAsPromised = require('chai-as-promised')
+import chaiAsPromised from 'chai-as-promised'
 import * as path from 'path'
 import { DebugClient } from '@vscode/debugadapter-testsupport'
 import { DebugProtocol } from '@vscode/debugprotocol'
 import * as semver from 'semver'
 import * as net from 'net'
+import { describe, it, beforeEach, afterEach } from 'mocha'
 chai.use(chaiAsPromised)
 const assert = chai.assert
 
@@ -80,8 +81,8 @@ describe('PHP Debug Adapter', () => {
             ])
             await client.disconnectRequest()
         })
-        ;(process.platform === 'win32' ? it.skip : it)('should listen on unix pipe', () => {
-            Promise.all([
+        ;(process.platform === 'win32' ? it.skip : it)('should listen on unix pipe', async () => {
+            await Promise.all([
                 client.launch({
                     program,
                     hostname: 'unix:///tmp/test',
@@ -135,11 +136,9 @@ describe('PHP Debug Adapter', () => {
 
         async function waitForBreakpointUpdate(breakpoint: DebugProtocol.Breakpoint): Promise<void> {
             while (true) {
-                let event = (await client.waitForEvent('breakpoint')) as DebugProtocol.BreakpointEvent
+                const event = (await client.waitForEvent('breakpoint')) as DebugProtocol.BreakpointEvent
                 if (event.body.breakpoint.id === breakpoint.id) {
-                    for (const [key, value] of Object.entries(event.body.breakpoint)) {
-                        ;(breakpoint as any)[key] = value
-                    }
+                    Object.assign(breakpoint, event.body.breakpoint)
                     break
                 }
             }
@@ -147,8 +146,7 @@ describe('PHP Debug Adapter', () => {
 
         describe('line breakpoints', () => {
             async function testBreakpointHit(program: string, line: number): Promise<void> {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 const breakpoint = (
                     await client.setBreakpointsRequest({
                         breakpoints: [{ line }],
@@ -169,8 +167,7 @@ describe('PHP Debug Adapter', () => {
             it('should stop on a breakpoint identical to the entrypoint', () => testBreakpointHit(program, 3))
 
             it('should support removing a breakpoint', async () => {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 // set two breakpoints
                 let breakpoints = (
                     await client.setBreakpointsRequest({
@@ -210,15 +207,13 @@ describe('PHP Debug Adapter', () => {
             const program = path.join(TEST_PROJECT, 'error.php')
 
             it('should not break on anything if the file matches the ignore pattern', async () => {
-                client.launch({ program, ignore: ['**/*.*'] })
-                await client.waitForEvent('initialized')
+                await client.launch({ program, ignore: ['**/*.*'] })
                 await client.setExceptionBreakpointsRequest({ filters: ['*'] })
                 await Promise.all([client.configurationDoneRequest(), client.waitForEvent('terminated')])
             })
 
             it('should support stopping only on a notice', async () => {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 await client.setExceptionBreakpointsRequest({ filters: ['Notice'] })
                 const [, { threadId }] = await Promise.all([
                     client.configurationDoneRequest(),
@@ -228,8 +223,7 @@ describe('PHP Debug Adapter', () => {
             })
 
             it('should support stopping only on a warning', async () => {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 await client.setExceptionBreakpointsRequest({ filters: ['Warning'] })
                 const [{ threadId }] = await Promise.all([
                     assertStoppedLocation('exception', program, 9),
@@ -241,8 +235,7 @@ describe('PHP Debug Adapter', () => {
             it('should support stopping only on an error')
 
             it('should support stopping only on an exception', async () => {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 await client.setExceptionBreakpointsRequest({ filters: ['Exception'] })
                 const [, { threadId }] = await Promise.all([
                     client.configurationDoneRequest(),
@@ -254,8 +247,7 @@ describe('PHP Debug Adapter', () => {
             // support for stopping on "*" was added in 2.3.0
             if (!process.env['XDEBUG_VERSION'] || semver.gte(process.env['XDEBUG_VERSION'], '2.3.0')) {
                 it('should support stopping on everything', async () => {
-                    client.launch({ program })
-                    await client.waitForEvent('initialized')
+                    await client.launch({ program })
                     await client.setExceptionBreakpointsRequest({ filters: ['*'] })
                     // Notice
                     const [, { threadId }] = await Promise.all([
@@ -282,8 +274,7 @@ describe('PHP Debug Adapter', () => {
             }
 
             it.skip('should report the error in a virtual error scope', async () => {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 await client.setExceptionBreakpointsRequest({ filters: ['Notice', 'Warning', 'Exception'] })
                 const [
                     {
@@ -363,8 +354,7 @@ describe('PHP Debug Adapter', () => {
             const program = path.join(TEST_PROJECT, 'variables.php')
 
             it('should stop on a conditional breakpoint when condition is true', async () => {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 const bp = (
                     await client.setBreakpointsRequest({
                         breakpoints: [{ line: 10, condition: '$anInt === 123' }],
@@ -387,8 +377,7 @@ describe('PHP Debug Adapter', () => {
             })
 
             it('should not stop on a conditional breakpoint when condition is false', async () => {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 const bp = (
                     await client.setBreakpointsRequest({
                         breakpoints: [{ line: 10, condition: '$anInt !== 123' }],
@@ -407,8 +396,7 @@ describe('PHP Debug Adapter', () => {
             const program = path.join(TEST_PROJECT, 'function.php')
 
             it('should stop on a function breakpoint', async () => {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 const breakpoint = (
                     await client.setFunctionBreakpointsRequest({
                         breakpoints: [{ name: 'a_function' }],
@@ -425,8 +413,7 @@ describe('PHP Debug Adapter', () => {
             const program = path.join(TEST_PROJECT, 'hit.php')
 
             async function testHits(condition: string, hits: string[], verified: boolean = true): Promise<void> {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 const breakpoint = (
                     await client.setBreakpointsRequest({
                         breakpoints: [{ line: 4, hitCondition: condition }],
@@ -463,8 +450,7 @@ describe('PHP Debug Adapter', () => {
                 hits: string[],
                 verified: boolean = true
             ): Promise<void> {
-                client.launch({ program })
-                await client.waitForEvent('initialized')
+                await client.launch({ program })
                 const breakpoint = (
                     await client.setFunctionBreakpointsRequest({
                         breakpoints: [{ name: 'f1', hitCondition: condition }],
@@ -541,14 +527,13 @@ describe('PHP Debug Adapter', () => {
         let constantsScope: DebugProtocol.Scope | undefined
 
         beforeEach(async () => {
-            client.launch({
+            await client.launch({
                 program,
                 xdebugSettings: {
                     max_data: 10000,
                     max_children: 100,
                 },
             })
-            await client.waitForEvent('initialized')
             await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
             const [, event] = await Promise.all([
                 client.configurationDoneRequest(),
@@ -578,7 +563,8 @@ describe('PHP Debug Adapter', () => {
                     .body.variables
             })
 
-            it('should report local scalar variables correctly', async () => {
+            it('should report local scalar variables correctly', () => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const variables: { [name: string]: string } = Object.create(null)
                 for (const variable of localVariables) {
                     variables[variable.name] = variable.value
@@ -699,11 +685,11 @@ describe('PHP Debug Adapter', () => {
 
         let localScope: DebugProtocol.Scope | undefined
         let localVariables: DebugProtocol.Variable[]
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         let variables: { [name: string]: string } = Object.create(null)
 
         beforeEach(async () => {
-            client.launch({ program })
-            await client.waitForEvent('initialized')
+            await client.launch({ program })
             await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
             const [, event] = await Promise.all([
                 client.configurationDoneRequest(),
@@ -717,6 +703,7 @@ describe('PHP Debug Adapter', () => {
         async function getLocals() {
             localVariables = (await client.variablesRequest({ variablesReference: localScope!.variablesReference }))
                 .body.variables
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             variables = Object.create(null)
             for (const variable of localVariables) {
                 variables[variable.name] = variable.value
@@ -773,10 +760,9 @@ describe('PHP Debug Adapter', () => {
         it('should return the eval result', async () => {
             const program = path.join(TEST_PROJECT, 'variables.php')
 
-            client.launch({
+            await client.launch({
                 program,
             })
-            await client.waitForEvent('initialized')
             await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
             await client.configurationDoneRequest()
             const { frame } = await assertStoppedLocation('breakpoint', program, 19)
@@ -795,10 +781,9 @@ describe('PHP Debug Adapter', () => {
         it('should return variable references for structured results', async () => {
             const program = path.join(TEST_PROJECT, 'variables.php')
 
-            client.launch({
+            await client.launch({
                 program,
             })
-            await client.waitForEvent('initialized')
             await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
             await client.configurationDoneRequest()
             const { frame } = await assertStoppedLocation('breakpoint', program, 19)
@@ -833,12 +818,13 @@ describe('PHP Debug Adapter', () => {
         it('max connections', async () => {
             await Promise.all([client.launch({ maxConnections: 1, log: true }), client.configurationSequence()])
 
-            let s1 = net.createConnection({ port: 9003 })
+            const s1 = net.createConnection({ port: 9003 })
             await client.assertOutput('console', 'new connection 1 from ')
             net.createConnection({ port: 9003 })
-            let o = await client.waitForEvent('output')
+            const o = await client.waitForEvent('output')
             assert.match(
-                o.body!.output,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                o.body.output as string,
                 /^new connection from .* - dropping due to max connection limit/,
                 'Second connection does not generate proper error output'
             )
@@ -859,7 +845,7 @@ describe('PHP Debug Adapter', () => {
             assert.lengthOf(response.body.stackFrames, 1)
             assert.equal(response.body.totalFrames, 4)
             assert.equal(response.body.stackFrames[0].name, 'depth3')
-            const response2 = await client.stackTraceRequest({ threadId, startFrame: 1 /*, levels: 3*/ })
+            const response2 = await client.stackTraceRequest({ threadId, startFrame: 1 /* , levels: 3*/ })
             assert.lengthOf(response2.body.stackFrames, 3)
             assert.equal(response2.body.totalFrames, 4)
             assert.equal(response2.body.stackFrames[0].name, 'depth2')

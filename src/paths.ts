@@ -1,4 +1,4 @@
-import fileUrl = require('file-url')
+import fileUrl from 'file-url'
 import * as url from 'url'
 import * as path from 'path'
 import { decode } from 'urlencode'
@@ -45,7 +45,7 @@ export function convertDebuggerPathToClient(
             const mappedLocalSource = pathMapping[mappedServerPath]
             // normalize slashes for windows-to-unix
             const serverRelative = (serverIsWindows ? path.win32 : path.posix).relative(mappedServerPath, serverPath)
-            if (serverRelative.indexOf('..') !== 0) {
+            if (!serverRelative.startsWith('..')) {
                 // If a matching mapping has previously been found, only update
                 // it if the current server path is longer than the previous one
                 // (longest prefix matching)
@@ -88,7 +88,7 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
     let localSourceRoot: string | undefined
     let serverSourceRoot: string | undefined
     // Xdebug always lowercases Windows drive letters in file URIs
-    let localFileUri = fileUrl(
+    const localFileUri = fileUrl(
         localPath.replace(/^[A-Z]:\\/, match => match.toLowerCase()),
         { resolve: false }
     )
@@ -101,7 +101,7 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
                 mappedLocalSource += '\\'
             }
             const localRelative = path.relative(mappedLocalSource, localPath)
-            if (localRelative.indexOf('..') !== 0) {
+            if (!localRelative.startsWith('..')) {
                 // If a matching mapping has previously been found, only update
                 // it if the current local path is longer than the previous one
                 // (longest prefix matching)

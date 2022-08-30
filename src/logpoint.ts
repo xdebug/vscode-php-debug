@@ -1,4 +1,4 @@
-import stringReplaceAsync = require('string-replace-async')
+import stringReplaceAsync from 'string-replace-async'
 import { isWindowsUri } from './paths'
 
 export class LogPointManager {

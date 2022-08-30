@@ -2,11 +2,12 @@ import { DbgpConnection, ENCODING } from '../dbgp'
 import { Socket } from 'net'
 import * as iconv from 'iconv-lite'
 import { assert } from 'chai'
+import { describe, it, beforeEach } from 'mocha'
 
 describe('DbgpConnection', () => {
     function makePacket(message: string): Buffer {
         const messageBuffer = iconv.encode(message, ENCODING)
-        return Buffer.concat([Buffer.from(messageBuffer.length + '\0'), messageBuffer, Buffer.from('\0')])
+        return Buffer.concat([Buffer.from(`${messageBuffer.length}\0`), messageBuffer, Buffer.from('\0')])
     }
 
     const message =

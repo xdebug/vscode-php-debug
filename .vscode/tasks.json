@@ -27,7 +27,7 @@
       "script": "lint",
       "problemMatcher": ["$eslint-stylish"],
       "label": "npm: lint",
-      "detail": "npm run tslint && npm run prettier"
+      "detail": "npm run eslint && npm run prettier"
     },
     {
       "type": "npm",

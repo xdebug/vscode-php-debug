@@ -1,5 +1,6 @@
 import { LogPointManager } from '../logpoint'
 import * as assert from 'assert'
+import { describe, it, beforeEach } from 'mocha'
 
 describe('logpoint', () => {
     const FILE_URI1 = 'file://my/file1'

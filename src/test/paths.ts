@@ -1,5 +1,6 @@
 import { isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient } from '../paths'
 import * as assert from 'assert'
+import { describe, it } from 'mocha'
 
 describe('paths', () => {
     describe('isSameUri', () => {

@@ -1,4 +1,4 @@
-/*---------------------------------------------------------------------------------------------
+/* ---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
@@ -72,7 +72,7 @@ class DefaultTerminalService implements ITerminalService {
         return new Promise<any | void>((resolve, reject) => {
             try {
                 const cmd = Path.join(__dirname, './terminateProcess.sh')
-                const result = (<any>CP).spawnSync(cmd, [pid.toString()])
+                const result = CP.spawnSync(cmd, [pid.toString()])
                 if (result.error) {
                     reject(result.error)
                 } else {
@@ -122,7 +122,7 @@ class WindowsTerminalService extends DefaultTerminalService {
             // merge environment variables into a copy of the process.env
             const env = extendObject(extendObject({}, process.env), envVars)
 
-            const options: any = {
+            const options = {
                 cwd: dir,
                 env: env,
                 windowsVerbatimArguments: true,
@@ -180,13 +180,13 @@ class LinuxTerminalService extends DefaultTerminalService {
                 '-x',
                 'bash',
                 '-c',
-                `\'\'${bashCommand}\'\'`, // wrapping argument in two sets of ' because node is so "friendly" that it removes one set...
+                `''${bashCommand}''`, // wrapping argument in two sets of ' because node is so "friendly" that it removes one set...
             ]
 
             // merge environment variables into a copy of the process.env
             const env = extendObject(extendObject({}, process.env), envVars)
 
-            const options: any = {
+            const options = {
                 env: env,
             }
 
@@ -197,7 +197,7 @@ class LinuxTerminalService extends DefaultTerminalService {
                     // OK
                     resolve(undefined) // since cmd is not the terminal process but just a launcher, we do not pass it in the resolve to the caller
                 } else {
-                    reject(new Error('exit code: ' + code))
+                    reject(new Error(`exit code: ${code}`))
                 }
             })
         })
@@ -253,7 +253,7 @@ class MacTerminalService extends DefaultTerminalService {
                     if (stderr) {
                         reject(new Error(stderr))
                     } else {
-                        reject(new Error('exit code: ' + code))
+                        reject(new Error(`exit code: ${code}`))
                     }
                 }
             })
@@ -264,11 +264,7 @@ class MacTerminalService extends DefaultTerminalService {
 // ---- private utilities ----
 
 function extendObject<T>(objectCopy: T, object: T): T {
-    for (let key in object) {
-        if (Object.prototype.hasOwnProperty.call(object, key)) {
-            ;(<any>objectCopy)[key] = (<any>object)[key]
-        }
-    }
+    Object.assign(objectCopy, object)
 
     return objectCopy
 }
