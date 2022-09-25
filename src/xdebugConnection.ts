@@ -1,6 +1,5 @@
-import * as net from 'net'
 import * as iconv from 'iconv-lite'
-import { DbgpConnection } from './dbgp'
+import { Transport, DbgpConnection } from './dbgp'
 import { ENCODING } from './dbgp'
 
 /** The first packet we receive from Xdebug. Returned by waitForInitPacket() */
@@ -738,6 +737,17 @@ function escape(value: string): string {
     return '"' + value.replace(/("|\\)/g, '\\$1') + '"'
 }
 
+export declare interface Connection extends DbgpConnection {
+    on(event: 'message', listener: (document: Document) => void): this
+    on(event: 'error', listener: (error: Error) => void): this
+    on(event: 'close', listener: () => void): this
+    on(event: 'warning', listener: (warning: string) => void): this
+    on(event: 'log', listener: (text: string) => void): this
+    on(event: 'notify_user', listener: (notify: UserNotify) => void): this
+    on(event: 'notify_breakpoint_resolved', listener: (notify: BreakpointResolvedNotify) => void): this
+}
+
+
 /**
  * This class represents a connection to Xdebug and is instantiated with a socket.
  */
@@ -786,7 +796,7 @@ export class Connection extends DbgpConnection {
     }
 
     /** Constructs a new connection that uses the given socket to communicate with Xdebug. */
-    constructor(socket: net.Socket) {
+    constructor(socket: Transport) {
         super(socket)
         this.id = Connection._connectionCounter++
         this.timeEstablished = new Date()
