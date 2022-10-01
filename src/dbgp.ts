@@ -12,12 +12,12 @@ enum ParsingState {
 }
 
 export interface Transport {
-    readonly writable: boolean;
+    readonly writable: boolean
     on(event: 'data', listener: (data: Buffer) => void): this
     on(event: 'error', listener: (error: Error) => void): this
     on(event: 'close', listener: () => void): this
-    write(buffer: Uint8Array | string, cb?: (err?: Error) => void): boolean;
-    end(callback?: () => void): this;
+    write(buffer: Uint8Array | string, cb?: (err?: Error) => void): boolean
+    end(callback?: () => void): this
 }
 
 export declare interface DbgpConnection {
@@ -44,7 +44,7 @@ export class DbgpConnection extends EventEmitter {
         this._parsingState = ParsingState.DataLength
         this._chunksDataLength = 0
         this._chunks = []
-        this._closePromise = new Promise<void>(resolve => this._closePromiseResolveFn = resolve)
+        this._closePromise = new Promise<void>(resolve => (this._closePromiseResolveFn = resolve))
         socket.on('data', (data: Buffer) => this._handleDataChunk(data))
         socket.on('error', (error: Error) => this.emit('error', error))
         socket.on('close', () => {
@@ -52,7 +52,6 @@ export class DbgpConnection extends EventEmitter {
             this.emit('close')
         })
     }
-
 
     private _handleDataChunk(data: Buffer): void {
         // Anatomy of packets: [data length] [NULL] [xml] [NULL]
@@ -146,17 +145,7 @@ export class DbgpConnection extends EventEmitter {
 
     /** closes the underlying socket */
     public close(): Promise<void> {
-        /*
-        return new Promise<void>(resolve => {
-            if (this._socket.destroyed) {
-                resolve()
-                return
-            }
-            this._socket.once('close', resolve)
-            this._socket.end()
-        })
-        */
-       this._socket.end()
-       return this._closePromise
+        this._socket.end()
+        return this._closePromise
     }
 }

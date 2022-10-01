@@ -747,7 +747,6 @@ export declare interface Connection extends DbgpConnection {
     on(event: 'notify_breakpoint_resolved', listener: (notify: BreakpointResolvedNotify) => void): this
 }
 
-
 /**
  * This class represents a connection to Xdebug and is instantiated with a socket.
  */

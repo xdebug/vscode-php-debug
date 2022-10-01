@@ -181,6 +181,7 @@ class PhpDebugSession extends vscode.DebugSession {
     /** The proxy initialization and termination connection. */
     private _proxyConnect: ProxyConnect
 
+    /** Optional cloud connection */
     private _xdebugCloudConnection: XdebugCloudConnection
 
     /** the promise that gets resolved once we receive the done request */
@@ -347,11 +348,13 @@ class PhpDebugSession extends vscode.DebugSession {
                         const connection = new xdebug.Connection(socket)
                         if (this._args.log) {
                             this.sendEvent(
-                                new vscode.OutputEvent(`new connection ${connection.id} from ${socket.remoteAddress || 'unknown'}\n`),
+                                new vscode.OutputEvent(
+                                    `new connection ${connection.id} from ${socket.remoteAddress || 'unknown'}\n`
+                                ),
                                 true
                             )
                         }
-                        await this.setupConnection(connection)
+                        this.setupConnection(connection)
                         try {
                             await this.initializeConnection(connection)
                         } catch (error) {
@@ -449,7 +452,7 @@ class PhpDebugSession extends vscode.DebugSession {
         this.sendEvent(new vscode.InitializedEvent())
     }
 
-    private async setupConnection(connection: xdebug.Connection): Promise<void> {
+    private setupConnection(connection: xdebug.Connection): void {
         this._connections.set(connection.id, connection)
         connection.on('warning', (warning: string) => {
             this.sendEvent(new vscode.OutputEvent(warning + '\n'))
@@ -569,17 +572,12 @@ class PhpDebugSession extends vscode.DebugSession {
                 this.sendEvent(new vscode.OutputEvent(log), true)
             }
         })
-        this._xdebugCloudConnection.on('connection', async (connection: xdebug.Connection) => {
+        this._xdebugCloudConnection.on('connection', (connection: xdebug.Connection) => {
             this.setupConnection(connection)
             if (this._args.log) {
-                this.sendEvent(
-                    new vscode.OutputEvent(`new connection ${connection.id} from cloud\n`),
-                    true
-                )
+                this.sendEvent(new vscode.OutputEvent(`new connection ${connection.id} from cloud\n`), true)
             }
-            try {
-                await this.initializeConnection(connection)
-            } catch (error) {
+            this.initializeConnection(connection).catch(error => {
                 this.sendEvent(
                     new vscode.OutputEvent(
                         `Failed initializing connection ${connection.id}: ${
@@ -589,26 +587,21 @@ class PhpDebugSession extends vscode.DebugSession {
                     )
                 )
                 this.disposeConnection(connection)
-            }
+            })
         })
         try {
             const xdc = new XdebugCloudConnection(token)
-            await xdc.connectAndStop()
             xdc.on('log', (text: string) => {
                 if (this._args && this._args.log) {
                     const log = `xdc2 ${text}\n`
                     this.sendEvent(new vscode.OutputEvent(log), true)
                 }
             })
-            } catch (error) {
+            await xdc.connectAndStop()
+        } catch (error) {
             // just ignore
         }
         await this._xdebugCloudConnection.connect()
-        // we do not wait for this?
-        //this.setupConnection(socket)
-        //.then((connection) => {
-        //    connection.on('close', error => xdc.stop())
-        //})
     }
 
     private async setupProxy(idePort: number): Promise<void> {
@@ -729,7 +722,10 @@ class PhpDebugSession extends vscode.DebugSession {
 
     public sendResponse(response: VSCodeDebugProtocol.Response): void {
         if (this._args?.log) {
-            const log = `<- ${response.command}Response\n${util.inspect(response, { depth: Infinity, compact: true })}\n\n`
+            const log = `<- ${response.command}Response\n${util.inspect(response, {
+                depth: Infinity,
+                compact: true,
+            })}\n\n`
             super.sendEvent(new vscode.OutputEvent(log))
         }
         super.sendResponse(response)
@@ -1297,12 +1293,7 @@ class PhpDebugSession extends vscode.DebugSession {
         response: VSCodeDebugProtocol.PauseResponse,
         args: VSCodeDebugProtocol.PauseArguments
     ): void {
-        this._xdebugCloudConnection.stop()
-        .then(() => {
-            this.sendResponse(response)
-        })
-
-        //this.sendErrorResponse(response, new Error('Pausing the execution is not supported by Xdebug'))
+        this.sendErrorResponse(response, new Error('Pausing the execution is not supported by Xdebug'))
     }
 
     protected async disconnectRequest(
