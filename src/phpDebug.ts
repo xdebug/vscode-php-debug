@@ -602,6 +602,9 @@ class PhpDebugSession extends vscode.DebugSession {
             // just ignore
         }
         await this._xdebugCloudConnection.connect()
+        this._xdebugCloudConnection.once('close', () => {
+            this.sendEvent(new vscode.TerminatedEvent())
+        })
     }
 
     private async setupProxy(idePort: number): Promise<void> {
@@ -1329,7 +1332,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 await this._proxyConnect.sendProxyStopCommand()
             }
             if (this._xdebugCloudConnection) {
-                await this._xdebugCloudConnection.stop()
+                await this._xdebugCloudConnection.close()
             }
             // If launched as CLI, kill process
             if (this._phpProcess) {

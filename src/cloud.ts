@@ -17,23 +17,29 @@ export class XdebugCloudConnection extends EventEmitter {
     private _token: string
 
     private _netSocket: net.Socket
-    private _tlsSocket: tls.TLSSocket
+    private _tlsSocket: net.Socket
 
     private _resolveFn: (() => void) | null
     private _rejectFn: ((error?: Error) => void) | null
 
     private _dbgpConnection: DbgpConnection
 
-    constructor(token: string) {
+    constructor(token: string, testSocket?: net.Socket) {
         super()
-        this._netSocket = new net.Socket()
-        this._tlsSocket = new tls.TLSSocket(this._netSocket)
+        if (testSocket != null) {
+            this._netSocket = testSocket
+            this._tlsSocket = testSocket
+        } else {
+            this._netSocket = new net.Socket()
+            this._tlsSocket = new tls.TLSSocket(this._netSocket)
+        }
         this._token = token
         this._resolveFn = null
         this._rejectFn = null
         this._dbgpConnection = new DbgpConnection(this._tlsSocket)
 
         this._dbgpConnection.on('message', (response: XMLDocument) => {
+            this.emit('log', response)
             if (response.documentElement.nodeName === 'cloudinit') {
                 if (response.documentElement.firstChild && response.documentElement.firstChild.nodeName === 'error') {
                     this._rejectFn?.(
@@ -59,33 +65,35 @@ export class XdebugCloudConnection extends EventEmitter {
         })
 
         this._dbgpConnection.on('error', (err: Error) => {
-            this.emit('log', `error from parent ${err.toString()}`)
+            this.emit('log', `dbgp error: ${err.toString()}`)
+            this._rejectFn?.(err instanceof Error ? err : new Error(err))
+        })
+        this._netSocket.on('error', (err: Error) => {
+            this.emit('log', `netSocket error ${err.toString()}`)
             this._rejectFn?.(err instanceof Error ? err : new Error(err))
         })
 
         this._netSocket.on('connect', () => {
-            this.emit('log', `connected`)
+            this.emit('log', `netSocket connected`)
             //  this._resolveFn?.()
         })
         this._tlsSocket.on('secureConnect', () => {
-            this.emit('log', `secureConnect`)
+            this.emit('log', `tlsSocket secureConnect`)
             //this._resolveFn?.()
         })
+
         this._netSocket.on('close', had_error => {
-            this.emit('log', `close`)
+            this.emit('log', 'netSocket close')
             this._rejectFn?.() // err instanceof Error ? err : new Error(err))
         })
         this._tlsSocket.on('close', had_error => {
-            this.emit('log', 'tls close')
+            this.emit('log', 'tlsSocket close')
             this._rejectFn?.()
         })
         this._dbgpConnection.on('close', () => {
-            this.emit('log', `close from parent`)
+            this.emit('log', `dbgp close`)
             this._rejectFn?.() // err instanceof Error ? err : new Error(err))
-        })
-        this._netSocket.on('error', (err: Error) => {
-            this.emit('log', `net socket error ${err.toString()}`)
-            this._rejectFn?.(err instanceof Error ? err : new Error(err))
+            this.emit('close')
         })
     }
 
@@ -97,18 +105,21 @@ export class XdebugCloudConnection extends EventEmitter {
         return url
     }
 
-    public async connect(): Promise<net.Socket> {
+    public async connect(): Promise<void> {
         await new Promise<void>((resolveFn, rejectFn) => {
             this._resolveFn = resolveFn
             this._rejectFn = rejectFn
 
-            this._netSocket.connect(
-                {
-                    host: this.computeCloudHost(this._token),
-                    port: 9021,
-                },
-                resolveFn
-            )
+            this._netSocket
+                .connect(
+                    {
+                        host: this.computeCloudHost(this._token),
+                        servername: this.computeCloudHost(this._token),
+                        port: 9021,
+                    } as net.SocketConnectOpts,
+                    resolveFn
+                )
+                .on('error', rejectFn)
         })
 
         const commandString = `cloudinit -i 1 -u ${this._token}\0`
@@ -122,8 +133,6 @@ export class XdebugCloudConnection extends EventEmitter {
         await this._dbgpConnection.write(data)
 
         await p2
-
-        return this._tlsSocket
     }
 
     public async stop(): Promise<void> {
@@ -145,18 +154,21 @@ export class XdebugCloudConnection extends EventEmitter {
 
     public async close(): Promise<void> {
         return new Promise<void>(resolve => {
-            this._netSocket.end(resolve)
+            this._tlsSocket.end(resolve)
         })
     }
 
     public async connectAndStop(): Promise<void> {
         await new Promise<void>((resolveFn, rejectFn) => {
+            // this._resolveFn = resolveFn
+            this._rejectFn = rejectFn
             this._netSocket
                 .connect(
                     {
                         host: this.computeCloudHost(this._token),
+                        servername: this.computeCloudHost(this._token),
                         port: 9021,
-                    },
+                    } as net.SocketConnectOpts,
                     resolveFn
                 )
                 .on('error', rejectFn)
@@ -169,7 +181,7 @@ export class XdebugCloudConnection extends EventEmitter {
 class InnerCloudTransport extends EventEmitter implements Transport {
     private _open = true
 
-    constructor(private _socket: tls.TLSSocket) {
+    constructor(private _socket: net.Socket) {
         super()
 
         this._socket.on('data', (data: Buffer) => {
