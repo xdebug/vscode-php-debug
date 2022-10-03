@@ -68,11 +68,14 @@ export class XdebugCloudConnection extends EventEmitter {
             this.emit('log', `dbgp error: ${err.toString()}`)
             this._rejectFn?.(err instanceof Error ? err : new Error(err))
         })
+        /*
         this._netSocket.on('error', (err: Error) => {
             this.emit('log', `netSocket error ${err.toString()}`)
             this._rejectFn?.(err instanceof Error ? err : new Error(err))
         })
+        */
 
+        /*
         this._netSocket.on('connect', () => {
             this.emit('log', `netSocket connected`)
             //  this._resolveFn?.()
@@ -81,7 +84,9 @@ export class XdebugCloudConnection extends EventEmitter {
             this.emit('log', `tlsSocket secureConnect`)
             //this._resolveFn?.()
         })
+        */
 
+        /*
         this._netSocket.on('close', had_error => {
             this.emit('log', 'netSocket close')
             this._rejectFn?.() // err instanceof Error ? err : new Error(err))
@@ -90,6 +95,7 @@ export class XdebugCloudConnection extends EventEmitter {
             this.emit('log', 'tlsSocket close')
             this._rejectFn?.()
         })
+        */
         this._dbgpConnection.on('close', () => {
             this.emit('log', `dbgp close`)
             this._rejectFn?.() // err instanceof Error ? err : new Error(err))

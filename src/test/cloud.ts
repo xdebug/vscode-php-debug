@@ -39,16 +39,20 @@ describe('XdebugCloudConnection', () => {
             return testSocket
         }
         testSocket.write = (...param): boolean => {
-            if (param[1] instanceof Function) {
-                ;(param[1] as () => void)()
-            }
-            testSocket.emit('write', param[0])
+            setTimeout(() => {
+                if (param[1] instanceof Function) {
+                    ;(param[1] as () => void)()
+                }
+                testSocket.emit('write', param[0])
+            }, 1)
             return true
         }
         testSocket.end = (...param): Socket => {
-            if (param[0] instanceof Function) {
-                ;(param[0] as () => void)()
-            }
+            setTimeout(() => {
+                if (param[0] instanceof Function) {
+                    ;(param[0] as () => void)()
+                }
+            }, 1)
             return testSocket
         }
         conn = new XdebugCloudConnection('test', testSocket)
@@ -70,10 +74,18 @@ describe('XdebugCloudConnection', () => {
             )
         })
         conn.connectAndStop().then(
-            () => done(Error('should not have succeeded ')),
+            () => done(Error('should not have succeeded')),
             err => done()
         )
         testSocket.emit('connect')
+    })
+
+    it('should connect with error', (done: Mocha.Done) => {
+        conn.connect().then(
+            () => done(Error('should not have succeeded')),
+            err => done()
+        )
+        testSocket.emit('error', new Error('connection error'))
     })
 
     it('should connect', (done: Mocha.Done) => {
@@ -109,6 +121,33 @@ describe('XdebugCloudConnection', () => {
             )
         }, done)
         conn.on('connection', conn => done())
+        testSocket.emit('connect')
+    })
+
+    it('should connect and init and stop', (done: Mocha.Done) => {
+        testSocket.once('write', (buffer: string | Buffer) => {
+            testSocket.emit('data', _xmlCloud('init', 1))
+        })
+        conn.connect().then(() => {
+            // after connect, send init and wait for connection event
+            testSocket.emit(
+                'data',
+                _xml(
+                    '<init xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" fileuri="file:///test.php" language="PHP" xdebug:language_version="8.1.2" protocol_version="1.0" xdebug:userid="test"><engine version="3.2.0-dev"><![CDATA[Xdebug]]></engine><author><![CDATA[Derick Rethans]]></author><url><![CDATA[https://xdebug.org]]></url><copyright><![CDATA[Copyright (c) 2002-2021 by Derick Rethans]]></copyright></init>'
+                )
+            )
+        }, done)
+        conn.on('connection', conn => {
+            testSocket.once('write', (buffer: string | Buffer) => {
+                testSocket.emit(
+                    'data',
+                    _xml(
+                        '<response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="stop" transaction_id="1" status="stopped" reason="ok"/>'
+                    )
+                )
+            })
+            conn.sendStopCommand().then(() => done(), done)
+        })
         testSocket.emit('connect')
     })
 })
