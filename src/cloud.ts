@@ -10,7 +10,7 @@ export declare interface XdebugCloudConnection {
     on(event: 'error', listener: (error: Error) => void): this
     on(event: 'close', listener: () => void): this
     on(event: 'log', listener: (text: string) => void): this
-    on(event: 'connection', listener: (notify: xdebug.Connection) => void): this
+    on(event: 'connection', listener: (conn: xdebug.Connection) => void): this
 }
 
 export class XdebugCloudConnection extends EventEmitter {
