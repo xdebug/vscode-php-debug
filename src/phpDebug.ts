@@ -188,7 +188,7 @@ class PhpDebugSession extends vscode.DebugSession {
     private _donePromise: Promise<void>
 
     /** resolves the done promise */
-    private _donePromiseResolveFn: () => any
+    private _donePromiseResolveFn: () => void
 
     constructor() {
         super()
@@ -1333,11 +1333,13 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             if (this._xdebugCloudConnection) {
                 await this._xdebugCloudConnection.close()
-                try {
-                    const xdc = new XdebugCloudConnection(this._args.xdebugCloudToken!!)
-                    await xdc.connectAndStop()
-                } catch (error) {
-                    // just ignore
+                if (this._args.xdebugCloudToken) {
+                    try {
+                        const xdc = new XdebugCloudConnection(this._args.xdebugCloudToken)
+                        await xdc.connectAndStop()
+                    } catch (error) {
+                        // just ignore
+                    }
                 }
             }
             // If launched as CLI, kill process
