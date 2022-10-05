@@ -1333,6 +1333,12 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             if (this._xdebugCloudConnection) {
                 await this._xdebugCloudConnection.close()
+                try {
+                    const xdc = new XdebugCloudConnection(this._args.xdebugCloudToken!!)
+                    await xdc.connectAndStop()
+                } catch (error) {
+                    // just ignore
+                }
             }
             // If launched as CLI, kill process
             if (this._phpProcess) {
