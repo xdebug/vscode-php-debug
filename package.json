@@ -342,7 +342,7 @@
               },
               "xdebugCloudToken": {
                 "type": "string",
-                "description": "Xdebug could token"
+                "description": "Xdebug Could token"
               }
             }
           }
@@ -469,6 +469,16 @@
                 "uriFormat": "http://localhost:%s",
                 "action": "openExternally"
               }
+            }
+          },
+          {
+            "label": "PHP: Xdebug Cloud",
+            "description": "Register with Xdebug Cloud and wait for debug sessions",
+            "body": {
+              "name": "Xdebug Cloud",
+              "type": "php",
+              "request": "launch",
+              "xdebugCloudToken": "${1}"
             }
           }
         ]
