@@ -644,9 +644,6 @@ class PhpDebugSession extends vscode.DebugSession {
             this._breakpointAdapters.delete(connection)
             this.sendEvent(new vscode.ThreadEvent('exited', connection.id))
             await connection.close()
-            //connection
-            //    .close()
-            //    .catch(err => this.sendEvent(new vscode.OutputEvent(`connection ${connection.id}: ${err as string}\n`)))
         } else if (response.status === 'break') {
             // First sync breakpoints
             const bpa = this._breakpointAdapters.get(connection)
@@ -1315,9 +1312,6 @@ class PhpDebugSession extends vscode.DebugSession {
                         ])
                     }
                     await connection.close()
-                    //connection
-                    //    .close()
-                    //    .catch(err => this.sendEvent(new vscode.OutputEvent(`connection ${connection.id}: ${err as string}\n`)))
                     this._connections.delete(id)
                     this._statuses.delete(connection)
                     this._breakpointAdapters.delete(connection)
@@ -1336,6 +1330,12 @@ class PhpDebugSession extends vscode.DebugSession {
                 if (this._args.xdebugCloudToken) {
                     try {
                         const xdc = new XdebugCloudConnection(this._args.xdebugCloudToken)
+                        xdc.on('log', (text: string) => {
+                            if (this._args && this._args.log) {
+                                const log = `xdc2 ${text}\n`
+                                this.sendEvent(new vscode.OutputEvent(log), true)
+                            }
+                        })
                         await xdc.connectAndStop()
                     } catch (error) {
                         // just ignore
