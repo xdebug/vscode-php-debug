@@ -60,7 +60,7 @@
     "which": "^2.0.2"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.1.1",
+    "@commitlint/cli": "^17.1.2",
     "@commitlint/config-conventional": "^17.1.0",
     "@types/buffer-crc32": "^0.2.0",
     "@types/chai": "4.3.3",
