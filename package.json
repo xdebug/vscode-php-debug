@@ -46,6 +46,7 @@
     "@vscode/debugadapter": "^1.57.0",
     "@vscode/debugprotocol": "^1.55.1",
     "@xmldom/xmldom": "^0.8.2",
+    "buffer-crc32": "^0.2.13",
     "dotenv": "^16.0.1",
     "file-url": "^3.0.0",
     "iconv-lite": "^0.6.3",
@@ -61,6 +62,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.1.1",
     "@commitlint/config-conventional": "^17.1.0",
+    "@types/buffer-crc32": "^0.2.0",
     "@types/chai": "4.3.3",
     "@types/chai-as-promised": "^7.1.5",
     "@types/minimatch": "^5.1.0",
@@ -337,6 +339,10 @@
                 "type": "number",
                 "description": "The maximum allowed parallel debugging sessions",
                 "default": 0
+              },
+              "xdebugCloudToken": {
+                "type": "string",
+                "description": "Xdebug Could token"
               }
             }
           }
@@ -463,6 +469,16 @@
                 "uriFormat": "http://localhost:%s",
                 "action": "openExternally"
               }
+            }
+          },
+          {
+            "label": "PHP: Xdebug Cloud",
+            "description": "Register with Xdebug Cloud and wait for debug sessions",
+            "body": {
+              "name": "Xdebug Cloud",
+              "type": "php",
+              "request": "launch",
+              "xdebugCloudToken": "${1}"
             }
           }
         ]

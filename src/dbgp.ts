@@ -1,4 +1,3 @@
-import * as net from 'net'
 import { EventEmitter } from 'events'
 import * as iconv from 'iconv-lite'
 import { DOMParser } from '@xmldom/xmldom'
@@ -12,23 +11,46 @@ enum ParsingState {
     Response,
 }
 
+export interface Transport {
+    readonly writable: boolean
+    on(event: 'data', listener: (data: Buffer) => void): this
+    on(event: 'error', listener: (error: Error) => void): this
+    on(event: 'close', listener: () => void): this
+    write(buffer: Uint8Array | string, cb?: (err?: Error) => void): boolean
+    end(callback?: () => void): this
+}
+
+export declare interface DbgpConnection {
+    on(event: 'message', listener: (document: Document) => void): this
+    on(event: 'error', listener: (error: Error) => void): this
+    on(event: 'close', listener: () => void): this
+    on(event: 'warning', listener: (warning: string) => void): this
+    on(event: 'log', listener: (text: string) => void): this
+}
+
 /** Wraps the NodeJS Socket and calls handleResponse() whenever a full response arrives */
 export class DbgpConnection extends EventEmitter {
-    private _socket: net.Socket
+    private _socket: Transport
     private _parsingState: ParsingState
     private _chunksDataLength: number
     private _chunks: Buffer[]
     private _dataLength: number
+    private _closePromise: Promise<void>
+    private _closePromiseResolveFn: () => void
 
-    constructor(socket: net.Socket) {
+    constructor(socket: Transport) {
         super()
         this._socket = socket
         this._parsingState = ParsingState.DataLength
         this._chunksDataLength = 0
         this._chunks = []
+        this._closePromise = new Promise<void>(resolve => (this._closePromiseResolveFn = resolve))
         socket.on('data', (data: Buffer) => this._handleDataChunk(data))
         socket.on('error', (error: Error) => this.emit('error', error))
-        socket.on('close', () => this.emit('close'))
+        socket.on('close', () => {
+            this._closePromiseResolveFn?.()
+            this.emit('close')
+        })
     }
 
     private _handleDataChunk(data: Buffer): void {
@@ -123,13 +145,7 @@ export class DbgpConnection extends EventEmitter {
 
     /** closes the underlying socket */
     public close(): Promise<void> {
-        return new Promise<void>(resolve => {
-            if (this._socket.destroyed) {
-                resolve()
-                return
-            }
-            this._socket.once('close', resolve)
-            this._socket.end()
-        })
+        this._socket.end()
+        return this._closePromise
     }
 }
