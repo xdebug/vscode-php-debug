@@ -65,7 +65,7 @@
     "@types/buffer-crc32": "^0.2.0",
     "@types/chai": "4.3.3",
     "@types/chai-as-promised": "^7.1.5",
-    "@types/minimatch": "^5.1.0",
+    "@types/minimatch": "^5.1.2",
     "@types/mocha": "^9.1.1",
     "@types/node": "^16.11.27",
     "@types/relateurl": "^0.2.29",
