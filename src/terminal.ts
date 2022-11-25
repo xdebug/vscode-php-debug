@@ -264,7 +264,5 @@ class MacTerminalService extends DefaultTerminalService {
 // ---- private utilities ----
 
 function extendObject<T>(objectCopy: T, object: T): T {
-    Object.assign(objectCopy, object)
-
-    return objectCopy
+    return { ...objectCopy, ...object }
 }
