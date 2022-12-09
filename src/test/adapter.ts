@@ -41,7 +41,7 @@ describe('PHP Debug Adapter', () => {
             ))
 
         it('should error on env without program', () =>
-            assert.isRejected(Promise.all([client.launch({ env: {} }), client.configurationSequence()])))
+            assert.isRejected(Promise.all([client.launch({ env: { some: 'key' } }), client.configurationSequence()])))
 
         it('should run program to the end', () =>
             Promise.all([
