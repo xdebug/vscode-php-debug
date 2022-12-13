@@ -414,7 +414,12 @@ class PhpDebugSession extends vscode.DebugSession {
             })
         try {
             // Some checks
-            if (args.env !== undefined && args.program === undefined && args.runtimeArgs === undefined) {
+            if (
+                args.env &&
+                Object.keys(args.env).length !== 0 &&
+                args.program === undefined &&
+                args.runtimeArgs === undefined
+            ) {
                 throw new Error(
                     `Cannot set env without running a program.\nPlease remove env from [${
                         args.name || 'unknown'
