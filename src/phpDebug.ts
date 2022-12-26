@@ -76,6 +76,8 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     log?: boolean
     /** Array of glob patterns that errors should be ignored from */
     ignore?: string[]
+    /** Debug only user-written code */
+    justMyCode?: boolean
     /** Xdebug configuration */
     xdebugSettings?: { [featureName: string]: string | number }
     /** proxy connection configuration */
@@ -676,27 +678,27 @@ class PhpDebugSession extends vscode.DebugSession {
                 stoppedEventReason = 'entry'
                 this._hasStoppedOnEntry = true
             } else if (response.command.startsWith('step')) {
+                await this._processLogPoints(response)
+                // check just my code
+                if (
+                    this._args.justMyCode &&
+                    this._args.ignore &&
+                    this._args.ignore.some(glob =>
+                        minimatch(convertDebuggerPathToClient(response.fileUri).replace(/\\/g, '/'), glob)
+                    )
+                ) {
+                    const response = await connection.sendStepIntoCommand()
+                    await this._checkStatus(response)
+                    return
+                }
                 stoppedEventReason = 'step'
             } else {
-                stoppedEventReason = 'breakpoint'
-            }
-            // Check for log points
-            if (this._logPointManager.hasLogPoint(response.fileUri, response.line)) {
-                const logMessage = await this._logPointManager.resolveExpressions(
-                    response.fileUri,
-                    response.line,
-                    async (expr: string): Promise<string> => {
-                        const evaluated = await connection.sendEvalCommand(expr)
-                        return formatPropertyValue(evaluated.result)
-                    }
-                )
-
-                this.sendEvent(new vscode.OutputEvent(logMessage + '\n', 'console'))
-                if (stoppedEventReason === 'breakpoint') {
+                if (await this._processLogPoints(response)) {
                     const responseCommand = await connection.sendRunCommand()
                     await this._checkStatus(responseCommand)
                     return
                 }
+                stoppedEventReason = 'breakpoint'
             }
             const event: VSCodeDebugProtocol.StoppedEvent = new vscode.StoppedEvent(
                 stoppedEventReason,
@@ -706,6 +708,24 @@ class PhpDebugSession extends vscode.DebugSession {
             event.body.allThreadsStopped = false
             this.sendEvent(event)
         }
+    }
+
+    private async _processLogPoints(response: xdebug.StatusResponse): Promise<boolean> {
+        const connection = response.connection
+        if (this._logPointManager.hasLogPoint(response.fileUri, response.line)) {
+            const logMessage = await this._logPointManager.resolveExpressions(
+                response.fileUri,
+                response.line,
+                async (expr: string): Promise<string> => {
+                    const evaluated = await connection.sendEvalCommand(expr)
+                    return formatPropertyValue(evaluated.result)
+                }
+            )
+
+            this.sendEvent(new vscode.OutputEvent(logMessage + '\n', 'console'))
+            return true
+        }
+        return false
     }
 
     /** Logs all requests before dispatching */

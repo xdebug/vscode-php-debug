@@ -270,6 +270,10 @@
                   "**/vendor/**/*.php"
                 ]
               },
+              "justMyCode": {
+                "type": "boolean",
+                "description": "Debug only user-written code"
+              },
               "log": {
                 "type": "boolean",
                 "description": "If true, will log all communication between VS Code and the adapter"
