@@ -76,6 +76,7 @@ More general information on debugging with VS Code can be found on https://code.
 - `pathMappings`: A list of server paths mapping to the local source paths on your machine, see "Remote Host Debugging" below
 - `log`: Whether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
 - `ignore`: An optional array of glob patterns that errors should be ignored from (for example `**/vendor/**/*.php`)
+- `justMyCode`: All paths in the `ignore` array are skipped when stepping into them.
 - `maxConnections`: Accept only this number of parallel debugging sessions. Additional connections will be dropped and their execution will continue without debugging.
 - `proxy`: DBGp Proxy settings
   - `enable`: To enable proxy registration set to `true` (default is `false).

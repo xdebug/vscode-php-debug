@@ -272,7 +272,7 @@
               },
               "justMyCode": {
                 "type": "boolean",
-                "description": "Debug only user-written code"
+                "description": "Debug only user-written code. Files in ignore array are skipped if this setting is true"
               },
               "log": {
                 "type": "boolean",
