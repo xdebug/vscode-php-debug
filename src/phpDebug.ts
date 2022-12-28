@@ -76,8 +76,8 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     log?: boolean
     /** Array of glob patterns that errors should be ignored from */
     ignore?: string[]
-    /** Debug only user-written code */
-    justMyCode?: boolean
+    /** Array of glob patterns that debugger should not step in */
+    skipFiles?: string[]
     /** Xdebug configuration */
     xdebugSettings?: { [featureName: string]: string | number }
     /** proxy connection configuration */
@@ -680,16 +680,18 @@ class PhpDebugSession extends vscode.DebugSession {
             } else if (response.command.startsWith('step')) {
                 await this._processLogPoints(response)
                 // check just my code
-                if (
-                    this._args.justMyCode &&
-                    this._args.ignore &&
-                    this._args.ignore.some(glob =>
-                        minimatch(convertDebuggerPathToClient(response.fileUri).replace(/\\/g, '/'), glob)
+                if (this._args.skipFiles) {
+                    const f = this._args.skipFiles.find(glob =>
+                        minimatch(
+                            convertDebuggerPathToClient(response.fileUri).replace(/\\/g, '/'),
+                            glob.charAt(0) == '!' ? glob.substring(1) : glob
+                        )
                     )
-                ) {
-                    const response = await connection.sendStepIntoCommand()
-                    await this._checkStatus(response)
-                    return
+                    if (f && f.charAt(0) !== '!') {
+                        const response = await connection.sendStepIntoCommand()
+                        await this._checkStatus(response)
+                        return
+                    }
                 }
                 stoppedEventReason = 'step'
             } else {

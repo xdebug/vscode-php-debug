@@ -270,9 +270,13 @@
                   "**/vendor/**/*.php"
                 ]
               },
-              "justMyCode": {
-                "type": "boolean",
-                "description": "Debug only user-written code. Files in ignore array are skipped if this setting is true"
+              "skipFiles": {
+                "type": "array",
+                "items": "string",
+                "description": "An array of glob patterns, to skip when debugging. Star patterns and negations are allowed, for example, `[\"**/vendor/**\", \"!**/vendor/my-module/**\"]`",
+                "default": [
+                  "**/vendor/**"
+                ]
               },
               "log": {
                 "type": "boolean",

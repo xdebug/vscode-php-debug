@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [1.30.0]
 
-- Add justMyCode launch setting to skip over all ignored files.
+- Add skipFiles launch setting to skip over specified file patterns.
 
 ## [1.29.1]
 
