@@ -9,7 +9,7 @@ import * as path from 'path'
 import * as util from 'util'
 import * as fs from 'fs'
 import { Terminal } from './terminal'
-import { convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
+import { convertClientPathToDebugger, convertDebuggerPathToClient, isPositiveMatchInGlobs } from './paths'
 import minimatch from 'minimatch'
 import { BreakpointManager, BreakpointAdapter } from './breakpoints'
 import * as semver from 'semver'
@@ -76,6 +76,8 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     log?: boolean
     /** Array of glob patterns that errors should be ignored from */
     ignore?: string[]
+    /** Array of glob patterns that debugger should not step in */
+    skipFiles?: string[]
     /** Xdebug configuration */
     xdebugSettings?: { [featureName: string]: string | number }
     /** proxy connection configuration */
@@ -164,6 +166,9 @@ class PhpDebugSession extends vscode.DebugSession {
 
     /** A flag to indicate that the adapter has already processed the stopOnEntry step request */
     private _hasStoppedOnEntry = false
+
+    /** A map from  Xdebug connection id to state of skipping files */
+    private _skippingFiles = new Map<number, boolean>()
 
     /** Breakpoint Manager to map VS Code to Xdebug breakpoints */
     private _breakpointManager = new BreakpointManager()
@@ -566,6 +571,7 @@ class PhpDebugSession extends vscode.DebugSession {
             this._connections.delete(connection.id)
             this._statuses.delete(connection)
             this._breakpointAdapters.delete(connection)
+            this._skippingFiles.delete(connection.id)
         }
     }
 
@@ -676,27 +682,43 @@ class PhpDebugSession extends vscode.DebugSession {
                 stoppedEventReason = 'entry'
                 this._hasStoppedOnEntry = true
             } else if (response.command.startsWith('step')) {
+                await this._processLogPoints(response)
+                // check just my code
+                if (
+                    this._args.skipFiles &&
+                    isPositiveMatchInGlobs(
+                        convertDebuggerPathToClient(response.fileUri).replace(/\\/g, '/'),
+                        this._args.skipFiles
+                    )
+                ) {
+                    if (!this._skippingFiles.has(connection.id)) {
+                        this._skippingFiles.set(connection.id, true)
+                    }
+                    if (this._skippingFiles.get(connection.id)) {
+                        let stepResponse
+                        switch (response.command) {
+                            case 'step_out':
+                                stepResponse = await connection.sendStepOutCommand()
+                                break
+                            case 'step_over':
+                                stepResponse = await connection.sendStepOverCommand()
+                                break
+                            default:
+                                stepResponse = await connection.sendStepIntoCommand()
+                        }
+                        await this._checkStatus(stepResponse)
+                        return
+                    }
+                    this._skippingFiles.delete(connection.id)
+                }
                 stoppedEventReason = 'step'
             } else {
-                stoppedEventReason = 'breakpoint'
-            }
-            // Check for log points
-            if (this._logPointManager.hasLogPoint(response.fileUri, response.line)) {
-                const logMessage = await this._logPointManager.resolveExpressions(
-                    response.fileUri,
-                    response.line,
-                    async (expr: string): Promise<string> => {
-                        const evaluated = await connection.sendEvalCommand(expr)
-                        return formatPropertyValue(evaluated.result)
-                    }
-                )
-
-                this.sendEvent(new vscode.OutputEvent(logMessage + '\n', 'console'))
-                if (stoppedEventReason === 'breakpoint') {
+                if (await this._processLogPoints(response)) {
                     const responseCommand = await connection.sendRunCommand()
                     await this._checkStatus(responseCommand)
                     return
                 }
+                stoppedEventReason = 'breakpoint'
             }
             const event: VSCodeDebugProtocol.StoppedEvent = new vscode.StoppedEvent(
                 stoppedEventReason,
@@ -706,6 +728,24 @@ class PhpDebugSession extends vscode.DebugSession {
             event.body.allThreadsStopped = false
             this.sendEvent(event)
         }
+    }
+
+    private async _processLogPoints(response: xdebug.StatusResponse): Promise<boolean> {
+        const connection = response.connection
+        if (this._logPointManager.hasLogPoint(response.fileUri, response.line)) {
+            const logMessage = await this._logPointManager.resolveExpressions(
+                response.fileUri,
+                response.line,
+                async (expr: string): Promise<string> => {
+                    const evaluated = await connection.sendEvalCommand(expr)
+                    return formatPropertyValue(evaluated.result)
+                }
+            )
+
+            this.sendEvent(new vscode.OutputEvent(logMessage + '\n', 'console'))
+            return true
+        }
+        return false
     }
 
     /** Logs all requests before dispatching */
@@ -1298,6 +1338,11 @@ class PhpDebugSession extends vscode.DebugSession {
         response: VSCodeDebugProtocol.PauseResponse,
         args: VSCodeDebugProtocol.PauseArguments
     ): void {
+        if (this._skippingFiles.has(args.threadId)) {
+            this._skippingFiles.set(args.threadId, false)
+            this.sendResponse(response)
+            return
+        }
         this.sendErrorResponse(response, new Error('Pausing the execution is not supported by Xdebug'))
     }
 

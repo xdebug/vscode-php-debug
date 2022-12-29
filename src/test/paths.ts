@@ -1,4 +1,4 @@
-import { isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient } from '../paths'
+import { isSameUri, convertClientPathToDebugger, convertDebuggerPathToClient, isPositiveMatchInGlobs } from '../paths'
 import * as assert from 'assert'
 import { describe, it } from 'mocha'
 
@@ -306,6 +306,23 @@ describe('paths', () => {
                     'C:\\Users\\felix\\mysource\\source.php'
                 )
             })
+        })
+    })
+    describe('isPositiveMatchInGlobs', () => {
+        it('should not match empty globs', () => {
+            assert.equal(isPositiveMatchInGlobs('/test/test.php', []), false)
+        })
+        it('should match positive globs', () => {
+            assert.equal(isPositiveMatchInGlobs('/test/test.php', ['**/test/**']), true)
+        })
+        it('should not match positive globs', () => {
+            assert.equal(isPositiveMatchInGlobs('/test/test.php', ['**/not_test/**']), false)
+        })
+        it('should match negative globs', () => {
+            assert.equal(isPositiveMatchInGlobs('/test/test.php', ['!**/test.php', '**/test/**']), false)
+        })
+        it('should not match negative globs', () => {
+            assert.equal(isPositiveMatchInGlobs('/test/test.php', ['!**/not_test/test.php', '**/test/**']), true)
         })
     })
 })

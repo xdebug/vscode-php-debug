@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.30.0]
+
+- Add skipFiles launch setting to skip over specified file patterns.
+
 ## [1.29.1]
 
 - Fix for env configuration check that sometimes causes an error.

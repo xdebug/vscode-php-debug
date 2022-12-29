@@ -270,6 +270,14 @@
                   "**/vendor/**/*.php"
                 ]
               },
+              "skipFiles": {
+                "type": "array",
+                "items": "string",
+                "description": "An array of glob patterns, to skip when debugging. Star patterns and negations are allowed, for example, `[\"**/vendor/**\", \"!**/vendor/my-module/**\"]`",
+                "default": [
+                  "**/vendor/**"
+                ]
+              },
               "log": {
                 "type": "boolean",
                 "description": "If true, will log all communication between VS Code and the adapter"
