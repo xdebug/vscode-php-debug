@@ -3,6 +3,7 @@ import * as url from 'url'
 import * as path from 'path'
 import { decode } from 'urlencode'
 import RelateUrl from 'relateurl'
+import minimatch from 'minimatch'
 
 /**
  * Options to make sure that RelateUrl only outputs relative URLs and performs not other "smart" modifications.
@@ -152,4 +153,9 @@ export function isSameUri(clientUri: string, debuggerUri: string): boolean {
     } else {
         return debuggerUri === clientUri
     }
+}
+
+export function isPositiveMatchInGlobs(path: string, globs: string[]): boolean {
+    const f = globs.find(glob => minimatch(path, glob.charAt(0) == '!' ? glob.substring(1) : glob))
+    return f !== undefined && f.charAt(0) !== '!'
 }

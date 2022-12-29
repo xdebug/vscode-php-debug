@@ -9,7 +9,7 @@ import * as path from 'path'
 import * as util from 'util'
 import * as fs from 'fs'
 import { Terminal } from './terminal'
-import { convertClientPathToDebugger, convertDebuggerPathToClient } from './paths'
+import { convertClientPathToDebugger, convertDebuggerPathToClient, isPositiveMatchInGlobs } from './paths'
 import minimatch from 'minimatch'
 import { BreakpointManager, BreakpointAdapter } from './breakpoints'
 import * as semver from 'semver'
@@ -684,34 +684,32 @@ class PhpDebugSession extends vscode.DebugSession {
             } else if (response.command.startsWith('step')) {
                 await this._processLogPoints(response)
                 // check just my code
-                if (this._args.skipFiles) {
-                    const f = this._args.skipFiles.find(glob =>
-                        minimatch(
-                            convertDebuggerPathToClient(response.fileUri).replace(/\\/g, '/'),
-                            glob.charAt(0) == '!' ? glob.substring(1) : glob
-                        )
+                if (
+                    this._args.skipFiles &&
+                    isPositiveMatchInGlobs(
+                        convertDebuggerPathToClient(response.fileUri).replace(/\\/g, '/'),
+                        this._args.skipFiles
                     )
-                    if (f && f.charAt(0) !== '!') {
-                        if (!this._skippingFiles.has(connection.id)) {
-                            this._skippingFiles.set(connection.id, true)
-                        }
-                        if (this._skippingFiles.get(connection.id)) {
-                            let stepResponse
-                            switch (response.command) {
-                                case 'step_out':
-                                    stepResponse = await connection.sendStepOutCommand()
-                                    break
-                                case 'step_over':
-                                    stepResponse = await connection.sendStepOverCommand()
-                                    break
-                                default:
-                                    stepResponse = await connection.sendStepIntoCommand()
-                            }
-                            await this._checkStatus(stepResponse)
-                            return
-                        }
-                        this._skippingFiles.delete(connection.id)
+                ) {
+                    if (!this._skippingFiles.has(connection.id)) {
+                        this._skippingFiles.set(connection.id, true)
                     }
+                    if (this._skippingFiles.get(connection.id)) {
+                        let stepResponse
+                        switch (response.command) {
+                            case 'step_out':
+                                stepResponse = await connection.sendStepOutCommand()
+                                break
+                            case 'step_over':
+                                stepResponse = await connection.sendStepOverCommand()
+                                break
+                            default:
+                                stepResponse = await connection.sendStepIntoCommand()
+                        }
+                        await this._checkStatus(stepResponse)
+                        return
+                    }
+                    this._skippingFiles.delete(connection.id)
                 }
                 stoppedEventReason = 'step'
             } else {
