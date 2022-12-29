@@ -167,6 +167,9 @@ class PhpDebugSession extends vscode.DebugSession {
     /** A flag to indicate that the adapter has already processed the stopOnEntry step request */
     private _hasStoppedOnEntry = false
 
+    /** A map from  Xdebug connection id to state of skipping files */
+    private _skippingFiles = new Map<number, boolean>()
+
     /** Breakpoint Manager to map VS Code to Xdebug breakpoints */
     private _breakpointManager = new BreakpointManager()
 
@@ -568,6 +571,7 @@ class PhpDebugSession extends vscode.DebugSession {
             this._connections.delete(connection.id)
             this._statuses.delete(connection)
             this._breakpointAdapters.delete(connection)
+            this._skippingFiles.delete(connection.id)
         }
     }
 
@@ -688,9 +692,25 @@ class PhpDebugSession extends vscode.DebugSession {
                         )
                     )
                     if (f && f.charAt(0) !== '!') {
-                        const response = await connection.sendStepIntoCommand()
-                        await this._checkStatus(response)
-                        return
+                        if (!this._skippingFiles.has(connection.id)) {
+                            this._skippingFiles.set(connection.id, true)
+                        }
+                        if (this._skippingFiles.get(connection.id)) {
+                            let stepResponse
+                            switch (response.command) {
+                                case 'step_out':
+                                    stepResponse = await connection.sendStepOutCommand()
+                                    break
+                                case 'step_over':
+                                    stepResponse = await connection.sendStepOverCommand()
+                                    break
+                                default:
+                                    stepResponse = await connection.sendStepIntoCommand()
+                            }
+                            await this._checkStatus(stepResponse)
+                            return
+                        }
+                        this._skippingFiles.delete(connection.id)
                     }
                 }
                 stoppedEventReason = 'step'
@@ -1320,6 +1340,11 @@ class PhpDebugSession extends vscode.DebugSession {
         response: VSCodeDebugProtocol.PauseResponse,
         args: VSCodeDebugProtocol.PauseArguments
     ): void {
+        if (this._skippingFiles.has(args.threadId)) {
+            this._skippingFiles.set(args.threadId, false)
+            this.sendResponse(response)
+            return
+        }
         this.sendErrorResponse(response, new Error('Pausing the execution is not supported by Xdebug'))
     }
 
