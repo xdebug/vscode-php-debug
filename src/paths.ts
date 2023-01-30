@@ -112,7 +112,7 @@ function pathOrUrlToUrl(path: string): string {
             // should be a path
         }
     }
-    // ok, not a URL, do some window path mangling before it is converted to URL
+    // Not a URL, do some windows path mangling before it is converted to URL
     if (path.startsWith('\\\\')) {
         // UNC
         const hostEndIndex = path.indexOf('\\', 2)

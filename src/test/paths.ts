@@ -314,7 +314,7 @@ describe('paths', () => {
         })
     })
     describe('sshfs', () => {
-        it('shoul map sshfs to remote unix', () => {
+        it('should map sshfs to remote unix', () => {
             assert.equal(
                 convertClientPathToDebugger('ssh://host/path/file.php', {
                     '/root/path': 'ssh://host/path/',
@@ -322,7 +322,7 @@ describe('paths', () => {
                 'file:///root/path/file.php'
             )
         })
-        it('shoul map remote unix to sshfs', () => {
+        it('should map remote unix to sshfs', () => {
             assert.equal(
                 convertDebuggerPathToClient('file:///root/path/file.php', {
                     '/root/path': 'ssh://host/path/',
