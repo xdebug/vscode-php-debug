@@ -107,7 +107,9 @@ function pathOrUrlToUrl(path: string): string {
     // Do not try to parse windows drive letter paths
     if (!isWindowsPath(path)) {
         try {
-            return new URL(path).toString()
+            // try to parse, but do not modify
+            new URL(path).toString()
+            return path
         } catch (ex) {
             // should be a path
         }

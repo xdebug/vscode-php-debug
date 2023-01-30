@@ -357,6 +357,40 @@ describe('paths', () => {
             )
         })
     })
+    describe('Phar', () => {
+        it('should map win32 Phar client to debugger', () => {
+            assert.equal(
+                convertClientPathToDebugger('C:\\otherfolder\\internal\\file.php', {
+                    'phar://C:/folder/file.phar': 'C:\\otherfolder',
+                }),
+                'phar://C:/folder/file.phar/internal/file.php'
+            )
+        })
+        it('should map win32 Phar debugger to debugger', () => {
+            assert.equal(
+                convertDebuggerPathToClient('phar://C:/folder/file.phar/internal/file.php', {
+                    'phar://C:/folder/file.phar': 'C:\\otherfolder',
+                }),
+                'C:\\otherfolder\\internal\\file.php'
+            )
+        })
+        it('should map posix Phar client to debugger', () => {
+            assert.equal(
+                convertClientPathToDebugger('/otherfolder/internal/file.php', {
+                    'phar:///folder/file.phar': '/otherfolder',
+                }),
+                'phar:///folder/file.phar/internal/file.php'
+            )
+        })
+        it('should map posix Phar debugger to debugger', () => {
+            assert.equal(
+                convertDebuggerPathToClient('phar:///folder/file.phar/internal/file.php', {
+                    'phar:///folder/file.phar': '/otherfolder',
+                }),
+                '/otherfolder/internal/file.php'
+            )
+        })
+    })
     describe('isPositiveMatchInGlobs', () => {
         it('should not match empty globs', () => {
             assert.equal(isPositiveMatchInGlobs('/test/test.php', []), false)
