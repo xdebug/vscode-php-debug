@@ -11,6 +11,13 @@ export function convertDebuggerPathToClient(fileUri: string, pathMapping?: { [in
     if (pathMapping) {
         for (const mappedServerPath of Object.keys(pathMapping)) {
             let mappedServerPathUrl = pathOrUrlToUrl(mappedServerPath)
+            // try exact match
+            if (fileUri.length === mappedServerPathUrl.length && isSameUri(fileUri, mappedServerPathUrl)) {
+                // bail early
+                serverSourceRootUrl = mappedServerPathUrl
+                localSourceRootUrl = pathOrUrlToUrl(pathMapping[mappedServerPath])
+                break
+            }
             // make sure it ends with a slash
             if (!mappedServerPathUrl.endsWith('/')) {
                 mappedServerPathUrl += '/'
@@ -68,6 +75,13 @@ export function convertClientPathToDebugger(localPath: string, pathMapping?: { [
         for (const mappedServerPath of Object.keys(pathMapping)) {
             //let mappedLocalSource = pathMapping[mappedServerPath]
             let mappedLocalSourceUrl = pathOrUrlToUrl(pathMapping[mappedServerPath])
+            // try exact match
+            if (localFileUri.length === mappedLocalSourceUrl.length && isSameUri(localFileUri, mappedLocalSourceUrl)) {
+                // bail early
+                localSourceRootUrl = mappedLocalSourceUrl
+                serverSourceRootUrl = pathOrUrlToUrl(mappedServerPath)
+                break
+            }
             // make sure it ends with a slash
             if (!mappedLocalSourceUrl.endsWith('/')) {
                 mappedLocalSourceUrl += '/'

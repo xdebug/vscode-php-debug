@@ -162,6 +162,24 @@ describe('paths', () => {
                 )
             })
         })
+        describe('exact file mappings', () => {
+            it('should map exact unix path', () => {
+                assert.equal(
+                    convertClientPathToDebugger('/var/path/file.php', {
+                        '/var/path2/file2.php': '/var/path/file.php',
+                    }),
+                    'file:///var/path2/file2.php'
+                )
+            })
+            it('should map exact windows path', () => {
+                assert.equal(
+                    convertClientPathToDebugger('C:\\var\\path\\file.php', {
+                        'C:\\var\\path2\\file2.php': 'C:\\var\\path\\file.php',
+                    }),
+                    'file:///C:/var/path2/file2.php'
+                )
+            })
+        })
     })
     describe('convertDebuggerPathToClient', () => {
         describe('without source mapping', () => {
@@ -309,6 +327,24 @@ describe('paths', () => {
                         'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource',
                     }),
                     'C:\\Users\\felix\\mysource\\source.php'
+                )
+            })
+        })
+        describe('exact file mappings', () => {
+            it('should map exact unix path', () => {
+                assert.equal(
+                    convertDebuggerPathToClient('file:///var/path2/file2.php', {
+                        '/var/path2/file2.php': '/var/path/file.php',
+                    }),
+                    '/var/path/file.php'
+                )
+            })
+            it('should map exact windows path', () => {
+                assert.equal(
+                    convertDebuggerPathToClient('file:///C:/var/path2/file2.php', {
+                        'C:\\var\\path2\\file2.php': 'C:\\var\\path\\file.php',
+                    }),
+                    'C:\\var\\path\\file.php'
                 )
             })
         })
