@@ -30,7 +30,7 @@ describe('paths', () => {
             it('should convert a windows path to a URI', () => {
                 assert.equal(
                     convertClientPathToDebugger('C:\\Users\\felix\\test.php'),
-                    'file:///c:/Users/felix/test.php'
+                    'file:///C:/Users/felix/test.php'
                 )
             })
             it('should convert a unix path to a URI', () => {
@@ -74,7 +74,7 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                         'C:\\Program Files\\MySource': '/home/felix/mysource',
                     }),
-                    'file:///c:/Program%20Files/Apache/2.4/htdocs/site.php'
+                    'file:///C:/Program%20Files/Apache/2.4/htdocs/site.php'
                 )
                 // source
                 assert.equal(
@@ -82,11 +82,11 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
                         'C:\\Program Files\\MySource': '/home/felix/mysource',
                     }),
-                    'file:///c:/Program%20Files/MySource/source.php'
+                    'file:///C:/Program%20Files/MySource/source.php'
                 )
             })
             // windows to unix
-            ;(process.platform === 'win32' ? it : it.skip)('should convert a windows path to a unix URI', () => {
+            it('should convert a windows path to a unix URI', () => {
                 // site
                 assert.equal(
                     convertClientPathToDebugger('C:\\Users\\felix\\mysite\\site.php', {
@@ -132,28 +132,25 @@ describe('paths', () => {
                     'file:///app/source.php'
                 )
             })
-            ;(process.platform === 'win32' ? it : it.skip)(
-                'should convert a windows path with inconsistent casing to a unix URI',
-                () => {
-                    const localSourceRoot = 'C:\\Users\\felix\\myproject'
-                    const serverSourceRoot = '/var/www'
-                    assert.equal(
-                        convertClientPathToDebugger('c:\\Users\\felix\\myproject\\test.php', {
-                            [serverSourceRoot]: localSourceRoot,
-                        }),
-                        'file:///var/www/test.php'
-                    )
-                }
-            )
+            it('should convert a windows path with inconsistent casing to a unix URI', () => {
+                const localSourceRoot = 'C:\\Users\\felix\\myproject'
+                const serverSourceRoot = '/var/www'
+                assert.equal(
+                    convertClientPathToDebugger('c:\\Users\\felix\\myproject\\test.php', {
+                        [serverSourceRoot]: localSourceRoot,
+                    }),
+                    'file:///var/www/test.php'
+                )
+            })
             // windows to windows
-            ;(process.platform === 'win32' ? it : it.skip)('should convert a windows path to a windows URI', () => {
+            it('should convert a windows path to a windows URI', () => {
                 // site
                 assert.equal(
                     convertClientPathToDebugger('C:\\Users\\felix\\mysite\\site.php', {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
                         'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource',
                     }),
-                    'file:///c:/Program%20Files/Apache/2.4/htdocs/site.php'
+                    'file:///C:/Program%20Files/Apache/2.4/htdocs/site.php'
                 )
                 // source
                 assert.equal(
@@ -161,7 +158,25 @@ describe('paths', () => {
                         'C:\\Program Files\\Apache\\2.4\\htdocs': 'C:\\Users\\felix\\mysite',
                         'C:\\Program Files\\MySource': 'C:\\Users\\felix\\mysource',
                     }),
-                    'file:///c:/Program%20Files/MySource/source.php'
+                    'file:///C:/Program%20Files/MySource/source.php'
+                )
+            })
+        })
+        describe('exact file mappings', () => {
+            it('should map exact unix path', () => {
+                assert.equal(
+                    convertClientPathToDebugger('/var/path/file.php', {
+                        '/var/path2/file2.php': '/var/path/file.php',
+                    }),
+                    'file:///var/path2/file2.php'
+                )
+            })
+            it('should map exact windows path', () => {
+                assert.equal(
+                    convertClientPathToDebugger('C:\\var\\path\\file.php', {
+                        'C:\\var\\path2\\file2.php': 'C:\\var\\path\\file.php',
+                    }),
+                    'file:///C:/var/path2/file2.php'
                 )
             })
         })
@@ -262,6 +277,14 @@ describe('paths', () => {
             })
             // windows to unix
             it('should map windows uris to unix paths', () => {
+                // dir/site
+                assert.equal(
+                    convertDebuggerPathToClient('file:///C:/Program%20Files/Apache/2.4/htdocs/dir/site.php', {
+                        'C:\\Program Files\\Apache\\2.4\\htdocs': '/home/felix/mysite',
+                        'C:\\Program Files\\MySource': '/home/felix/mysource',
+                    }),
+                    '/home/felix/mysite/dir/site.php'
+                )
                 // site
                 assert.equal(
                     convertDebuggerPathToClient('file:///C:/Program%20Files/Apache/2.4/htdocs/site.php', {
@@ -306,6 +329,102 @@ describe('paths', () => {
                     'C:\\Users\\felix\\mysource\\source.php'
                 )
             })
+        })
+        describe('exact file mappings', () => {
+            it('should map exact unix path', () => {
+                assert.equal(
+                    convertDebuggerPathToClient('file:///var/path2/file2.php', {
+                        '/var/path2/file2.php': '/var/path/file.php',
+                    }),
+                    '/var/path/file.php'
+                )
+            })
+            it('should map exact windows path', () => {
+                assert.equal(
+                    convertDebuggerPathToClient('file:///C:/var/path2/file2.php', {
+                        'C:\\var\\path2\\file2.php': 'C:\\var\\path\\file.php',
+                    }),
+                    'C:\\var\\path\\file.php'
+                )
+            })
+        })
+    })
+    describe('sshfs', () => {
+        it('should map sshfs to remote unix', () => {
+            assert.equal(
+                convertClientPathToDebugger('ssh://host/path/file.php', {
+                    '/root/path': 'ssh://host/path/',
+                }),
+                'file:///root/path/file.php'
+            )
+        })
+        it('should map remote unix to sshfs', () => {
+            assert.equal(
+                convertDebuggerPathToClient('file:///root/path/file.php', {
+                    '/root/path': 'ssh://host/path/',
+                }),
+                'ssh://host/path/file.php'
+            )
+        })
+    })
+    describe('UNC', () => {
+        it('should convert UNC to url', () => {
+            assert.equal(convertClientPathToDebugger('\\\\DARKPAD\\smb\\test1.php', {}), 'file://darkpad/smb/test1.php')
+        })
+        it('should convert url to UNC', () => {
+            assert.equal(convertDebuggerPathToClient('file://DARKPAD/SMB/test2.php', {}), '\\\\darkpad\\SMB\\test2.php')
+        })
+    })
+    describe('UNC mapping', () => {
+        it('should convert UNC to mapped url', () => {
+            assert.equal(
+                convertClientPathToDebugger('\\\\DARKPAD\\smb\\test1.php', {
+                    '/var/test': '\\\\DARKPAD\\smb',
+                }),
+                'file:///var/test/test1.php'
+            )
+        })
+        it('should convert url to mapped UNC', () => {
+            assert.equal(
+                convertDebuggerPathToClient('file:///var/test/test2.php', {
+                    '/var/test': '\\\\DARKPAD\\smb',
+                }),
+                '\\\\darkpad\\smb\\test2.php'
+            )
+        })
+    })
+    describe('Phar', () => {
+        it('should map win32 Phar client to debugger', () => {
+            assert.equal(
+                convertClientPathToDebugger('C:\\otherfolder\\internal\\file.php', {
+                    'phar://C:/folder/file.phar': 'C:\\otherfolder',
+                }),
+                'phar://C:/folder/file.phar/internal/file.php'
+            )
+        })
+        it('should map win32 Phar debugger to debugger', () => {
+            assert.equal(
+                convertDebuggerPathToClient('phar://C:/folder/file.phar/internal/file.php', {
+                    'phar://C:/folder/file.phar': 'C:\\otherfolder',
+                }),
+                'C:\\otherfolder\\internal\\file.php'
+            )
+        })
+        it('should map posix Phar client to debugger', () => {
+            assert.equal(
+                convertClientPathToDebugger('/otherfolder/internal/file.php', {
+                    'phar:///folder/file.phar': '/otherfolder',
+                }),
+                'phar:///folder/file.phar/internal/file.php'
+            )
+        })
+        it('should map posix Phar debugger to debugger', () => {
+            assert.equal(
+                convertDebuggerPathToClient('phar:///folder/file.phar/internal/file.php', {
+                    'phar:///folder/file.phar': '/otherfolder',
+                }),
+                '/otherfolder/internal/file.php'
+            )
         })
     })
     describe('isPositiveMatchInGlobs', () => {
