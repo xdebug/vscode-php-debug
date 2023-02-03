@@ -76,6 +76,8 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     log?: boolean
     /** Array of glob patterns that errors should be ignored from */
     ignore?: string[]
+    /** Array of glob patterns that errors should be ignored from */
+    ignoredExceptions?: string[]
     /** Array of glob patterns that debugger should not step in */
     skipFiles?: string[]
     /** Xdebug configuration */
@@ -667,15 +669,20 @@ class PhpDebugSession extends vscode.DebugSession {
             if (response.exception) {
                 // If one of the ignore patterns matches, ignore this exception
                 if (
-                    this._args.ignore &&
-                    this._args.ignore.some(glob =>
-                        minimatch(convertDebuggerPathToClient(response.fileUri).replace(/\\/g, '/'), glob)
-                    )
+                    // ignore files
+                    (this._args.ignore &&
+                        this._args.ignore.some(glob =>
+                            minimatch(convertDebuggerPathToClient(response.fileUri).replace(/\\/g, '/'), glob)
+                        )) ||
+                    // ignore exception class name
+                    (this._args.ignoredExceptions &&
+                        this._args.ignoredExceptions.some(glob => minimatch(response.exception.name, glob)))
                 ) {
                     const response = await connection.sendRunCommand()
                     await this._checkStatus(response)
                     return
                 }
+
                 stoppedEventReason = 'exception'
                 exceptionText = response.exception.name + ': ' + response.exception.message // this seems to be ignored currently by VS Code
             } else if (this._args.stopOnEntry && !this._hasStoppedOnEntry) {
