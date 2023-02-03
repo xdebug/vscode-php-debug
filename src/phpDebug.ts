@@ -76,7 +76,7 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     log?: boolean
     /** Array of glob patterns that errors should be ignored from */
     ignore?: string[]
-    /** Array of glob patterns that errors should be ignored from */
+    /** Array of glob patterns that exceptions should be ignored from */
     ignoredExceptions?: string[]
     /** Array of glob patterns that debugger should not step in */
     skipFiles?: string[]
