@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.32.0]
+
+- New launch setting ignoreExceptions.
+
 ## [1.31.0]
 
 - Allow more flexible path mappings in url format.
