@@ -213,9 +213,9 @@ describe('PHP Debug Adapter', () => {
             })
 
             it('should not break on exception that matches the ignore pattern', async () => {
-                const program2 = path.join(TEST_PROJECT, 'ignore_exception.php')
+                const program = path.join(TEST_PROJECT, 'ignore_exception.php')
 
-                await client.launch({ program2, ignoredException: ['IgnoredException'] })
+                await client.launch({ program, ignoreExceptions: ['IgnoreException'] })
                 await client.setExceptionBreakpointsRequest({ filters: ['*'] })
                 await Promise.all([client.configurationDoneRequest(), client.waitForEvent('terminated')])
             })

@@ -77,7 +77,7 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     /** Array of glob patterns that errors should be ignored from */
     ignore?: string[]
     /** Array of glob patterns that exceptions should be ignored from */
-    ignoredExceptions?: string[]
+    ignoreExceptions?: string[]
     /** Array of glob patterns that debugger should not step in */
     skipFiles?: string[]
     /** Xdebug configuration */
@@ -675,8 +675,8 @@ class PhpDebugSession extends vscode.DebugSession {
                             minimatch(convertDebuggerPathToClient(response.fileUri).replace(/\\/g, '/'), glob)
                         )) ||
                     // ignore exception class name
-                    (this._args.ignoredExceptions &&
-                        this._args.ignoredExceptions.some(glob => minimatch(response.exception.name, glob)))
+                    (this._args.ignoreExceptions &&
+                        this._args.ignoreExceptions.some(glob => minimatch(response.exception.name, glob)))
                 ) {
                     const response = await connection.sendRunCommand()
                     await this._checkStatus(response)

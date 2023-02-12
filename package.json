@@ -278,6 +278,11 @@
                   "**/vendor/**"
                 ]
               },
+              "ignoreExceptions": {
+                "type": "array",
+                "items": "string",
+                "description": "An array of exception class names that should be ignored."
+              },
               "log": {
                 "type": "boolean",
                 "description": "If true, will log all communication between VS Code and the adapter"
