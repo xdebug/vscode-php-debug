@@ -1,6 +1,6 @@
 import fileUrl from 'file-url'
 import * as url from 'url'
-import * as path from 'path'
+import * as Path from 'path'
 import minimatch from 'minimatch'
 
 /** converts a server-side Xdebug file URI to a local path for VS Code with respect to source root settings */
@@ -45,7 +45,7 @@ export function convertDebuggerPathToClient(fileUri: string, pathMapping?: { [in
         let pathname = u.pathname
         if (isWindowsUri(fileUri)) {
             // From Node.js lib/internal/url.js pathToFileURL
-            pathname = pathname.replace(/\//g, path.win32.sep)
+            pathname = pathname.replace(/\//g, Path.win32.sep)
             pathname = decodeURIComponent(pathname)
             if (u.hostname !== '') {
                 localPath = `\\\\${url.domainToUnicode(u.hostname)}${pathname}`
@@ -123,7 +123,8 @@ function pathOrUrlToUrl(path: string): string {
         try {
             // try to parse, but do not modify
             new URL(path).toString()
-            return path
+            // super simple relative path resolver
+            return simpleResolveUrl(path)
         } catch (ex) {
             // should be a path
         }
@@ -131,6 +132,7 @@ function pathOrUrlToUrl(path: string): string {
     // Not a URL, do some windows path mangling before it is converted to URL
     if (path.startsWith('\\\\')) {
         // UNC
+        path = Path.win32.resolve(path)
         const hostEndIndex = path.indexOf('\\', 2)
         const host = path.substring(2, hostEndIndex)
         const outURL = new URL('file://')
@@ -147,6 +149,7 @@ function pathOrUrlToUrl(path: string): string {
     //     // Xdebug always lowercases Windows drive letters in file URIs
     //     //path = path.replace(/^[A-Z]:/, match => match.toLowerCase())
     // }
+    path = isWindowsPath(path) ? Path.win32.resolve(path) : Path.posix.resolve(path)
     return fileUrl(path, { resolve: false })
 }
 
@@ -162,4 +165,16 @@ export function isSameUri(clientUri: string, debuggerUri: string): boolean {
 export function isPositiveMatchInGlobs(path: string, globs: string[]): boolean {
     const f = globs.find(glob => minimatch(path, glob.charAt(0) == '!' ? glob.substring(1) : glob))
     return f !== undefined && f.charAt(0) !== '!'
+}
+
+function simpleResolveUrl(path: string): string {
+    if (path.indexOf('/../') != -1) {
+        const pp = path.split('/')
+        let i
+        while ((i = pp.findIndex(v => v == '..')) > 0) {
+            pp.splice(i - 1, 2)
+        }
+        path = pp.join('/')
+    }
+    return path
 }
