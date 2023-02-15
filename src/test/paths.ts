@@ -180,6 +180,38 @@ describe('paths', () => {
                 )
             })
         })
+        describe('relative paths', () => {
+            it('should resolve relative path posix', () => {
+                assert.equal(convertClientPathToDebugger('/var/www/foo/../bar'), 'file:///var/www/bar')
+            })
+            it('should resolve relative path maps posix', () => {
+                assert.equal(
+                    convertClientPathToDebugger('/work/foo/test.php', {
+                        '/var/www/html/bar': '/work/project/folder/../../foo',
+                    }),
+                    'file:///var/www/html/bar/test.php'
+                )
+            })
+            it('should resolve relative path win32', () => {
+                assert.equal(convertClientPathToDebugger('C:\\var\\www\\foo\\..\\bar'), 'file:///C:/var/www/bar')
+            })
+            it('should resolve relative path maps win32 to posix', () => {
+                assert.equal(
+                    convertClientPathToDebugger('C:\\work\\foo\\test.php', {
+                        '/var/www/html/bar': 'C:\\work\\project\\folder\\..\\..\\foo',
+                    }),
+                    'file:///var/www/html/bar/test.php'
+                )
+            })
+            it('should resolve relative path maps win32 to win32', () => {
+                assert.equal(
+                    convertClientPathToDebugger('C:\\work\\foo\\test.php', {
+                        'C:\\var\\www\\html\\bar': 'C:\\work\\project\\folder\\..\\..\\foo',
+                    }),
+                    'file:///C:/var/www/html/bar/test.php'
+                )
+            })
+        })
     })
     describe('convertDebuggerPathToClient', () => {
         describe('without source mapping', () => {
@@ -362,6 +394,22 @@ describe('paths', () => {
             assert.equal(
                 convertDebuggerPathToClient('file:///root/path/file.php', {
                     '/root/path': 'ssh://host/path/',
+                }),
+                'ssh://host/path/file.php'
+            )
+        })
+        it('should map sshfs to remote unix relative', () => {
+            assert.equal(
+                convertClientPathToDebugger('ssh://host/path/file.php', {
+                    '/root/path': 'ssh://host/test/../path/',
+                }),
+                'file:///root/path/file.php'
+            )
+        })
+        it('should map remote unix to sshfs relative', () => {
+            assert.equal(
+                convertDebuggerPathToClient('file:///root/path/file.php', {
+                    '/root/path': 'ssh://host/test/../path/',
                 }),
                 'ssh://host/path/file.php'
             )

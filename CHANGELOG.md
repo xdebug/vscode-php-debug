@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - New launch setting ignoreExceptions.
 
+## [1.31.1]
+
+- Fix relative paths and path mappings support.
+
 ## [1.31.0]
 
 - Allow more flexible path mappings in url format.
