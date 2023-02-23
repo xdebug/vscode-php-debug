@@ -76,6 +76,7 @@ More general information on debugging with VS Code can be found on https://code.
 - `pathMappings`: A list of server paths mapping to the local source paths on your machine, see "Remote Host Debugging" below
 - `log`: Whether to log all communication between VS Code and the adapter to the debug console. See _Troubleshooting_ further down.
 - `ignore`: An optional array of glob patterns that errors should be ignored from (for example `**/vendor/**/*.php`)
+- `ignoreExceptions`: An optional array of exception class names that should be ignored (for example `BaseException`)
 - `skipFiles`: An array of glob patterns, to skip when debugging. Star patterns and negations are allowed, for example, `**/vendor/**` or `!**/vendor/my-module/**`.
 - `maxConnections`: Accept only this number of parallel debugging sessions. Additional connections will be dropped and their execution will continue without debugging.
 - `proxy`: DBGp Proxy settings
