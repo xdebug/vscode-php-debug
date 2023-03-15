@@ -676,7 +676,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         )) ||
                     // ignore exception class name
                     (this._args.ignoreExceptions &&
-                        this._args.ignoreExceptions.some(glob => minimatch(response.exception.name, glob)))
+                        this._args.ignoreExceptions.some(glob => response.exception.name === glob))
                 ) {
                     const response = await connection.sendRunCommand()
                     await this._checkStatus(response)

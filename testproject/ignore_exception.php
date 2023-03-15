@@ -1,11 +1,22 @@
 <?php
 
-class IgnoreException extends Exception
+namespace App;
+
+class IgnoreException extends \Exception
+{}
+
+class NotIgnoreException extends \Exception
 {}
 
 try {
     // see launch.json ignoreExceptions
-    throw new IgnoreException('this is an ignored exception');
-} catch (Exception $e) {
+    throw new IgnoreException('This exception is ignored');
+} catch (\Exception $e) {
+    //
+}
+
+try {
+    throw new NotIgnoreException('This exception is not ignored');
+} catch (\Exception $e) {
     //
 }
