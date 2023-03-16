@@ -18,6 +18,7 @@ import { ProxyConnect } from './proxyConnect'
 import { randomUUID } from 'crypto'
 import { getConfiguredEnvironment } from './envfile'
 import { XdebugCloudConnection } from './cloud'
+import { shouldIgnoreException } from './ignore'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -676,7 +677,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         )) ||
                     // ignore exception class name
                     (this._args.ignoreExceptions &&
-                        this._args.ignoreExceptions.some(glob => minimatch(response.exception.name, glob)))
+                        shouldIgnoreException(response.exception.name, this._args.ignoreExceptions))
                 ) {
                     const response = await connection.sendRunCommand()
                     await this._checkStatus(response)
