@@ -31,7 +31,30 @@
       "args": ["out/test", "--no-timeouts", "--colors"],
       "cwd": "${workspaceRoot}",
       "sourceMaps": true,
+      "env": {
+        "VSCODE_DEBUG_PORT": "4711"
+      },
       "outFiles": ["${workspaceFolder}/out/**/*.js"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "PHP Debug",
+      "stopAll": true,
+      "configurations": ["Debug adapter", "Launch Extension"],
+      "presentation": {
+        "group": "0_php",
+        "order": 1
+      }
+    },
+    {
+      "name": "Unit tests",
+      "stopAll": true,
+      "configurations": ["Debug adapter", "Mocha"],
+      "presentation": {
+        "group": "0_php",
+        "order": 2
+      }
     }
   ]
 }
