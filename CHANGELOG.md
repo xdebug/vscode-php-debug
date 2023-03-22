@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.32.1]
+
+- Fix logging of cloud connection.
+- Fix ignore exceptions patterns and namespaces.
+
 ## [1.32.0]
 
 - New launch setting ignoreExceptions.
