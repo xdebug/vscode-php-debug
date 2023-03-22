@@ -24,6 +24,8 @@ export class XdebugCloudConnection extends EventEmitter {
 
     private _dbgpConnection: DbgpConnection
 
+    private _logging = true
+
     constructor(token: string, testSocket?: net.Socket) {
         super()
         if (testSocket != null) {
@@ -38,8 +40,13 @@ export class XdebugCloudConnection extends EventEmitter {
         this._rejectFn = null
         this._dbgpConnection = new DbgpConnection(this._tlsSocket)
 
+        this._dbgpConnection.on('log', (text: string) => {
+            if (this._logging) {
+                this.emit('log', text)
+            }
+        })
+
         this._dbgpConnection.on('message', (response: XMLDocument) => {
-            this.emit('log', response)
             if (response.documentElement.nodeName === 'cloudinit') {
                 if (response.documentElement.firstChild && response.documentElement.firstChild.nodeName === 'error') {
                     this._rejectFn?.(
@@ -57,8 +64,10 @@ export class XdebugCloudConnection extends EventEmitter {
                     this._resolveFn?.()
                 }
             } else if (response.documentElement.nodeName === 'init') {
+                this._logging = false
                 // spawn a new xdebug.Connection
                 const cx = new xdebug.Connection(new InnerCloudTransport(this._tlsSocket))
+                cx.once('close', () => (this._logging = true))
                 cx.emit('message', response)
                 this.emit('connection', cx)
             }
