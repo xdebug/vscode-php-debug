@@ -12,7 +12,7 @@
         "NODE_ENV": "development"
       },
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/out/**/*.js"]
+      "outDir": "${workspaceRoot}/out"
     },
     {
       "name": "Launch Extension",
@@ -21,7 +21,7 @@
       "runtimeExecutable": "${execPath}",
       "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/out/**/*.js"]
+      "outDir": "${workspaceRoot}/out"
     },
     {
       "name": "Mocha",
@@ -31,30 +31,7 @@
       "args": ["out/test", "--no-timeouts", "--colors"],
       "cwd": "${workspaceRoot}",
       "sourceMaps": true,
-      "env": {
-        "VSCODE_DEBUG_PORT": "4711"
-      },
-      "outFiles": ["${workspaceFolder}/out/**/*.js"]
-    }
-  ],
-  "compounds": [
-    {
-      "name": "PHP Debug",
-      "stopAll": true,
-      "configurations": ["Debug adapter", "Launch Extension"],
-      "presentation": {
-        "group": "0_php",
-        "order": 1
-      }
-    },
-    {
-      "name": "Unit tests",
-      "stopAll": true,
-      "configurations": ["Debug adapter", "Mocha"],
-      "presentation": {
-        "group": "0_php",
-        "order": 2
-      }
+      "outDir": "${workspaceRoot}/out"
     }
   ]
 }
