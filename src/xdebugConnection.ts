@@ -644,27 +644,8 @@ export class PropertyGetResponse extends Response {
      * @param  {XMLDocument} document
      * @param  {Context} context
      */
-    constructor(document: XMLDocument, context: Context) {
-        super(document, context.stackFrame.connection)
-<<<<<<< HEAD
-        this.children = Array.from(document.documentElement.firstChild!.childNodes)
-            .filter(node => node.nodeName === 'property')
-            .map((propertyNode: Element) => new Property(propertyNode, context))
-    }
-}
-
-/** The response to a property_get by name command */
-export class PropertyGetNameResponse extends Response {
-    /** The property being resolved */
-    property: Property
-    /**
-     * @param  {XMLDocument} document
-     * @param  {Context} context
-     */
-    constructor(document: XMLDocument, context: Context) {
-        super(document, context.stackFrame.connection)
-        this.property = new Property(<Element>document.documentElement.firstChild!, context)
-=======
+    constructor(document: XMLDocument, property: Property) {
+        super(document, property.context.stackFrame.connection)
         this.children = Array.from(document.documentElement.firstChild!.childNodes).map(
             (propertyNode: Element) => new Property(propertyNode, context)
         )
@@ -1073,10 +1054,7 @@ export class Connection extends DbgpConnection {
     // ------------------------------ property --------------------------------------
 
     /** Sends a property_get command */
-<<<<<<< HEAD
-    public async sendPropertyGetCommand(property: Property, page: number = 0): Promise<PropertyGetResponse> {
-=======
-    public async sendPropertyGetCommand(property: {context: Context, fullName: string}): Promise<PropertyGetResponse> {
+    public async sendPropertyGetCommand(property: Property): Promise<PropertyGetResponse> {
         const escapedFullName = '"' + property.fullName.replace(/("|\\)/g, '\\$1') + '"'
 >>>>>>> 95e0764 (Rebase and fix code changes.)
         return new PropertyGetResponse(
@@ -1086,34 +1064,7 @@ export class Connection extends DbgpConnection {
                     property.fullName
                 )}`
             ),
-            property.context
-<<<<<<< HEAD
-        )
-    }
-
-    /** Sends a property_get by name command */
-    public async sendPropertyGetNameCommand(name: string, context: Context): Promise<PropertyGetNameResponse> {
-        const escapedFullName = '"' + name.replace(/("|\\)/g, '\\$1') + '"'
-        return new PropertyGetNameResponse(
-            await this._enqueueCommand(
-                'property_get',
-                `-d ${context.stackFrame.level} -c ${context.id} -n ${escapedFullName}`
-            ),
-            context
-        )
-    }
-
-    /** Sends a property_set command */
-    public async sendPropertySetCommand(property: Property, value: string): Promise<Response> {
-        return new Response(
-            await this._enqueueCommand(
-                'property_set',
-                `-d ${property.context.stackFrame.level} -c ${property.context.id} -n ${escape(property.fullName)}`,
-                value
-            ),
-            property.context.stackFrame.connection
-=======
->>>>>>> 95e0764 (Rebase and fix code changes.)
+            property
         )
     }
 
