@@ -16,8 +16,8 @@ jobs:
           - xdebug: xdebug-3.2.1 # renovate:keep-up-to-date
             php: '8.2' # renovate:keep-up-to-date
             os: ubuntu-22.04
-          - xdebug: xdebug-3.0.1 # renovate:keep-up-to-date
-            php: '8.0' # renovate:keep-up-to-date
+          - xdebug: xdebug-3.1.3 # renovate:keep-up-to-date
+            php: '8.1' # renovate:keep-up-to-date
             os: windows-2022
           - xdebug: xdebug-3.2.1 # renovate:keep-up-to-date
             php: '8.2' # renovate:keep-up-to-date
