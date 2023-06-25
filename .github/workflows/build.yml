@@ -15,7 +15,7 @@ jobs:
           # Latest versions
           - xdebug: xdebug-3.0.1 # renovate:keep-up-to-date
             php: '8.0' # renovate:keep-up-to-date
-            os: ubuntu-18.04
+            os: ubuntu-22.04
           - xdebug: xdebug-3.0.1 # renovate:keep-up-to-date
             php: '8.0' # renovate:keep-up-to-date
             os: windows-2019
@@ -25,7 +25,7 @@ jobs:
           # Old versions
           - xdebug: xdebug-2.9.8
             php: '7.4'
-            os: ubuntu-18.04
+            os: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
@@ -62,7 +62,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
   release:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     needs: test
     if: github.repository_owner == 'xdebug' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
