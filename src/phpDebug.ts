@@ -79,6 +79,8 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     ignore?: string[]
     /** Array of glob patterns that exceptions should be ignored from */
     ignoreExceptions?: string[]
+    /** An array of glob pattern to skip if the initial entry file is matched. */
+    skipEntryPaths?: string[]
     /** Array of glob patterns that debugger should not step in */
     skipFiles?: string[]
     /** Xdebug configuration */
@@ -486,6 +488,26 @@ class PhpDebugSession extends vscode.DebugSession {
 
     private async initializeConnection(connection: xdebug.Connection): Promise<void> {
         const initPacket = await connection.waitForInitPacket()
+
+        // check if this connection should be skipped
+        if (
+            this._args.skipEntryPaths &&
+            isPositiveMatchInGlobs(
+                convertDebuggerPathToClient(initPacket.fileUri).replace(/\\/g, '/'),
+                this._args.skipEntryPaths
+            )
+        ) {
+            this.sendEvent(
+                new vscode.OutputEvent(
+                    `skipping entry point ${convertDebuggerPathToClient(initPacket.fileUri).replace(
+                        /\\/g,
+                        '/'
+                    )} on connection ${connection.id}\n`
+                )
+            )
+            this.disposeConnection(connection)
+            return
+        }
 
         // support for breakpoints
         let feat: xdebug.FeatureGetResponse
