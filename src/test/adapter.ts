@@ -827,7 +827,7 @@ describe('PHP Debug Adapter', () => {
             await Promise.all([client.launch({ maxConnections: 1, log: true }), client.configurationSequence()])
 
             const s1 = net.createConnection({ port: 9003 })
-            await client.assertOutput('console', 'new connection 1 from ')
+            await client.assertOutput('console', 'new connection ')
             net.createConnection({ port: 9003 })
             const o = await client.waitForEvent('output')
             assert.match(

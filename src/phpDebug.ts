@@ -241,6 +241,7 @@ class PhpDebugSession extends vscode.DebugSession {
             ],
             supportTerminateDebuggee: true,
             supportsDelayedStackTraceLoading: false,
+            supportsClipboardContext: true,
         }
         this.sendResponse(response)
     }
@@ -1440,6 +1441,17 @@ class PhpDebugSession extends vscode.DebugSession {
                 const response = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx[1])
                 if (response.property) {
                     result = response.property
+                }
+            } else if (args.context === 'clipboard') {
+                const uuid = randomUUID()
+                await connection.sendEvalCommand(`$GLOBALS['eval_cache']['${uuid}']=var_export(${args.expression}, true)`)
+                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                const res = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx[1])
+                if (res.property) {
+                    // force a string response
+                    response.body = { result: res.property.value, variablesReference: 0 }
+                    this.sendResponse(response)
+                    return
                 }
             } else {
                 const response = await connection.sendEvalCommand(args.expression)
