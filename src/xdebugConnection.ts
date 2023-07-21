@@ -28,8 +28,8 @@ export class InitPacket {
         this.language = documentElement.getAttribute('language')!
         this.protocolVersion = documentElement.getAttribute('protocol_version')!
         this.ideKey = documentElement.getAttribute('idekey')!
-        this.engineVersion = documentElement.getElementsByTagName('engine')[0].getAttribute('version')!
-        this.engineName = documentElement.getElementsByTagName('engine')[0].textContent ?? ''
+        this.engineVersion = documentElement.getElementsByTagName('engine').item(0)?.getAttribute('version') ?? ''
+        this.engineName = documentElement.getElementsByTagName('engine').item(0)?.textContent ?? ''
         this.connection = connection
     }
 }
