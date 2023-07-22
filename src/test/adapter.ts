@@ -810,6 +810,52 @@ describe('PHP Debug Adapter', () => {
             assert.deepEqual(vars.body.variables[0].name, '0')
             assert.deepEqual(vars.body.variables[0].value, '1')
         })
+        it('should return the eval result for clipboard', async () => {
+            const program = path.join(TEST_PROJECT, 'variables.php')
+
+            await client.launch({
+                program,
+            })
+            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
+            await client.configurationDoneRequest()
+            const { frame } = await assertStoppedLocation('breakpoint', program, 19)
+
+            const response = (
+                await client.evaluateRequest({
+                    context: 'clipboard',
+                    frameId: frame.id,
+                    expression: '$anInt',
+                })
+            ).body
+
+            assert.equal(response.result, '123')
+            assert.equal(response.variablesReference, 0)
+
+            const response2 = (
+                await client.evaluateRequest({
+                    context: 'clipboard',
+                    frameId: frame.id,
+                    expression: '$aString',
+                })
+            ).body
+
+            assert.equal(response2.result, "'123'")
+            assert.equal(response2.variablesReference, 0)
+
+            const response3 = (
+                await client.evaluateRequest({
+                    context: 'clipboard',
+                    frameId: frame.id,
+                    expression: '$anArray',
+                })
+            ).body
+
+            assert.equal(
+                response3.result,
+                "array (\n  0 => 1,\n  'test' => 2,\n  'test2' => \n  array (\n    't' => 123,\n  ),\n)"
+            )
+            assert.equal(response3.variablesReference, 0)
+        })
     })
 
     describe.skip('output events', () => {
