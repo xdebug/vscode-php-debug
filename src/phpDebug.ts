@@ -1484,14 +1484,14 @@ class PhpDebugSession extends vscode.DebugSession {
                 }
             } else if (args.context === 'clipboard') {
                 const uuid = randomUUID()
-                const eres = await connection.sendEvalCommand(
-                    `$GLOBALS['eval_cache']['${uuid}']=var_export(${args.expression}, true)`
+                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                await connection.sendEvalCommand(
+                    `$GLOBALS['eval_cache']['${uuid}']=var_export(${args.expression}, true)`,
+                    ctx[1]
                 )
-                response.body = { result: eres.result.value, variablesReference: 0 }
-                //const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                //const res = await connection.sendPropertyValueNameCommand(`$eval_cache['${uuid}']`, ctx[1])
+                const res = await connection.sendPropertyValueNameCommand(`$eval_cache['${uuid}']`, ctx[1])
                 // force a string response
-                //response.body = { result: res.value, variablesReference: 0 }
+                response.body = { result: res.value, variablesReference: 0 }
                 this.sendResponse(response)
                 return
             } else {

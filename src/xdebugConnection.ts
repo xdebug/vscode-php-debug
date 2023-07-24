@@ -1146,13 +1146,13 @@ export class Connection extends DbgpConnection {
         )
     }
 
-    /** Sends a property_value by name command */
+    /** Sends a property_value by name command and request full data */
     public async sendPropertyValueNameCommand(name: string, context: Context): Promise<PropertyValueResponse> {
         const escapedFullName = '"' + name.replace(/("|\\)/g, '\\$1') + '"'
         return new PropertyValueResponse(
             await this._enqueueCommand(
                 'property_value',
-                `-d ${context.stackFrame.level} -c ${context.id} -n ${escapedFullName}`
+                `-m 0 -d ${context.stackFrame.level} -c ${context.id} -n ${escapedFullName}`
             ),
             context.stackFrame.connection
         )
@@ -1173,8 +1173,8 @@ export class Connection extends DbgpConnection {
     // ------------------------------- eval -----------------------------------------
 
     /** sends an eval command */
-    public async sendEvalCommand(expression: string): Promise<EvalResponse> {
-        return new EvalResponse(await this._enqueueCommand('eval', undefined, expression), this)
+    public async sendEvalCommand(expression: string, context?: Context): Promise<EvalResponse> {
+        return new EvalResponse(await this._enqueueCommand('eval', context ? `-d ${context.stackFrame.level}` : undefined, expression), this)
     }
 
     // ------------------------------ stream ----------------------------------------
