@@ -70,27 +70,6 @@ export function activate(context: vscode.ExtensionContext) {
             },
         })
     )
-    context.subscriptions.push(
-        vscode.languages.registerEvaluatableExpressionProvider('php', {
-            // eslint-disable-next-line @typescript-eslint/require-await
-            async provideEvaluatableExpression(
-                document: vscode.TextDocument,
-                position: vscode.Position,
-                token: CancellationToken
-            ): Promise<ProviderResult<vscode.EvaluatableExpression>> {
-                // see https://www.php.net/manual/en/language.variables.basics.php
-                // const wordRange = document.getWordRangeAtPosition(position, /\$([a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)((->(?1))|\[(\d+|'[^']+'|"[^"]+"|(?0))\])*/)
-                const wordRange = document.getWordRangeAtPosition(
-                    position,
-                    /\$[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*(->[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)*/
-                )
-                if (wordRange) {
-                    return new vscode.EvaluatableExpression(wordRange)
-                }
-                return undefined // nothing evaluatable found under mouse
-            },
-        })
-    )
 
     context.subscriptions.push(
         vscode.commands.registerCommand('php.debug.debugPhpFile', async (uri: vscode.Uri) => {
