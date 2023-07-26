@@ -827,7 +827,12 @@ describe('PHP Debug Adapter', () => {
             await Promise.all([client.launch({ maxConnections: 1, log: true }), client.configurationSequence()])
 
             const s1 = net.createConnection({ port: 9003 })
-            await client.assertOutput('console', 'new connection 1 from ')
+            const o1 = await client.assertOutput('console', 'new connection')
+            assert.match(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                o1.body.output as string,
+                /^new connection \d+ from/
+            )
             net.createConnection({ port: 9003 })
             const o = await client.waitForEvent('output')
             assert.match(
@@ -859,6 +864,15 @@ describe('PHP Debug Adapter', () => {
             assert.equal(response2.body.stackFrames[0].name, 'depth2')
             assert.equal(response2.body.stackFrames[1].name, 'depth1')
             assert.equal(response2.body.stackFrames[2].name, '{main}')
+        })
+        it('skip entry paths', async () => {
+            const program = path.join(TEST_PROJECT, 'variables.php')
+
+            await client.launch({ program, skipEntryPaths: ['**/variables.php'] })
+            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
+            await client.configurationDoneRequest()
+
+            await client.assertOutput('console', 'skipping entry point')
         })
     })
 })

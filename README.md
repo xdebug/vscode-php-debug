@@ -78,6 +78,7 @@ More general information on debugging with VS Code can be found on https://code.
 - `ignore`: An optional array of glob patterns that errors should be ignored from (for example `**/vendor/**/*.php`)
 - `ignoreExceptions`: An optional array of exception class names that should be ignored (for example `BaseException`, `\NS1\Exception`, `\*\Exception` or `\**\Exception*`)
 - `skipFiles`: An array of glob patterns, to skip when debugging. Star patterns and negations are allowed, for example, `**/vendor/**` or `!**/vendor/my-module/**`.
+- `skipEntryPaths`: An array of glob patterns, to immediately detach from and ignore for debugging if the entry script matches (example `**/ajax.php`).
 - `maxConnections`: Accept only this number of parallel debugging sessions. Additional connections will be dropped and their execution will continue without debugging.
 - `proxy`: DBGp Proxy settings
   - `enable`: To enable proxy registration set to `true` (default is `false).
