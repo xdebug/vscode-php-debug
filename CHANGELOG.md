@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.33.0]
+
+- Add skipEntryPaths to immediately detach a debug session depending on entry path.
+- Remove EvaluatableExpression Provider.
+
 ## [1.32.1]
 
 - Fix logging of cloud connection.
