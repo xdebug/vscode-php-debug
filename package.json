@@ -154,8 +154,9 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onDebugResolve:php",
-    "onCommand:php.debug.debugPhpFile",
-    "onCommand:php.debug.startWithStopOnEntry"
+    "onCommand:extension.php-debug.startWithStopOnEntry",
+    "onCommand:extension.php-debug.debugEditorContents",
+    "onCommand:extension.php-debug.runEditorContents"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
@@ -525,32 +526,56 @@
     "menus": {
       "editor/title/run": [
         {
-          "command": "php.debug.debugPhpFile",
+          "command": "extension.php-debug.runEditorContents",
+          "when": "resourceLangId == php && !inDiffEditor",
+          "group": "navigation@1"
+        },
+        {
+          "command": "extension.php-debug.debugEditorContents",
+          "when": "resourceLangId == php && !inDiffEditor",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "extension.php-debug.debugEditorContents",
+          "when": "resourceLangId == php && !inDiffEditor"
+        },
+        {
+          "command": "extension.php-debug.runEditorContents",
           "when": "resourceLangId == php && !inDiffEditor"
         }
       ]
     },
     "commands": [
       {
-        "command": "php.debug.debugPhpFile",
-        "title": "Debug PHP",
-        "icon": "$(debug-alt-small)",
-        "enablement": "resourceLangId == php"
-      },
-      {
-        "command": "php.debug.startWithStopOnEntry",
+        "command": "extension.php-debug.startWithStopOnEntry",
         "title": "Start Debugging and Stop on Entry",
         "category": "Debug"
+      },
+      {
+        "command": "extension.php-debug.debugEditorContents",
+        "title": "Debug PHP File",
+        "category": "PHP Debug",
+        "enablement": "!inDebugMode",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "extension.php-debug.runEditorContents",
+        "title": "Run PHP File",
+        "category": "PHP Debug",
+        "enablement": "!inDebugMode",
+        "icon": "$(play)"
       }
     ],
     "keybindings": [
       {
-        "command": "php.debug.startWithStopOnEntry",
+        "command": "extension.php-debug.startWithStopOnEntry",
         "key": "F10",
         "when": "!inDebugMode && debugConfigurationType == 'php'"
       },
       {
-        "command": "php.debug.startWithStopOnEntry",
+        "command": "extension.php-debug.startWithStopOnEntry",
         "key": "F11",
         "when": "!inDebugMode && debugConfigurationType == 'php'"
       }
