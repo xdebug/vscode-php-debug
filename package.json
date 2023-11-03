@@ -165,6 +165,10 @@
       "restrictedConfigurations": [
         "php.debug.executablePath"
       ]
+    },
+    "virtualWorkspaces": {
+      "supported": "limited",
+      "description": "In virtual workspaces, PHP process cannot be started, but can listen for incoming connections."
     }
   },
   "contributes": {

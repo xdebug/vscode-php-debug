@@ -71,6 +71,17 @@ export function activate(context: vscode.ExtensionContext) {
                         }
                     }
                 }
+                if (folder && folder.uri.scheme !== 'file') {
+                    // replace
+                    if (debugConfiguration.pathMappings) {
+                        for (const key in debugConfiguration.pathMappings) {
+                            debugConfiguration.pathMappings[key] = debugConfiguration.pathMappings[key].replace(
+                                '${workspaceFolder}',
+                                folder.uri.toString()
+                            )
+                        }
+                    }
+                }
                 return debugConfiguration
             },
         })
