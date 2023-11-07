@@ -75,7 +75,7 @@
     "@types/which": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
     "@typescript-eslint/parser": "^5.44.0",
-    "@vscode/debugadapter-testsupport": "^1.57.0",
+    "@vscode/debugadapter-testsupport": "^1.64.0",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
     "copyfiles": "^2.4.1",
