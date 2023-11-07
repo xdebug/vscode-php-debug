@@ -71,6 +71,29 @@ export function activate(context: vscode.ExtensionContext) {
                         }
                     }
                 }
+                if (folder && folder.uri.scheme !== 'file') {
+                    // replace
+                    if (debugConfiguration.pathMappings) {
+                        for (const key in debugConfiguration.pathMappings) {
+                            debugConfiguration.pathMappings[key] = debugConfiguration.pathMappings[key].replace(
+                                '${workspaceFolder}',
+                                folder.uri.toString()
+                            )
+                        }
+                    }
+                    // The following path are currently NOT mapped
+                    /*
+                    debugConfiguration.skipEntryPaths = debugConfiguration.skipEntryPaths?.map(v =>
+                        v.replace('${workspaceFolder}', folder.uri.toString())
+                    )
+                    debugConfiguration.skipFiles = debugConfiguration.skipFiles?.map(v =>
+                        v.replace('${workspaceFolder}', folder.uri.toString())
+                    )
+                    debugConfiguration.ignore = debugConfiguration.ignore?.map(v =>
+                        v.replace('${workspaceFolder}', folder.uri.toString())
+                    )
+                    */
+                }
                 return debugConfiguration
             },
         })
