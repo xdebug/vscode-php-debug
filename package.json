@@ -215,7 +215,7 @@
               "cwd": {
                 "type": "string",
                 "description": "Absolute path to the working directory of the program being debugged. Default is the current workspace.",
-                "default": "${workspaceRoot}"
+                "default": "${workspaceFolder}"
               },
               "runtimeExecutable": {
                 "type": "string",
@@ -531,23 +531,23 @@
       "editor/title/run": [
         {
           "command": "extension.php-debug.runEditorContents",
-          "when": "resourceLangId == php && !inDiffEditor",
+          "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file",
           "group": "navigation@1"
         },
         {
           "command": "extension.php-debug.debugEditorContents",
-          "when": "resourceLangId == php && !inDiffEditor",
+          "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file",
           "group": "navigation@2"
         }
       ],
       "commandPalette": [
         {
           "command": "extension.php-debug.debugEditorContents",
-          "when": "resourceLangId == php && !inDiffEditor"
+          "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file"
         },
         {
           "command": "extension.php-debug.runEditorContents",
-          "when": "resourceLangId == php && !inDiffEditor"
+          "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file"
         }
       ]
     },
