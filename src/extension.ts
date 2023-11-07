@@ -81,6 +81,18 @@ export function activate(context: vscode.ExtensionContext) {
                             )
                         }
                     }
+                    // The following path are currently NOT mapped
+                    /*
+                    debugConfiguration.skipEntryPaths = debugConfiguration.skipEntryPaths?.map(v =>
+                        v.replace('${workspaceFolder}', folder.uri.toString())
+                    )
+                    debugConfiguration.skipFiles = debugConfiguration.skipFiles?.map(v =>
+                        v.replace('${workspaceFolder}', folder.uri.toString())
+                    )
+                    debugConfiguration.ignore = debugConfiguration.ignore?.map(v =>
+                        v.replace('${workspaceFolder}', folder.uri.toString())
+                    )
+                    */
                 }
                 return debugConfiguration
             },
