@@ -823,7 +823,13 @@ export class Connection extends DbgpConnection {
                 }
             }
         })
-        this.on('close', () => this._initPromiseRejectFn(new Error('connection closed (on close)')))
+        this.on('close', () => {
+            this._pendingCommands.forEach(command => command.rejectFn(new Error('connection closed (on close)')))
+            this._pendingCommands.clear()
+            this._commandQueue.forEach(command => command.rejectFn(new Error('connection closed (on close)')))
+            this._commandQueue = []
+            this._initPromiseRejectFn(new Error('connection closed (on close)'))
+        })
     }
 
     /** Returns a promise that gets resolved once the init packet arrives */
