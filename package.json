@@ -48,6 +48,7 @@
     "@xmldom/xmldom": "^0.9.8",
     "buffer-crc32": "^1.0.0",
     "dotenv": "^17.2.1",
+    "abstract-socket": "^2.1.1",
     "file-url": "^3.0.0",
     "iconv-lite": "^0.6.3",
     "minimatch": "^10.0.3",

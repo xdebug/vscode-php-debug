@@ -21,6 +21,7 @@ import { shouldIgnoreException } from './ignore'
 import { varExportProperty } from './varExport'
 import { supportedEngine } from './xdebugUtils'
 import { varJsonProperty } from './varJson'
+import * as abs from 'abstract-socket'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -1432,10 +1433,47 @@ class PhpDebugSession extends vscode.DebugSession {
         }
     }
 
-    protected pauseRequest(
+    protected async pauseRequest(
         response: VSCodeDebugProtocol.PauseResponse,
         args: VSCodeDebugProtocol.PauseArguments
-    ): void {
+    ): Promise<void> {
+        // test
+        let connection: xdebug.Connection | undefined
+        connection = this._connections.get(args.threadId)
+        if (!connection) {
+            return this.sendErrorResponse(response, new Error(`Unknown thread ID ${args.threadId}`))
+        }
+
+        let initPacket = await connection.waitForInitPacket()
+        const supportedControl =
+            process.platform === 'linux' &&
+            initPacket.engineName === 'Xdebug' &&
+            semver.valid(initPacket.engineVersion, { loose: true }) &&
+            (semver.gte(initPacket.engineVersion, '3.4.0', { loose: true }) || initPacket.engineVersion === '3.4.0-dev')
+
+        if (supportedControl) {
+            let cs = `\0xdebug-ctrl.${initPacket.appId}y`.padEnd(108, 'x')
+            try {
+                const sock = abs.connect(cs, () => {
+                    sock.write("pause\0")
+                    if (this._skippingFiles.has(args.threadId)) {
+                        this._skippingFiles.set(args.threadId, false)
+                    }
+                    this.sendResponse(response)
+                })
+                sock.on('data', (data) => {
+                    // todo
+                })
+                sock.on('error', (error) => {
+                    this.sendErrorResponse(response, new Error('Cannot connect to Xdebug control socket'))    
+                })
+                return
+            } catch (error) {
+                this.sendErrorResponse(response, new Error('Cannot connect to Xdebug control socket'))
+                return
+            }
+        }
+        // test
         if (this._skippingFiles.has(args.threadId)) {
             this._skippingFiles.set(args.threadId, false)
             this.sendResponse(response)
