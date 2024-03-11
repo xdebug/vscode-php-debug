@@ -866,7 +866,25 @@ class PhpDebugSession extends vscode.DebugSession {
         args: VSCodeDebugProtocol.SetBreakpointsArguments
     ): void {
         try {
-            const fileUri = convertClientPathToDebugger(args.source.path!, this._args.pathMappings)
+            let fileUri: string
+            /*
+            if (args.source.path) {
+                fileUri = convertClientPathToDebugger(args.source.path!, this._args.pathMappings)
+            } else {
+                if (!this._sources.has(args.source.sourceReference ?? -1)) {
+                    throw new Error(`Unknown sourceReference ${args.source.sourceReference}`)
+                }
+                fileUri = this._sources.get(args.source.sourceReference ?? -1)!.url
+            }
+            */
+            if (args.source.sourceReference) {
+                if (!this._sources.has(args.source.sourceReference)) {
+                    throw new Error(`Unknown sourceReference ${args.source.sourceReference}`)
+                }
+                fileUri = this._sources.get(args.source.sourceReference)!.url
+            } else {
+                fileUri = convertClientPathToDebugger(args.source.path!, this._args.pathMappings)
+            }
             const vscodeBreakpoints = this._breakpointManager.setBreakPoints(args.source, fileUri, args.breakpoints!)
             response.body = { breakpoints: vscodeBreakpoints }
             // Process logpoints
@@ -966,7 +984,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 let line = status.line
                 let source: VSCodeDebugProtocol.Source
                 const urlObject = url.parse(status.fileUri)
-                if (urlObject.protocol === 'dbgp:') {
+                if (urlObject.protocol !== 'file:') {
                     let sourceReference
                     const src = Array.from(this._sources).find(
                         ([, v]) => v.url === status.fileUri && v.connection === connection
@@ -979,8 +997,10 @@ class PhpDebugSession extends vscode.DebugSession {
                     }
                     // for eval code, we need to include .php extension to get syntax highlighting
                     source = { name: status.exception.name + '.php', sourceReference, origin: status.exception.name }
-                    // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
-                    line++
+                    if (urlObject.protocol === 'dbgp:') {
+                        // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
+                        line++
+                    }
                 } else {
                     // Xdebug paths are URIs, VS Code file paths
                     const filePath = convertDebuggerPathToClient(status.fileUri, this._args.pathMappings)
@@ -998,7 +1018,7 @@ class PhpDebugSession extends vscode.DebugSession {
                         let source: VSCodeDebugProtocol.Source
                         let line = stackFrame.line
                         const urlObject = url.parse(stackFrame.fileUri)
-                        if (urlObject.protocol === 'dbgp:') {
+                        if (urlObject.protocol !== 'file:') {
                             let sourceReference
                             const src = Array.from(this._sources).find(
                                 ([, v]) => v.url === stackFrame.fileUri && v.connection === connection
@@ -1014,12 +1034,15 @@ class PhpDebugSession extends vscode.DebugSession {
                                 name:
                                     stackFrame.type === 'eval'
                                         ? `eval ${stackFrame.fileUri.substr(7)}.php`
-                                        : stackFrame.name,
+                                        : stackFrame.fileUri.replace(/[\/;,]/g, ''), // stackFrame.name,
                                 sourceReference,
+                                // path: urlObject.protocol === 'dbgp:' ? undefined : stackFrame.fileUri,
                                 origin: stackFrame.type,
                             }
-                            // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
-                            line++
+                            if (urlObject.protocol === 'dbgp:') {
+                                // for eval code, we add a "<?php" line at the beginning to get syntax highlighting (see sourceRequest)
+                                line++
+                            }
                         } else {
                             // Xdebug paths are URIs, VS Code file paths
                             const filePath = convertDebuggerPathToClient(stackFrame.fileUri, this._args.pathMappings)

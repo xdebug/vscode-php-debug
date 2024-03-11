@@ -22,7 +22,7 @@ export class BreakpointManager extends EventEmitter {
     private _nextId = 1
 
     protected sourceKey(source: VSCodeDebugProtocol.Source): string {
-        return source.path!
+        return source.sourceReference ? `sourceReference:${source.sourceReference}` : source.path!
     }
 
     public setBreakPoints(
