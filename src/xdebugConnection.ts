@@ -1042,6 +1042,10 @@ export class Connection extends DbgpConnection {
         return new StackGetResponse(await this._enqueueCommand('stack_get'), this)
     }
 
+    public async sendStackGetDepthCommand(depth: number): Promise<StackGetResponse> {
+        return new StackGetResponse(await this._enqueueCommand('stack_get', `-d ${depth}`), this)
+    }
+
     public async sendSourceCommand(uri: string): Promise<SourceResponse> {
         return new SourceResponse(await this._enqueueCommand('source', `-f ${uri}`), this)
     }

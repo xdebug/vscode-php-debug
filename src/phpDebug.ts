@@ -243,6 +243,7 @@ class PhpDebugSession extends vscode.DebugSession {
             ],
             supportTerminateDebuggee: true,
             supportsDelayedStackTraceLoading: false,
+            supportsExceptionInfoRequest: true,
         }
         this.sendResponse(response)
     }
@@ -1494,6 +1495,87 @@ class PhpDebugSession extends vscode.DebugSession {
             response.success = false
             this.sendResponse(response)
         }
+    }
+
+    protected async exceptionInfoRequest(
+        response: VSCodeDebugProtocol.ExceptionInfoResponse,
+        args: VSCodeDebugProtocol.ExceptionInfoArguments
+    ): Promise<void> {
+        try {
+            const connection = this._connections.get(args.threadId)
+            if (!connection) {
+                throw new Error('Unknown thread ID')
+            }
+
+            const status = this._statuses.get(connection)
+            /*
+            if (status && status.exception) {
+                const variableId = this._variableIdCounter++
+                this._errorScopes.set(variableId, status)
+                scopes.unshift(new vscode.Scope(status.exception.name.replace(/^(.*\\)+/g, ''), variableId))
+            }*/
+
+            let { stack } = await connection.sendStackGetDepthCommand(0)
+            const stackFrame = stack[0]
+            const contexts = await stackFrame.getContexts()
+            let { property } = await connection.sendPropertyGetNameCommand('$__EXCEPTION', contexts[0])
+            response.body = {
+                exceptionId: property.class,
+                description: status?.exception.message,
+                breakMode: 'userUnhandled',
+            }
+            let properties: xdebug.Property[] = property.children
+            if (property.hasChildren && property.children.length == 0) {
+                properties = await property.getChildren()
+            }
+            response.body.description = `${properties.find(p => p.name === 'message')?.value ?? '**UNKNOWN**'} in ${
+                properties.find(p => p.name === 'file')?.value ?? '**UNKNOWN**'
+            }:${properties.find(p => p.name === 'line')?.value ?? 0}`
+            response.body.details = {
+                message: properties.find(p => p.name === 'message')?.value ?? undefined,
+                typeName: property.class,
+                fullTypeName: property.class,
+                evaluateName: '$__EXCEPTION',
+                stackTrace: await this._parseTrace(properties.find(p => p.name === 'trace' || p.name === '*Exception*trace' || p.name === '*Error*trace'))
+            }
+
+            this.sendResponse(response)
+        } catch (error) {
+            response.message = (error as Error).message
+            response.success = false
+            this.sendResponse(response)
+        }
+    }
+
+    private async _parseTrace(traceProperty?: xdebug.Property): Promise<string|undefined> {
+        if (!traceProperty) {
+            return undefined
+        }
+        let properties: xdebug.Property[] = traceProperty.children
+        if (traceProperty.hasChildren && traceProperty.children.length == 0) {
+            properties = await traceProperty.getChildren()
+        }
+
+        const m = await Promise.all(properties.map(async (v, i) => `#${i} ${await this._parseLine(v)}`))
+        m.push(`#${properties.length} {main}`)
+        const j = m.join('\n')
+        return j
+    }
+
+    private async _parseLine(traceLineProperty: xdebug.Property): Promise<string> {
+        let properties: xdebug.BaseProperty[] = traceLineProperty.children
+        if (traceLineProperty.hasChildren && traceLineProperty.children.length == 0) {
+            properties = await traceLineProperty.getChildren()
+        }
+        let clazz = ''
+        if (properties.find(p => p.name === 'class')) {
+            clazz = `${properties.find(p => p.name === 'class')?.value ?? ''}${
+                properties.find(p => p.name === 'type')?.value ?? '->'
+            }`
+        }
+        return `${properties.find(p => p.name === 'file')?.value ?? '**UNKNOWN**'}(${
+            properties.find(p => p.name === 'line')?.value ?? 0
+        }): ${clazz}${properties.find(p => p.name === 'function')?.value ?? ''}()`
     }
 }
 
