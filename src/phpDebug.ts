@@ -21,8 +21,7 @@ import { shouldIgnoreException } from './ignore'
 import { varExportProperty } from './varExport'
 import { supportedEngine } from './xdebugUtils'
 import { varJsonProperty } from './varJson'
-import * as abs from 'abstract-socket'
-
+import { ControlSocket } from './controlSocket'
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
@@ -1437,43 +1436,26 @@ class PhpDebugSession extends vscode.DebugSession {
         response: VSCodeDebugProtocol.PauseResponse,
         args: VSCodeDebugProtocol.PauseArguments
     ): Promise<void> {
-        // test
-        let connection: xdebug.Connection | undefined
-        connection = this._connections.get(args.threadId)
+        const connection = this._connections.get(args.threadId)
         if (!connection) {
             return this.sendErrorResponse(response, new Error(`Unknown thread ID ${args.threadId}`))
         }
 
-        let initPacket = await connection.waitForInitPacket()
-        const supportedControl =
-            process.platform === 'linux' &&
-            initPacket.engineName === 'Xdebug' &&
-            semver.valid(initPacket.engineVersion, { loose: true }) &&
-            (semver.gte(initPacket.engineVersion, '3.4.0', { loose: true }) || initPacket.engineVersion === '3.4.0-dev')
-
-        if (supportedControl) {
-            let cs = `\0xdebug-ctrl.${initPacket.appId}y`.padEnd(108, 'x')
+        const initPacket = await connection.waitForInitPacket()
+        const controlSocket = new ControlSocket()
+        if (controlSocket.supportedInitPacket(initPacket)) {
+            if (this._skippingFiles.has(args.threadId)) {
+                this._skippingFiles.set(args.threadId, false)
+            }
             try {
-                const sock = abs.connect(cs, () => {
-                    sock.write("pause\0")
-                    if (this._skippingFiles.has(args.threadId)) {
-                        this._skippingFiles.set(args.threadId, false)
-                    }
-                    this.sendResponse(response)
-                })
-                sock.on('data', (data) => {
-                    // todo
-                })
-                sock.on('error', (error) => {
-                    this.sendErrorResponse(response, new Error('Cannot connect to Xdebug control socket'))    
-                })
+                await controlSocket.requestPause(initPacket.appId)
+                this.sendResponse(response)
                 return
             } catch (error) {
-                this.sendErrorResponse(response, new Error('Cannot connect to Xdebug control socket'))
-                return
+                this.sendErrorResponse(response, error as Error)
             }
         }
-        // test
+
         if (this._skippingFiles.has(args.threadId)) {
             this._skippingFiles.set(args.threadId, false)
             this.sendResponse(response)
