@@ -4,11 +4,6 @@
 
 ![Demo GIF](images/demo.gif)
 
-## Sponsored by
-
-<p><a title="Try CodeStream" href="https://sponsorlink.codestream.com/?utm_source=vscmarket&amp;utm_campaign=phpdebug&amp;utm_medium=banner"><img src="https://alt-images.codestream.com/codestream_logo_phpdebug.png"></a></br>
-Manage pull requests and conduct code reviews in your IDE with full source-tree context. Comment on any line, not just the diffs. Use jump-to-definition, your favorite keybindings, and code intelligence with more of your workflow.<br> <a title="Try CodeStream" href="https://sponsorlink.codestream.com/?utm_source=vscmarket&amp;utm_campaign=phpdebug&amp;utm_medium=banner">Learn More</a></p>
-
 ### Sponsor PHP Debug Adapter for Visual Studio Code
 
 If you find this extension useful, if it helps you solve your problems and if you appreciate the support given here, consider sponsoring our work.
