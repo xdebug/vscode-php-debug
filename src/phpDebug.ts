@@ -561,6 +561,13 @@ class PhpDebugSession extends vscode.DebugSession {
             throw new Error(`Error applying xdebugSettings: ${String(error instanceof Error ? error.message : error)}`)
         }
 
+        if (this._args.externalConsole) {
+            await connection.sendStdout('1')
+            connection.on('stream', (stream: xdebug.Stream) =>
+                this.sendEvent(new vscode.OutputEvent(stream.value, 'stdout'))
+            )
+        }
+
         this.sendEvent(new vscode.ThreadEvent('started', connection.id))
 
         // wait for all breakpoints
