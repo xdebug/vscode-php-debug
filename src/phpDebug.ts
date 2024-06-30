@@ -8,7 +8,7 @@ import * as childProcess from 'child_process'
 import * as path from 'path'
 import * as util from 'util'
 import * as fs from 'fs'
-import { Terminal } from './terminal'
+import { Terminal, IProgram, ProgramPidWrapper } from './terminal'
 import { convertClientPathToDebugger, convertDebuggerPathToClient, isPositiveMatchInGlobs } from './paths'
 import minimatch from 'minimatch'
 import { BreakpointManager, BreakpointAdapter } from './breakpoints'
@@ -115,11 +115,16 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     env?: { [key: string]: string }
     /** Absolute path to a file containing environment variable definitions. */
     envFile?: string
-    /** If true launch the target in an external console. */
+    /** DEPRECATED: If true launch the target in an external console. */
     externalConsole?: boolean
+    /** Where to launch the debug target: internal console, integrated terminal, or external terminal. */
+    console?: 'internalConsole' | 'integratedTerminal' | 'externalTerminal'
 }
 
 class PhpDebugSession extends vscode.DebugSession {
+    /** The arguments that were given to initializeRequest */
+    private _initializeArgs: VSCodeDebugProtocol.InitializeRequestArguments
+
     /** The arguments that were given to launchRequest */
     private _args: LaunchRequestArguments
 
@@ -127,7 +132,7 @@ class PhpDebugSession extends vscode.DebugSession {
     private _server: net.Server
 
     /** The child process of the launched PHP script, if launched by the debug adapter */
-    private _phpProcess?: childProcess.ChildProcess
+    private _phpProcess?: IProgram
 
     /**
      * A map from VS Code thread IDs to Xdebug Connections.
@@ -211,6 +216,7 @@ class PhpDebugSession extends vscode.DebugSession {
         response: VSCodeDebugProtocol.InitializeResponse,
         args: VSCodeDebugProtocol.InitializeRequestArguments
     ): void {
+        this._initializeArgs = args
         response.body = {
             supportsConfigurationDoneRequest: true,
             supportsEvaluateForHovers: true,
@@ -287,18 +293,36 @@ class PhpDebugSession extends vscode.DebugSession {
             const program = args.program ? [args.program] : []
             const cwd = args.cwd || process.cwd()
             const env = Object.fromEntries(
-                Object.entries({ ...process.env, ...getConfiguredEnvironment(args) }).map(v => [
+                Object.entries(getConfiguredEnvironment(args)).map(v => [
                     v[0],
                     v[1]?.replace('${port}', port.toString()),
                 ])
             )
             // launch in CLI mode
-            if (args.externalConsole) {
-                const script = await Terminal.launchInTerminal(
-                    cwd,
-                    [runtimeExecutable, ...runtimeArgs, ...program, ...programArgs],
-                    env
-                )
+            if (args.externalConsole || args.console == 'integratedTerminal' || args.console == 'externalTerminal') {
+                let script: IProgram | undefined
+                if (this._initializeArgs.supportsRunInTerminalRequest) {
+                    const kind: 'integrated' | 'external' =
+                        args.externalConsole || args.console === 'externalTerminal' ? 'external' : 'integrated'
+                    const ritr = await new Promise<VSCodeDebugProtocol.RunInTerminalResponse>((resolve, reject) => {
+                        this.runInTerminalRequest(
+                            { args: [runtimeExecutable, ...runtimeArgs, ...program, ...programArgs], env, cwd, kind },
+                            5000,
+                            resolve
+                        )
+                    })
+                    script =
+                        ritr.success && ritr.body.shellProcessId
+                            ? new ProgramPidWrapper(ritr.body.shellProcessId)
+                            : undefined
+                } else {
+                    script = await Terminal.launchInTerminal(
+                        cwd,
+                        [runtimeExecutable, ...runtimeArgs, ...program, ...programArgs],
+                        env
+                    )
+                }
+
                 if (script) {
                     // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
                     script.on('exit', (code: number | null) => {
@@ -306,10 +330,11 @@ class PhpDebugSession extends vscode.DebugSession {
                         this.sendEvent(new vscode.TerminatedEvent())
                     })
                 }
+                // this._phpProcess = script
             } else {
                 const script = childProcess.spawn(runtimeExecutable, [...runtimeArgs, ...program, ...programArgs], {
                     cwd,
-                    env,
+                    env: { ...process.env, ...env },
                 })
                 // redirect output to debug console
                 script.stdout.on('data', (data: Buffer) => {
@@ -1423,8 +1448,10 @@ class PhpDebugSession extends vscode.DebugSession {
                 }
             }
             // If launched as CLI, kill process
-            if (this._phpProcess) {
-                this._phpProcess.kill()
+            if (this._phpProcess?.pid) {
+                Terminal.killTree(this._phpProcess.pid).catch(err =>
+                    this.sendEvent(new vscode.OutputEvent(`killTree: ${err as string}\n`))
+                )
             }
         } catch (error) {
             this.sendErrorResponse(response, error as Error)
