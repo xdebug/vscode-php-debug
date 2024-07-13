@@ -4,7 +4,7 @@ import { Transport, DbgpConnection, ENCODING } from './dbgp'
 import * as tls from 'tls'
 import * as iconv from 'iconv-lite'
 import * as xdebug from './xdebugConnection'
-import { EventEmitter } from 'stream'
+import { EventEmitter } from 'events'
 
 export declare interface XdebugCloudConnection {
     on(event: 'error', listener: (error: Error) => void): this

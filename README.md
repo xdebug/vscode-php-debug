@@ -97,7 +97,8 @@ Options specific to CLI debugging:
 - `cwd`: The current working directory to use when launching the script
 - `runtimeExecutable`: Path to the PHP binary used for launching the script. By default the one on the PATH.
 - `runtimeArgs`: Additional arguments to pass to the PHP binary
-- `externalConsole`: Launches the script in an external console window instead of the debug console (default: `false`)
+- `externalConsole`: _DEPRECATED_ Launches the script in an external console window instead of the debug console (default: `false`)
+- `console`: What kind of console to use for running the script. Possible values are: `internalConsole` (default), `integratedTerminal` or `externalTerminal`.
 - `env`: Environment variables to pass to the script
 - `envFile`: Optional path to a file containing environment variable definitions
 
