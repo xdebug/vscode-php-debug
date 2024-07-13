@@ -92,6 +92,16 @@ describe('PHP Debug Adapter', () => {
                 client.waitForEvent('terminated'),
             ])
         })
+        ;(process.platform === 'win32' ? it.skip : it)('should error on existing unix pipe', async () => {
+            await assert.isRejected(
+                client.launch({
+                    program,
+                    hostname: 'unix:///tmp',
+                    runtimeArgs: ['-dxdebug.client_host=unix:///tmp'],
+                }),
+                /File .+ exists and cannot be used for Unix Domain socket/
+            )
+        })
     })
 
     describe('continuation commands', () => {
