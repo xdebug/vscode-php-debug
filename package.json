@@ -581,7 +581,7 @@
       {
         "command": "extension.php-debug.startWithStopOnEntry",
         "key": "F11",
-        "when": "!inDebugMode && debugConfigurationType == 'php'"
+        "when": "!inDebugMode && activeViewlet == 'workbench.view.debug' && debugConfigurationType == 'php'"
       }
     ]
   }
