@@ -8,7 +8,7 @@ import * as childProcess from 'child_process'
 import * as path from 'path'
 import * as util from 'util'
 import * as fs from 'fs'
-import { Terminal, IProgram, ProgramPidWrapper } from './terminal'
+import { Terminal, IProgram, ProgramPidWrapper, isProcessAlive } from './terminal'
 import { convertClientPathToDebugger, convertDebuggerPathToClient, isPositiveMatchInGlobs } from './paths'
 import minimatch from 'minimatch'
 import { BreakpointManager, BreakpointAdapter } from './breakpoints'
@@ -513,6 +513,21 @@ class PhpDebugSession extends vscode.DebugSession {
 
     private async initializeConnection(connection: xdebug.Connection): Promise<void> {
         const initPacket = await connection.waitForInitPacket()
+
+        // track the process, if we asked the IDE to spawn it
+        if (
+            !this._phpProcess &&
+            (this._args.program || this._args.runtimeArgs) &&
+            initPacket.appid &&
+            isProcessAlive(parseInt(initPacket.appid))
+        ) {
+            this._phpProcess = new ProgramPidWrapper(parseInt(initPacket.appid))
+            // we only do this for CLI mode. In normal listen mode, only a thread exited event is send.
+            this._phpProcess.on('exit', (code: number | null) => {
+                this.sendEvent(new vscode.ExitedEvent(code ?? 0))
+                this.sendEvent(new vscode.TerminatedEvent())
+            })
+        }
 
         // check if this connection should be skipped
         if (
@@ -1448,10 +1463,8 @@ class PhpDebugSession extends vscode.DebugSession {
                 }
             }
             // If launched as CLI, kill process
-            if (this._phpProcess?.pid) {
-                Terminal.killTree(this._phpProcess.pid).catch(err =>
-                    this.sendEvent(new vscode.OutputEvent(`killTree: ${err as string}\n`))
-                )
+            if (this._phpProcess) {
+                this._phpProcess.kill()
             }
         } catch (error) {
             this.sendErrorResponse(response, error as Error)

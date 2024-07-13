@@ -6,7 +6,7 @@
 import * as Path from 'path'
 import * as FS from 'fs'
 import * as CP from 'child_process'
-import { EventEmitter } from 'stream'
+import { EventEmitter } from 'events'
 
 export class Terminal {
     private static _terminalService: ITerminalService
@@ -61,11 +61,11 @@ export class ProgramPidWrapper extends EventEmitter implements IProgram {
     /**
      * How often to check and see if the process exited after we send a close signal.
      */
-    //private static readonly killConfirmInterval = 200;
+    private static readonly killConfirmInterval = 200
 
     private loop?: { timer: NodeJS.Timeout; processId: number }
 
-    constructor(readonly pid?: number) {
+    constructor(readonly pid: number) {
         super()
 
         if (pid) {
@@ -74,7 +74,11 @@ export class ProgramPidWrapper extends EventEmitter implements IProgram {
     }
 
     kill(signal?: number | NodeJS.Signals | undefined): boolean {
-        return false
+        this.startPollLoop(this.pid, ProgramPidWrapper.killConfirmInterval)
+        Terminal.killTree(this.pid).catch(err => {
+            // ignore
+        })
+        return true
     }
 
     private startPollLoop(processId: number, interval = ProgramPidWrapper.terminationPollInterval) {
@@ -95,7 +99,7 @@ export class ProgramPidWrapper extends EventEmitter implements IProgram {
         this.loop = loop
     }
 }
-function isProcessAlive(processId: number) {
+export function isProcessAlive(processId: number) {
     try {
         // kill with signal=0 just test for whether the proc is alive. It throws if not.
         process.kill(processId, 0)
