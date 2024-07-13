@@ -18,6 +18,7 @@ export interface Transport {
     on(event: 'close', listener: () => void): this
     write(buffer: Uint8Array | string, cb?: (err?: Error) => void): boolean
     end(callback?: () => void): this
+    destroy(error?: Error): this
 }
 
 export declare interface DbgpConnection {
@@ -145,7 +146,7 @@ export class DbgpConnection extends EventEmitter {
 
     /** closes the underlying socket */
     public close(): Promise<void> {
-        this._socket.end()
+        this._socket.destroy()
         return this._closePromise
     }
 }
