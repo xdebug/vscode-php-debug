@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode'
 import { LaunchRequestArguments } from './phpDebug'
 import * as which from 'which'
+import * as path from 'path'
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -11,14 +12,18 @@ export function activate(context: vscode.ExtensionContext) {
                 debugConfiguration: DebugConfiguration & LaunchRequestArguments,
                 token?: CancellationToken
             ): Promise<ProviderResult<DebugConfiguration>> {
-                if (!debugConfiguration.type && !debugConfiguration.request && !debugConfiguration.name) {
+                const isDynamic =
+                    (!debugConfiguration.type || debugConfiguration.type === 'php') &&
+                    !debugConfiguration.request &&
+                    !debugConfiguration.name
+                if (isDynamic) {
                     const editor = vscode.window.activeTextEditor
                     if (editor && editor.document.languageId === 'php') {
                         debugConfiguration.type = 'php'
                         debugConfiguration.name = 'Launch (dynamic)'
                         debugConfiguration.request = 'launch'
-                        debugConfiguration.program = '${file}'
-                        debugConfiguration.cwd = '${fileDirname}'
+                        debugConfiguration.program = debugConfiguration.program || '${file}'
+                        debugConfiguration.cwd = debugConfiguration.cwd || '${fileDirname}'
                         debugConfiguration.port = 0
                         debugConfiguration.runtimeArgs = ['-dxdebug.start_with_request=yes']
                         debugConfiguration.env = {
@@ -66,19 +71,71 @@ export function activate(context: vscode.ExtensionContext) {
                         }
                     }
                 }
+                if (folder && folder.uri.scheme !== 'file') {
+                    // replace
+                    if (debugConfiguration.pathMappings) {
+                        for (const key in debugConfiguration.pathMappings) {
+                            debugConfiguration.pathMappings[key] = debugConfiguration.pathMappings[key].replace(
+                                '${workspaceFolder}',
+                                folder.uri.toString()
+                            )
+                        }
+                    }
+                    // The following path are currently NOT mapped
+                    /*
+                    debugConfiguration.skipEntryPaths = debugConfiguration.skipEntryPaths?.map(v =>
+                        v.replace('${workspaceFolder}', folder.uri.toString())
+                    )
+                    debugConfiguration.skipFiles = debugConfiguration.skipFiles?.map(v =>
+                        v.replace('${workspaceFolder}', folder.uri.toString())
+                    )
+                    debugConfiguration.ignore = debugConfiguration.ignore?.map(v =>
+                        v.replace('${workspaceFolder}', folder.uri.toString())
+                    )
+                    */
+                }
                 return debugConfiguration
             },
         })
     )
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('php.debug.debugPhpFile', async (uri: vscode.Uri) => {
-            await vscode.debug.startDebugging(undefined, { type: '', name: '', request: '' })
+        vscode.commands.registerCommand('extension.php-debug.runEditorContents', (resource: vscode.Uri) => {
+            let targetResource = resource
+            if (!targetResource && vscode.window.activeTextEditor) {
+                targetResource = vscode.window.activeTextEditor.document.uri
+            }
+            if (targetResource) {
+                void vscode.debug.startDebugging(undefined, {
+                    type: 'php',
+                    name: '',
+                    request: '',
+                    noDebug: true,
+                    program: targetResource.fsPath,
+                    cwd: path.dirname(targetResource.fsPath),
+                })
+            }
+        }),
+        vscode.commands.registerCommand('extension.php-debug.debugEditorContents', (resource: vscode.Uri) => {
+            let targetResource = resource
+            if (!targetResource && vscode.window.activeTextEditor) {
+                targetResource = vscode.window.activeTextEditor.document.uri
+            }
+            if (targetResource) {
+                void vscode.debug.startDebugging(undefined, {
+                    type: 'php',
+                    name: '',
+                    request: '',
+                    stopOnEntry: true,
+                    program: targetResource.fsPath,
+                    cwd: path.dirname(targetResource.fsPath),
+                })
+            }
         })
     )
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('php.debug.startWithStopOnEntry', async (uri: vscode.Uri) => {
+        vscode.commands.registerCommand('extension.php-debug.startWithStopOnEntry', async (uri: vscode.Uri) => {
             await vscode.commands.executeCommand('workbench.action.debug.start', {
                 config: {
                     stopOnEntry: true,

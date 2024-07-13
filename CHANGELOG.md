@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.34.0]
+
+- Partial support for virtual workspaces
+
+## [1.33.1]
+
+- Fix editor title run/debug button.
+
 ## [1.33.0]
 
 - Add skipEntryPaths to immediately detach a debug session depending on entry path.
