@@ -414,6 +414,11 @@ class PhpDebugSession extends vscode.DebugSession {
                     throw new Error('Cannot have port and socketPath set at the same time')
                 }
                 if (args.hostname?.toLowerCase()?.startsWith('unix://') === true) {
+                    if (fs.existsSync(args.hostname.substring(7))) {
+                        throw new Error(
+                            `File ${args.hostname.substring(7)} exists and cannot be used for Unix Domain socket`
+                        )
+                    }
                     server.listen(args.hostname.substring(7))
                 } else if (args.hostname?.startsWith('\\\\') === true) {
                     server.listen(args.hostname)
