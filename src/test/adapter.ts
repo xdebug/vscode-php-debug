@@ -828,7 +828,7 @@ describe('PHP Debug Adapter', () => {
 
         it('listen with externalConsole', async () => {
             // this is how we can currently turn on stdout redirect
-            await Promise.all([client.launch({ externalConsole: true }), client.configurationSequence()])
+            await Promise.all([client.launch({ stream: { stdout: '1' } }), client.configurationSequence()])
 
             const script = childProcess.spawn('php', [program])
             after(() => script.kill())

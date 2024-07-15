@@ -1134,11 +1134,11 @@ export class Connection extends DbgpConnection {
 
     // ------------------------------ stream ----------------------------------------
 
-    public async sendStdout(mode: '0' | '1' | '2'): Promise<Response> {
+    public async sendStdout(mode: 0 | 1 | 2): Promise<Response> {
         return new Response(await this._enqueueCommand('stdout', `-c ${mode}`), this)
     }
 
-    public async sendStderr(mode: '0' | '1' | '2'): Promise<Response> {
+    public async sendStderr(mode: 0 | 1 | 2): Promise<Response> {
         return new Response(await this._enqueueCommand('stderr', `-c ${mode}`), this)
     }
 }
