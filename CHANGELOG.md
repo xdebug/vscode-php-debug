@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.35.0]
+
+- Support for DBGp stream command
+- Avoid conflict with full screen F11 shortcut
+- Improve existing unix socket handling
+- Improve close socket handling
+
 ## [1.34.0]
 
 - Partial support for virtual workspaces
