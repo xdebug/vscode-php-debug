@@ -98,6 +98,10 @@ export interface LaunchRequestArguments extends VSCodeDebugProtocol.LaunchReques
     maxConnections?: number
     /** Xdebug cloud token */
     xdebugCloudToken?: string
+    /** Xdebug stream settings */
+    stream?: {
+        stdout?: 0 | 1 | 2
+    }
 
     // CLI options
 
@@ -564,6 +568,15 @@ class PhpDebugSession extends vscode.DebugSession {
             this._args.xdebugSettings = xdebugSettings
         } catch (error) {
             throw new Error(`Error applying xdebugSettings: ${String(error instanceof Error ? error.message : error)}`)
+        }
+
+        const stdout =
+            this._args.stream?.stdout === undefined ? (this._args.externalConsole ? 1 : 0) : this._args.stream.stdout
+        if (stdout) {
+            await connection.sendStdout(stdout)
+            connection.on('stream', (stream: xdebug.Stream) =>
+                this.sendEvent(new vscode.OutputEvent(stream.value, 'stdout'))
+            )
         }
 
         this.sendEvent(new vscode.ThreadEvent('started', connection.id))

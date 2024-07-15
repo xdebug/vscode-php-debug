@@ -366,6 +366,17 @@
               "xdebugCloudToken": {
                 "type": "string",
                 "description": "Xdebug Could token"
+              },
+              "stream": {
+                "type": "object",
+                "description": "Xdebug stream settings",
+                "properties": {
+                  "stdout": {
+                    "type": "number",
+                    "description": "Redirect stdout stream: 0 (disable), 1 (copy), 2 (redirect)",
+                    "default": 0
+                  }
+                }
               }
             }
           }
