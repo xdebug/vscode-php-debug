@@ -43,7 +43,7 @@
     "url": "https://github.com/xdebug/vscode-php-debug/issues"
   },
   "dependencies": {
-    "@vscode/debugadapter": "^1.57.0",
+    "@vscode/debugadapter": "^1.68.0",
     "@vscode/debugprotocol": "^1.55.1",
     "@xmldom/xmldom": "^0.8.4",
     "buffer-crc32": "^0.2.13",
