@@ -225,4 +225,12 @@ class InnerCloudTransport extends EventEmitter implements Transport {
         }
         return this
     }
+
+    destroy(error?: Error): this {
+        if (this._open) {
+            this._open = false
+            this.emit('close')
+        }
+        return this
+    }
 }
