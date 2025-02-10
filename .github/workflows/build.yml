@@ -21,7 +21,7 @@ jobs:
             os: windows-2022
           - xdebug: xdebug-3.3.2 # renovate:keep-up-to-date
             php: '8.2' # renovate:keep-up-to-date
-            os: macos-12
+            os: macos-14
           # Old versions
           - xdebug: xdebug-2.9.8
             php: '7.4'
@@ -31,7 +31,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16.14.2' # renovate:keep-up-to-date
+          node-version: '20.18.2' # renovate:keep-up-to-date
       - name: Install npm dependencies
         run: npm ci
       - name: Prettier
@@ -70,7 +70,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16.14.2' # renovate:keep-up-to-date
+          node-version: '20.18.2' # renovate:keep-up-to-date
       - name: Install npm dependencies
         run: npm ci
       - name: Build VS Code extension

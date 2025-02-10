@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode'
+import { WorkspaceFolder, DebugConfiguration, CancellationToken } from 'vscode'
 import { LaunchRequestArguments } from './phpDebug'
 import * as which from 'which'
 import * as path from 'path'
@@ -11,7 +11,7 @@ export function activate(context: vscode.ExtensionContext) {
                 folder: WorkspaceFolder | undefined,
                 debugConfiguration: DebugConfiguration & LaunchRequestArguments,
                 token?: CancellationToken
-            ): Promise<ProviderResult<DebugConfiguration>> {
+            ): Promise<DebugConfiguration | undefined> {
                 const isDynamic =
                     (!debugConfiguration.type || debugConfiguration.type === 'php') &&
                     !debugConfiguration.request &&
