@@ -20,21 +20,22 @@ export class ControlSocket {
             this.supportedPlatform() &&
             initPacket.engineName === 'Xdebug' &&
             semver.valid(initPacket.engineVersion, { loose: true }) !== null &&
-            (semver.gte(initPacket.engineVersion, '3.4.0', { loose: true }) || initPacket.engineVersion === '3.4.0-dev')
+            (semver.gte(initPacket.engineVersion, '3.4.0', { loose: true }) ||
+                initPacket.engineVersion.startsWith('3.4.0'))
         )
     }
 
     /**
      *
-     * @param pid appId returned in the init packet
+     * @param ctrlSocket Control socket full path
      * @returns
      */
-    async requestPause(pid: string): Promise<void> {
+    async requestPause(ctrlSocket: string): Promise<void> {
         let retval
         if (process.platform === 'linux') {
-            retval = await this.executeLinux(pid, 'pause')
+            retval = await this.executeLinux(ctrlSocket, 'pause')
         } else if (process.platform === 'win32') {
-            retval = await this.executeWindows(pid, 'pause')
+            retval = await this.executeWindows(ctrlSocket, 'pause')
         } else {
             throw new Error('Invalid platform for Xdebug control socket')
         }
@@ -42,10 +43,11 @@ export class ControlSocket {
         return
     }
 
-    private async executeLinux(pid: string, cmd: string): Promise<string> {
+    private async executeLinux(ctrlSocket: string, cmd: string): Promise<string> {
         const abs = await import('abstract-socket')
         return new Promise<string>((resolve, reject) => {
-            const cs = `\0xdebug-ctrl.${pid}y`.padEnd(108, 'x')
+            // const cs = `\0xdebug-ctrl.${pid}y`.padEnd(108, 'x')
+            const cs = `\0${ctrlSocket}`
             try {
                 const s = abs.connect(cs, () => {
                     s.write(`${cmd}\0`)
@@ -81,9 +83,10 @@ export class ControlSocket {
         })
     }
 
-    private async executeWindows(pid: string, cmd: string): Promise<string> {
+    private async executeWindows(ctrlSocket: string, cmd: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
-            const s = net.createConnection(`\\\\.\\pipe\\xdebug-ctrl.${pid}`, () => {
+            //const s = net.createConnection(`\\\\.\\pipe\\xdebug-ctrl.${pid}`, () => {
+            const s = net.createConnection(ctrlSocket, () => {
                 s.end(`${cmd}\0`)
             })
             s.setTimeout(3000)

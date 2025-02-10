@@ -20,6 +20,8 @@ export class InitPacket {
     engineName: string
     /** the internal PID */
     appid: string
+    /** the control socket path */
+    ctrlSocket: string
     /**
      * @param  {XMLDocument} document - An XML document to read from
      * @param  {Connection} connection
@@ -33,6 +35,7 @@ export class InitPacket {
         this.engineVersion = documentElement.getElementsByTagName('engine').item(0)?.getAttribute('version') ?? ''
         this.engineName = documentElement.getElementsByTagName('engine').item(0)?.textContent ?? ''
         this.appid = documentElement.getAttribute('appid') ?? ''
+        this.ctrlSocket = documentElement.getAttributeNS('https://xdebug.org/dbgp/xdebug', 'ctrl_socket') ?? ''
         this.connection = connection
     }
 }

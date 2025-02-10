@@ -1448,7 +1448,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 this._skippingFiles.set(args.threadId, false)
             }
             try {
-                await controlSocket.requestPause(initPacket.appId)
+                await controlSocket.requestPause(initPacket.ctrlSocket)
                 this.sendResponse(response)
                 return
             } catch (error) {
