@@ -21,7 +21,7 @@ jobs:
             os: windows-2022
           - xdebug: xdebug-3.3.2 # renovate:keep-up-to-date
             php: '8.2' # renovate:keep-up-to-date
-            os: macos-12
+            os: macos-14
           # Old versions
           - xdebug: xdebug-2.9.8
             php: '7.4'
