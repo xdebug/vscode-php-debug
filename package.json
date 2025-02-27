@@ -353,6 +353,13 @@
                       1
                     ],
                     "description": "This feature can get set by the IDE if it wants to have more detailed internal information on properties (eg. private members of classes, etc.) Zero means that hidden members are not shown to the IDE"
+                  },
+                  "breakpoint_include_return_value": {
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "Determines whether to enable an additional \"return from function\" debugging step, allowing inspection of the return value when a function call returns."
                   }
                 },
                 "description": "Overrides for Xdebug remote debugging settings. See https://xdebug.org/docs-dbgp.php#feature-names",
