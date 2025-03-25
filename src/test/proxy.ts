@@ -92,6 +92,7 @@ describe('ProxyConnect', () => {
     })
 
     it('should request deregistration', (done: Mocha.Done) => {
+        done = doneOnce(done)
         conn.on('log_request', (str: string) => {
             assert.equal(str, msgs.deregisterInfo)
             done()
