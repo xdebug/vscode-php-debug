@@ -22,7 +22,7 @@
       "depNameTemplate": "php",
       "packageNameTemplate": "php/php-src",
       "datasourceTemplate": "github-tags",
-      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?<prerelease>\\w+)?$"
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.?(?<patch>\\d+)?(?<prerelease>\\w+)?$"
     },
     {
       "customType": "regex",
