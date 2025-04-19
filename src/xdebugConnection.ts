@@ -525,6 +525,8 @@ export abstract class BaseProperty {
     hasChildren: boolean
     /** the number of children this property has, if any. Useful for showing array length. */
     numberOfChildren: number
+    /** the size of the value */
+    size: number
     /** the value of the property for primitive types */
     value: string
     /** children that were already included in the response */
@@ -549,6 +551,9 @@ export abstract class BaseProperty {
         }
         if (propertyNode.hasAttribute('facet')) {
             this.facets = propertyNode.getAttribute('facet')!.split(' ')
+        }
+        if (propertyNode.hasAttribute('size')) {
+            this.size = parseInt(propertyNode.getAttribute('size') ?? '0')
         }
         this.hasChildren = !!parseInt(propertyNode.getAttribute('children')!)
         if (this.hasChildren) {
@@ -1174,7 +1179,10 @@ export class Connection extends DbgpConnection {
 
     /** sends an eval command */
     public async sendEvalCommand(expression: string, context?: Context): Promise<EvalResponse> {
-        return new EvalResponse(await this._enqueueCommand('eval', context ? `-d ${context.stackFrame.level}` : undefined, expression), this)
+        return new EvalResponse(
+            await this._enqueueCommand('eval', context ? `-d ${context.stackFrame.level}` : undefined, expression),
+            this
+        )
     }
 
     // ------------------------------ stream ----------------------------------------

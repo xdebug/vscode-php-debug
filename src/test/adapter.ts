@@ -863,7 +863,7 @@ describe('PHP Debug Adapter', () => {
 
             assert.equal(
                 response3.result,
-                "array (\n  0 => 1,\n  'test' => 2,\n  'test2' => \n  array (\n    't' => 123,\n  ),\n)"
+                'array (\n  0 => 1,\n  test => 2,\n  test2 => \n  array (\n    t => 123,\n  ),\n)'
             )
             assert.equal(response3.variablesReference, 0)
         })
