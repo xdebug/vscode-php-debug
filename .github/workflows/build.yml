@@ -13,25 +13,25 @@ jobs:
       matrix:
         include:
           # Latest versions
-          - xdebug: xdebug-3.2.1 # renovate:keep-up-to-date
+          - xdebug: xdebug-3.4.2 # renovate:keep-up-to-date
             php: '8.2' # renovate:keep-up-to-date
             os: ubuntu-22.04
-          - xdebug: xdebug-3.1.3 # renovate:keep-up-to-date
+          - xdebug: xdebug-3.4.2 # renovate:keep-up-to-date
             php: '8.1' # renovate:keep-up-to-date
             os: windows-2022
-          - xdebug: xdebug-3.2.1 # renovate:keep-up-to-date
+          - xdebug: xdebug-3.4.2 # renovate:keep-up-to-date
             php: '8.2' # renovate:keep-up-to-date
-            os: macos-12
+            os: macos-14
           # Old versions
           - xdebug: xdebug-2.9.8
             php: '7.4'
             os: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16.14.2' # renovate:keep-up-to-date
+          node-version: '20.18.2' # renovate:keep-up-to-date
       - name: Install npm dependencies
         run: npm ci
       - name: Prettier
@@ -66,11 +66,11 @@ jobs:
     needs: test
     if: github.repository_owner == 'xdebug' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16.14.2' # renovate:keep-up-to-date
+          node-version: '20.18.2' # renovate:keep-up-to-date
       - name: Install npm dependencies
         run: npm ci
       - name: Build VS Code extension

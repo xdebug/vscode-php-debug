@@ -1,49 +1,52 @@
 {
-  "extends": ["config:base"],
+  "extends": ["config:recommended"],
   "timezone": "Europe/Berlin",
   "rangeStrategy": "bump",
-  "semanticCommits": true,
-  "masterIssue": true,
+  "semanticCommits": "enabled",
+  "dependencyDashboard": true,
   "prHourlyLimit": 0,
-  "node": {
-    "supportPolicy": ["current"],
-    "major": {
-      "enabled": true
-    }
-  },
-  "regexManagers": [
+  "customManagers": [
     {
+      "customType": "regex",
       "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
       "matchStrings": ["xdebug: xdebug-(?<currentValue>\\S+).*# renovate:keep-up-to-date"],
       "depNameTemplate": "xdebug",
-      "lookupNameTemplate": "xdebug/xdebug",
+      "packageNameTemplate": "xdebug/xdebug",
       "datasourceTemplate": "github-tags",
       "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?<prerelease>\\w+)?$"
     },
     {
+      "customType": "regex",
       "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
       "matchStrings": ["php: '(?<currentValue>[^']+)'.*# renovate:keep-up-to-date"],
       "depNameTemplate": "php",
-      "lookupNameTemplate": "php/php-src",
+      "packageNameTemplate": "php/php-src",
       "datasourceTemplate": "github-tags",
-      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?<prerelease>\\w+)?$"
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.?(?<patch>\\d+)?(?<prerelease>\\w+)?$"
     },
     {
+      "customType": "regex",
       "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
       "matchStrings": ["node-version: '(?<currentValue>[^']+)'.*# renovate:keep-up-to-date"],
       "depNameTemplate": "node",
-      "lookupNameTemplate": "nodejs/node",
+      "packageNameTemplate": "nodejs/node",
       "datasourceTemplate": "github-tags",
       "versioningTemplate": "node"
     }
   ],
   "packageRules": [
     {
-      "packageNames": ["php"],
+      "matchCategories": ["node"],
+      "major": {
+        "enabled": true
+      }
+    },
+    {
+      "matchPackageNames": ["php"],
       "extractVersion": "^php-(?<version>.*)$"
     },
     {
-      "packageNames": ["node"],
+      "matchPackageNames": ["node"],
       "extractVersion": "^v(?<version>.*)$",
       "commitMessageTopic": "Node.js",
       "major": {
@@ -51,8 +54,8 @@
       }
     },
     {
-      "packagePatterns": ["^vscode-debug"],
-      "groupName": "vscode-debug"
+      "groupName": "vscode-debug",
+      "matchPackageNames": ["/^vscode-debug/"]
     },
     {
       "matchPackageNames": ["vscode"],

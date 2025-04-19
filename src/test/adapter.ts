@@ -5,7 +5,8 @@ import { DebugClient } from '@vscode/debugadapter-testsupport'
 import { DebugProtocol } from '@vscode/debugprotocol'
 import * as semver from 'semver'
 import * as net from 'net'
-import { describe, it, beforeEach, afterEach } from 'mocha'
+import * as childProcess from 'child_process'
+import { describe, it, beforeEach, afterEach, after } from 'mocha'
 chai.use(chaiAsPromised)
 const assert = chai.assert
 
@@ -91,6 +92,16 @@ describe('PHP Debug Adapter', () => {
                 client.configurationSequence(),
                 client.waitForEvent('terminated'),
             ])
+        })
+        ;(process.platform === 'win32' ? it.skip : it)('should error on existing unix pipe', async () => {
+            await assert.isRejected(
+                client.launch({
+                    program,
+                    hostname: 'unix:///tmp',
+                    runtimeArgs: ['-dxdebug.client_host=unix:///tmp'],
+                }),
+                /File .+ exists and cannot be used for Unix Domain socket/
+            )
         })
     })
 
@@ -868,12 +879,31 @@ describe('PHP Debug Adapter', () => {
         })
     })
 
+    describe('stream tests', () => {
+        const program = path.join(TEST_PROJECT, 'output.php')
+
+        it('listen with externalConsole', async () => {
+            // this is how we can currently turn on stdout redirect
+            await Promise.all([client.launch({ stream: { stdout: '1' } }), client.configurationSequence()])
+
+            const script = childProcess.spawn('php', [program])
+            after(() => script.kill())
+            await client.assertOutput('stdout', 'stdout output 1')
+            await client.assertOutput('stdout', 'stdout output 2')
+        })
+    })
+
     describe('special adapter tests', () => {
         it('max connections', async () => {
             await Promise.all([client.launch({ maxConnections: 1, log: true }), client.configurationSequence()])
 
             const s1 = net.createConnection({ port: 9003 })
-            await client.assertOutput('console', 'new connection ')
+            const o1 = await client.assertOutput('console', 'new connection')
+            assert.match(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                o1.body.output as string,
+                /^new connection \d+ from/
+            )
             net.createConnection({ port: 9003 })
             const o = await client.waitForEvent('output')
             assert.match(
@@ -905,6 +935,15 @@ describe('PHP Debug Adapter', () => {
             assert.equal(response2.body.stackFrames[0].name, 'depth2')
             assert.equal(response2.body.stackFrames[1].name, 'depth1')
             assert.equal(response2.body.stackFrames[2].name, '{main}')
+        })
+        it('skip entry paths', async () => {
+            const program = path.join(TEST_PROJECT, 'variables.php')
+
+            await client.launch({ program, skipEntryPaths: ['**/variables.php'] })
+            await client.setBreakpointsRequest({ source: { path: program }, breakpoints: [{ line: 19 }] })
+            await client.configurationDoneRequest()
+
+            await client.assertOutput('console', 'skipping entry point')
         })
     })
 })

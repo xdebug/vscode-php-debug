@@ -22,7 +22,7 @@
   ],
   "engines": {
     "vscode": "^1.66.1",
-    "node": "^16.14.2"
+    "node": "^20.18.2"
   },
   "sponsor": {
     "url": "https://github.com/sponsors/zobo"
@@ -43,8 +43,8 @@
     "url": "https://github.com/xdebug/vscode-php-debug/issues"
   },
   "dependencies": {
-    "@vscode/debugadapter": "^1.57.0",
-    "@vscode/debugprotocol": "^1.55.1",
+    "@vscode/debugadapter": "^1.68.0",
+    "@vscode/debugprotocol": "^1.68.0",
     "@xmldom/xmldom": "^0.8.4",
     "buffer-crc32": "^0.2.13",
     "dotenv": "^16.0.3",
@@ -53,43 +53,40 @@
     "minimatch": "^5.1.0",
     "moment": "^2.29.4",
     "relateurl": "^0.2.7",
-    "semver": "^7.3.8",
+    "semver": "^7.5.2",
     "string-replace-async": "^2.0.0",
-    "url-relative": "^1.0.0",
-    "urlencode": "^1.1.0",
     "which": "^2.0.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.3.0",
     "@commitlint/config-conventional": "^17.3.0",
-    "@types/buffer-crc32": "^0.2.0",
-    "@types/chai": "4.3.4",
-    "@types/chai-as-promised": "^7.1.5",
+    "@types/buffer-crc32": "^0.2.4",
+    "@types/chai": "4.3.9",
+    "@types/chai-as-promised": "^7.1.8",
     "@types/minimatch": "^5.1.2",
     "@types/mocha": "^10.0.0",
     "@types/node": "^16.11.27",
-    "@types/relateurl": "^0.2.29",
+    "@types/relateurl": "^0.2.33",
     "@types/semver": "^7.3.13",
-    "@types/urlencode": "^1.1.2",
     "@types/vscode": "^1.66.0",
-    "@types/which": "^2.0.1",
+    "@types/which": "^2.0.2",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
     "@typescript-eslint/parser": "^5.44.0",
-    "@vscode/debugadapter-testsupport": "^1.57.0",
-    "chai": "^4.3.7",
-    "chai-as-promised": "^7.1.1",
+    "@vscode/debugadapter-testsupport": "^1.68.0",
+    "@vscode/vsce": "^3.2.2",
+    "chai": "^4.3.10",
+    "chai-as-promised": "^7.1.2",
     "copyfiles": "^2.4.1",
     "eslint": "^8.28.0",
-    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-prettier": "^8.10.0",
     "eslint-plugin-jsdoc": "^39.6.4",
-    "husky": "^8.0.2",
+    "husky": "^8.0.3",
     "mocha": "^10.1.0",
     "nyc": "^15.1.0",
     "prettier": "2.7.1",
     "semantic-release": "^19.0.5",
-    "semantic-release-vsce": "^5.2.0",
-    "typescript": "^4.9.3",
-    "vsce": "^2.11.0"
+    "semantic-release-vsce": "^5.6.3",
+    "typescript": "^4.9.3"
   },
   "release": {
     "branches": [
@@ -154,8 +151,9 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onDebugResolve:php",
-    "onCommand:php.debug.debugPhpFile",
-    "onCommand:php.debug.startWithStopOnEntry"
+    "onCommand:extension.php-debug.startWithStopOnEntry",
+    "onCommand:extension.php-debug.debugEditorContents",
+    "onCommand:extension.php-debug.runEditorContents"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
@@ -164,6 +162,10 @@
       "restrictedConfigurations": [
         "php.debug.executablePath"
       ]
+    },
+    "virtualWorkspaces": {
+      "supported": "limited",
+      "description": "In virtual workspaces, PHP process cannot be started, but can listen for incoming connections."
     }
   },
   "contributes": {
@@ -210,7 +212,7 @@
               "cwd": {
                 "type": "string",
                 "description": "Absolute path to the working directory of the program being debugged. Default is the current workspace.",
-                "default": "${workspaceRoot}"
+                "default": "${workspaceFolder}"
               },
               "runtimeExecutable": {
                 "type": "string",
@@ -282,6 +284,11 @@
                 "type": "array",
                 "items": "string",
                 "description": "An array of exception class names that should be ignored."
+              },
+              "skipEntryPaths": {
+                "type": "array",
+                "items": "string",
+                "description": "An array of glob pattern to skip if the initial entry file is matched."
               },
               "log": {
                 "type": "boolean",
@@ -356,6 +363,17 @@
               "xdebugCloudToken": {
                 "type": "string",
                 "description": "Xdebug Could token"
+              },
+              "stream": {
+                "type": "object",
+                "description": "Xdebug stream settings",
+                "properties": {
+                  "stdout": {
+                    "type": "number",
+                    "description": "Redirect stdout stream: 0 (disable), 1 (copy), 2 (redirect)",
+                    "default": 0
+                  }
+                }
               }
             }
           }
@@ -520,34 +538,58 @@
     "menus": {
       "editor/title/run": [
         {
-          "command": "php.debug.debugPhpFile",
-          "when": "resourceLangId == php && !inDiffEditor"
+          "command": "extension.php-debug.runEditorContents",
+          "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file",
+          "group": "navigation@1"
+        },
+        {
+          "command": "extension.php-debug.debugEditorContents",
+          "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "extension.php-debug.debugEditorContents",
+          "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file"
+        },
+        {
+          "command": "extension.php-debug.runEditorContents",
+          "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file"
         }
       ]
     },
     "commands": [
       {
-        "command": "php.debug.debugPhpFile",
-        "title": "Debug PHP",
-        "icon": "$(debug-alt-small)",
-        "enablement": "resourceLangId == php"
-      },
-      {
-        "command": "php.debug.startWithStopOnEntry",
+        "command": "extension.php-debug.startWithStopOnEntry",
         "title": "Start Debugging and Stop on Entry",
         "category": "Debug"
+      },
+      {
+        "command": "extension.php-debug.debugEditorContents",
+        "title": "Debug PHP File",
+        "category": "PHP Debug",
+        "enablement": "!inDebugMode",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "extension.php-debug.runEditorContents",
+        "title": "Run PHP File",
+        "category": "PHP Debug",
+        "enablement": "!inDebugMode",
+        "icon": "$(play)"
       }
     ],
     "keybindings": [
       {
-        "command": "php.debug.startWithStopOnEntry",
+        "command": "extension.php-debug.startWithStopOnEntry",
         "key": "F10",
         "when": "!inDebugMode && debugConfigurationType == 'php'"
       },
       {
-        "command": "php.debug.startWithStopOnEntry",
+        "command": "extension.php-debug.startWithStopOnEntry",
         "key": "F11",
-        "when": "!inDebugMode && debugConfigurationType == 'php'"
+        "when": "!inDebugMode && activeViewlet == 'workbench.view.debug' && debugConfigurationType == 'php'"
       }
     ]
   }

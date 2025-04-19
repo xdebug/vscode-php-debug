@@ -4,11 +4,6 @@
 
 ![Demo GIF](images/demo.gif)
 
-## Sponsored by
-
-<p><a title="Try CodeStream" href="https://sponsorlink.codestream.com/?utm_source=vscmarket&amp;utm_campaign=phpdebug&amp;utm_medium=banner"><img src="https://alt-images.codestream.com/codestream_logo_phpdebug.png"></a></br>
-Manage pull requests and conduct code reviews in your IDE with full source-tree context. Comment on any line, not just the diffs. Use jump-to-definition, your favorite keybindings, and code intelligence with more of your workflow.<br> <a title="Try CodeStream" href="https://sponsorlink.codestream.com/?utm_source=vscmarket&amp;utm_campaign=phpdebug&amp;utm_medium=banner">Learn More</a></p>
-
 ### Sponsor PHP Debug Adapter for Visual Studio Code
 
 If you find this extension useful, if it helps you solve your problems and if you appreciate the support given here, consider sponsoring our work.
@@ -78,6 +73,7 @@ More general information on debugging with VS Code can be found on https://code.
 - `ignore`: An optional array of glob patterns that errors should be ignored from (for example `**/vendor/**/*.php`)
 - `ignoreExceptions`: An optional array of exception class names that should be ignored (for example `BaseException`, `\NS1\Exception`, `\*\Exception` or `\**\Exception*`)
 - `skipFiles`: An array of glob patterns, to skip when debugging. Star patterns and negations are allowed, for example, `**/vendor/**` or `!**/vendor/my-module/**`.
+- `skipEntryPaths`: An array of glob patterns, to immediately detach from and ignore for debugging if the entry script matches (example `**/ajax.php`).
 - `maxConnections`: Accept only this number of parallel debugging sessions. Additional connections will be dropped and their execution will continue without debugging.
 - `proxy`: DBGp Proxy settings
   - `enable`: To enable proxy registration set to `true` (default is `false).
@@ -93,6 +89,8 @@ More general information on debugging with VS Code can be found on https://code.
   - `max_depth`: maximum depth that the debugger engine may return when sending arrays, hashes or object structures to the IDE (there should be no need to change this as depth is retrieved incrementally, large value can cause IDE to hang).
   - `show_hidden`: This feature can get set by the IDE if it wants to have more detailed internal information on properties (eg. private members of classes, etc.) Zero means that hidden members are not shown to the IDE.
 - `xdebugCloudToken`: Instead of listening locally, open a connection and register with Xdebug Cloud and accept debugging sessions on that connection.
+- `stream`: Allows to influence DBGp streams. Xdebug only supports `stdout` see [DBGp stdout](https://xdebug.org/docs/dbgp#stdout-stderr)
+  - `stdout`: Redirect stdout stream: 0 (disable), 1 (copy), 2 (redirect)
 
 Options specific to CLI debugging:
 

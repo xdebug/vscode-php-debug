@@ -28,8 +28,8 @@ export class InitPacket {
         this.language = documentElement.getAttribute('language')!
         this.protocolVersion = documentElement.getAttribute('protocol_version')!
         this.ideKey = documentElement.getAttribute('idekey')!
-        this.engineVersion = documentElement.getElementsByTagName('engine')[0].getAttribute('version')!
-        this.engineName = documentElement.getElementsByTagName('engine')[0].textContent ?? ''
+        this.engineVersion = documentElement.getElementsByTagName('engine').item(0)?.getAttribute('version') ?? ''
+        this.engineName = documentElement.getElementsByTagName('engine').item(0)?.textContent ?? ''
         this.connection = connection
     }
 }
@@ -175,6 +175,24 @@ export class UserNotify extends Notify {
                 this.line = parseInt(locations[0].getAttribute('lineno')!)
                 this.fileUri = locations[0].getAttribute('filename')!
             }
+        }
+    }
+}
+
+export class Stream {
+    /** Type of stream */
+    type: string
+    /** Data of the stream */
+    value: string
+
+    /** Constructs a stream object from an XML node from a Xdebug response */
+    constructor(document: XMLDocument) {
+        this.type = document.documentElement.getAttribute('type')!
+        const encoding = document.documentElement.getAttribute('encoding')
+        if (encoding) {
+            this.value = iconv.encode(document.documentElement.textContent!, encoding).toString()
+        } else {
+            this.value = document.documentElement.textContent!
         }
     }
 }
@@ -772,6 +790,7 @@ export declare interface Connection extends DbgpConnection {
     on(event: 'log', listener: (text: string) => void): this
     on(event: 'notify_user', listener: (notify: UserNotify) => void): this
     on(event: 'notify_breakpoint_resolved', listener: (notify: BreakpointResolvedNotify) => void): this
+    on(event: 'stream', listener: (stream: Stream) => void): this
 }
 
 /**
@@ -836,6 +855,9 @@ export class Connection extends DbgpConnection {
             } else if (response.documentElement.nodeName === 'notify') {
                 const n = Notify.fromXml(response, this)
                 this.emit('notify_' + n.name, n)
+            } else if (response.documentElement.nodeName === 'stream') {
+                const s = new Stream(response)
+                this.emit('stream', s)
             } else {
                 const transactionId = parseInt(response.documentElement.getAttribute('transaction_id')!)
                 if (this._pendingCommands.has(transactionId)) {
@@ -850,7 +872,13 @@ export class Connection extends DbgpConnection {
                 }
             }
         })
-        this.on('close', () => this._initPromiseRejectFn(new Error('connection closed (on close)')))
+        this.on('close', () => {
+            this._pendingCommands.forEach(command => command.rejectFn(new Error('connection closed (on close)')))
+            this._pendingCommands.clear()
+            this._commandQueue.forEach(command => command.rejectFn(new Error('connection closed (on close)')))
+            this._commandQueue = []
+            this._initPromiseRejectFn(new Error('connection closed (on close)'))
+        })
     }
 
     /** Returns a promise that gets resolved once the init packet arrives */
@@ -1147,5 +1175,15 @@ export class Connection extends DbgpConnection {
     /** sends an eval command */
     public async sendEvalCommand(expression: string): Promise<EvalResponse> {
         return new EvalResponse(await this._enqueueCommand('eval', undefined, expression), this)
+    }
+
+    // ------------------------------ stream ----------------------------------------
+
+    public async sendStdout(mode: 0 | 1 | 2): Promise<Response> {
+        return new Response(await this._enqueueCommand('stdout', `-c ${mode}`), this)
+    }
+
+    public async sendStderr(mode: 0 | 1 | 2): Promise<Response> {
+        return new Response(await this._enqueueCommand('stderr', `-c ${mode}`), this)
     }
 }

@@ -18,6 +18,16 @@ describe('ProxyConnect', () => {
     let testSocket: Socket
     let msgs: ProxyMessages
 
+    function doneOnce(done: Mocha.Done): Mocha.Done {
+        let fired = false
+        return (err?: any) => {
+            if (!fired) {
+                fired = true
+                done(err)
+            }
+        }
+    }
+
     beforeEach(() => {
         testSocket = new Socket()
         testSocket.connect = (...param): Socket => {
@@ -57,6 +67,7 @@ describe('ProxyConnect', () => {
     })
 
     it('should request registration', (done: Mocha.Done) => {
+        done = doneOnce(done)
         conn.on('log_request', (str: string) => {
             assert.equal(str, msgs.registerInfo)
             done()
@@ -81,6 +92,7 @@ describe('ProxyConnect', () => {
     })
 
     it('should request deregistration', (done: Mocha.Done) => {
+        done = doneOnce(done)
         conn.on('log_request', (str: string) => {
             assert.equal(str, msgs.deregisterInfo)
             done()
