@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [1.36.0]
 
 - Implement copy to clipboard in var_export format
+- Improve watch eval to cache result or use property
+- Update docs
 
 ## [1.35.0]
 
