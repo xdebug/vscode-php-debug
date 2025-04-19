@@ -19,6 +19,7 @@ import { randomUUID } from 'crypto'
 import { getConfiguredEnvironment } from './envfile'
 import { XdebugCloudConnection } from './cloud'
 import { shouldIgnoreException } from './ignore'
+import { varExportProperty } from './varExport'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -247,6 +248,7 @@ class PhpDebugSession extends vscode.DebugSession {
             ],
             supportTerminateDebuggee: true,
             supportsDelayedStackTraceLoading: false,
+            supportsClipboardContext: true,
         }
         this.sendResponse(response)
     }
@@ -1469,22 +1471,28 @@ class PhpDebugSession extends vscode.DebugSession {
             if (args.context === 'hover') {
                 // try to get variable from property_get
                 const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                const response = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
-                if (response.property) {
-                    result = response.property
+                const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
+                if (res.property) {
+                    result = res.property
                 }
             } else if (args.context === 'repl') {
                 const uuid = randomUUID()
                 await connection.sendEvalCommand(`$GLOBALS['eval_cache']['${uuid}']=${args.expression}`)
                 const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                const response = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx[1])
-                if (response.property) {
-                    result = response.property
+                const res = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx[1])
+                if (res.property) {
+                    result = res.property
                 }
+            } else if (args.context === 'clipboard') {
+                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
+                response.body = { result: await varExportProperty(res.property), variablesReference: 0 }
+                this.sendResponse(response)
+                return
             } else {
-                const response = await connection.sendEvalCommand(args.expression)
-                if (response.result) {
-                    result = response.result
+                const res = await connection.sendEvalCommand(args.expression)
+                if (res.result) {
+                    result = res.result
                 }
             }
 

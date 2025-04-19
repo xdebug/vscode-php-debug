@@ -525,6 +525,8 @@ export abstract class BaseProperty {
     hasChildren: boolean
     /** the number of children this property has, if any. Useful for showing array length. */
     numberOfChildren: number
+    /** the size of the value */
+    size: number
     /** the value of the property for primitive types */
     value: string
     /** children that were already included in the response */
@@ -549,6 +551,9 @@ export abstract class BaseProperty {
         }
         if (propertyNode.hasAttribute('facet')) {
             this.facets = propertyNode.getAttribute('facet')!.split(' ')
+        }
+        if (propertyNode.hasAttribute('size')) {
+            this.size = parseInt(propertyNode.getAttribute('size') ?? '0')
         }
         this.hasChildren = !!parseInt(propertyNode.getAttribute('children')!)
         if (this.hasChildren) {
@@ -681,6 +686,33 @@ export class PropertyGetNameResponse extends Response {
     constructor(document: XMLDocument, context: Context) {
         super(document, context.stackFrame.connection)
         this.property = new Property(<Element>document.documentElement.firstChild!, context)
+    }
+}
+
+/** The response to a property_value command */
+export class PropertyValueResponse extends Response {
+    /** the size of the value */
+    size: number
+    /** the data type of the variable. Can be string, int, float, bool, array, object, uninitialized, null or resource  */
+    type: string
+    /** the value of the property for primitive types */
+    value: string
+    constructor(document: XMLDocument, connection: Connection) {
+        super(document, connection)
+        if (document.documentElement.hasAttribute('size')) {
+            this.size = parseInt(document.documentElement.getAttribute('size') ?? '0')
+        }
+        this.type = document.documentElement.getAttribute('type') ?? ''
+        if (document.documentElement.getElementsByTagName('value').length > 0) {
+            this.value = decodeTag(document.documentElement, 'value')
+        } else {
+            const encoding = document.documentElement.getAttribute('encoding')
+            if (encoding) {
+                this.value = iconv.encode(document.documentElement.textContent!, encoding).toString()
+            } else {
+                this.value = document.documentElement.textContent!
+            }
+        }
     }
 }
 
@@ -1116,6 +1148,18 @@ export class Connection extends DbgpConnection {
                 `-d ${context.stackFrame.level} -c ${context.id} -n ${escapedFullName}`
             ),
             context
+        )
+    }
+
+    /** Sends a property_value by name command and request full data */
+    public async sendPropertyValueNameCommand(name: string, context: Context): Promise<PropertyValueResponse> {
+        const escapedFullName = '"' + name.replace(/("|\\)/g, '\\$1') + '"'
+        return new PropertyValueResponse(
+            await this._enqueueCommand(
+                'property_value',
+                `-m 0 -d ${context.stackFrame.level} -c ${context.id} -n ${escapedFullName}`
+            ),
+            context.stackFrame.connection
         )
     }
 
