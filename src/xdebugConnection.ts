@@ -1178,11 +1178,8 @@ export class Connection extends DbgpConnection {
     // ------------------------------- eval -----------------------------------------
 
     /** sends an eval command */
-    public async sendEvalCommand(expression: string, context?: Context): Promise<EvalResponse> {
-        return new EvalResponse(
-            await this._enqueueCommand('eval', context ? `-d ${context.stackFrame.level}` : undefined, expression),
-            this
-        )
+    public async sendEvalCommand(expression: string): Promise<EvalResponse> {
+        return new EvalResponse(await this._enqueueCommand('eval', undefined, expression), this)
     }
 
     // ------------------------------ stream ----------------------------------------
