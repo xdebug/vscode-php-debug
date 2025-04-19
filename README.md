@@ -88,6 +88,7 @@ More general information on debugging with VS Code can be found on https://code.
   - `max_data`: max amount of variable data to initially retrieve.
   - `max_depth`: maximum depth that the debugger engine may return when sending arrays, hashes or object structures to the IDE (there should be no need to change this as depth is retrieved incrementally, large value can cause IDE to hang).
   - `show_hidden`: This feature can get set by the IDE if it wants to have more detailed internal information on properties (eg. private members of classes, etc.) Zero means that hidden members are not shown to the IDE.
+  - `breakpoint_include_return_value`: Determines whether to enable an additional "return from function" debugging step, allowing inspection of the return value when a function call returns.
 - `xdebugCloudToken`: Instead of listening locally, open a connection and register with Xdebug Cloud and accept debugging sessions on that connection.
 - `stream`: Allows to influence DBGp streams. Xdebug only supports `stdout` see [DBGp stdout](https://xdebug.org/docs/dbgp#stdout-stderr)
   - `stdout`: Redirect stdout stream: 0 (disable), 1 (copy), 2 (redirect)
