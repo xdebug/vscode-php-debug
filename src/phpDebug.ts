@@ -1489,6 +1489,26 @@ class PhpDebugSession extends vscode.DebugSession {
                 response.body = { result: await varExportProperty(res.property), variablesReference: 0 }
                 this.sendResponse(response)
                 return
+            } else if (args.context === 'watch') {
+                // if we suspect a function call
+                if (args.expression.includes('(')) {
+                    if (stackFrame.level !== 0) {
+                        throw new Error('Cannot evaluate function calls when not on top of the stack')
+                    }
+                    const uuid = randomUUID()
+                    await connection.sendEvalCommand(`$GLOBALS['eval_cache']['${uuid}']=${args.expression}`)
+                    const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                    const res = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx[1])
+                    if (res.property) {
+                        result = res.property
+                    }
+                } else {
+                    const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                    const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
+                    if (res.property) {
+                        result = res.property
+                    }
+                }
             } else {
                 const res = await connection.sendEvalCommand(args.expression)
                 if (res.result) {
