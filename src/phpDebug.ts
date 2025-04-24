@@ -1490,8 +1490,12 @@ class PhpDebugSession extends vscode.DebugSession {
                 this.sendResponse(response)
                 return
             } else if (args.context === 'watch') {
+                // try to translate static variable to special Xdebug format
+                if (args.expression.startsWith('self::$')) {
+                    args.expression = '$this::' + args.expression.substring(7)
+                }
                 // if we suspect a function call
-                if (args.expression.includes('(')) {
+                if (!args.expression.startsWith('$') || args.expression.includes('(')) {
                     if (stackFrame.level !== 0) {
                         throw new Error('Cannot evaluate function calls when not on top of the stack')
                     }
