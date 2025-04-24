@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.36.1]
+
+- Improve handling of watch for static properties
+
 ## [1.36.0]
 
 - Implement copy to clipboard in var_export format
