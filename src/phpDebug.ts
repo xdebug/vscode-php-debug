@@ -1475,7 +1475,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 if (res.property) {
                     result = res.property
                 }
-            } else if (args.context === 'repl' || args.context === 'watch') {
+            } else if (args.context === 'repl') {
                 const uuid = randomUUID()
                 await connection.sendEvalCommand(`$GLOBALS['eval_cache']['${uuid}']=${args.expression}`)
                 const ctx = await stackFrame.getContexts() // TODO CACHE THIS
@@ -1489,6 +1489,14 @@ class PhpDebugSession extends vscode.DebugSession {
                 response.body = { result: await varExportProperty(res.property), variablesReference: 0 }
                 this.sendResponse(response)
                 return
+            } else if (args.context === 'watch') {
+                const uuid = randomUUID()
+                await connection.sendEvalCommand(`$GLOBALS['eval_cache']['watch']['${uuid}']=${args.expression}`)
+                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                const res = await connection.sendPropertyGetNameCommand(`$eval_cache['watch']['${uuid}']`, ctx[1])
+                if (res.property) {
+                    result = res.property
+                }
             } else {
                 const res = await connection.sendEvalCommand(args.expression)
                 if (res.result) {
