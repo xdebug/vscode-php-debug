@@ -1490,28 +1490,12 @@ class PhpDebugSession extends vscode.DebugSession {
                 this.sendResponse(response)
                 return
             } else if (args.context === 'watch') {
-                // try to translate static variable to special Xdebug format
-                if (args.expression.startsWith('self::$')) {
-                    args.expression = '$this::' + args.expression.substring(7)
-                }
-                // if we suspect a function call
-                if (!args.expression.startsWith('$') || args.expression.includes('(')) {
-                    if (stackFrame.level !== 0) {
-                        throw new Error('Cannot evaluate function calls when not on top of the stack')
-                    }
-                    const uuid = randomUUID()
-                    await connection.sendEvalCommand(`$GLOBALS['eval_cache']['${uuid}']=${args.expression}`)
-                    const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                    const res = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx[1])
-                    if (res.property) {
-                        result = res.property
-                    }
-                } else {
-                    const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                    const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
-                    if (res.property) {
-                        result = res.property
-                    }
+                const uuid = randomUUID()
+                await connection.sendEvalCommand(`$GLOBALS['eval_cache']['watch']['${uuid}']=${args.expression}`)
+                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                const res = await connection.sendPropertyGetNameCommand(`$eval_cache['watch']['${uuid}']`, ctx[1])
+                if (res.property) {
+                    result = res.property
                 }
             } else {
                 const res = await connection.sendEvalCommand(args.expression)
