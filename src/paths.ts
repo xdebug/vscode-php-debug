@@ -1,7 +1,7 @@
 import fileUrl from 'file-url'
 import * as url from 'url'
 import * as Path from 'path'
-import minimatch from 'minimatch'
+import { minimatch } from 'minimatch'
 
 /** converts a server-side Xdebug file URI to a local path for VS Code with respect to source root settings */
 export function convertDebuggerPathToClient(fileUri: string, pathMapping?: { [index: string]: string }): string {
