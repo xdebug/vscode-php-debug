@@ -61,6 +61,8 @@ jobs:
         run: ./node_modules/.bin/nyc report --reporter=json
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
   release:
     runs-on: ubuntu-22.04
     needs: test
