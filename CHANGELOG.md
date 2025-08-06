@@ -4,9 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.37.0]
+
+- Expection info and support for virtual exception property (Xdebug 3.5.0)
+- Support for console option with internalConsole, integratedTerminal and externalTerminal options.
+
+## [1.36.2]
+
+- Revert watch handling to eval
+
+## [1.36.1]
+
+- Improve handling of watch for static properties
+
 ## [1.36.0]
 
-- Support for console option with internalConsole, integratedTerminal and externalTerminal options.
+- Implement copy to clipboard in var_export format
+- Improve watch eval to cache result or use property
+- Update docs
 
 ## [1.35.0]
 
