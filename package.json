@@ -197,8 +197,13 @@
               },
               "externalConsole": {
                 "type": "boolean",
-                "description": "Launch debug target in external console.",
+                "description": "DEPRECATED: Launch debug target in external console.",
                 "default": false
+              },
+              "console": {
+                "enum": ["internalConsole", "integratedTerminal", "externalTerminal"],
+                "description": "Where to launch the debug target: internal console, integrated terminal, or external terminal",
+                "default": "internalConsole"
               },
               "args": {
                 "type": "array",

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [1.37.0]
 
 - Expection info and support for virtual exception property (Xdebug 3.5.0)
+- Support for console option with internalConsole, integratedTerminal and externalTerminal options.
 
 ## [1.36.2]
 
