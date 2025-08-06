@@ -845,6 +845,12 @@ export class Connection extends DbgpConnection {
         return this._pendingExecuteCommand
     }
 
+    private _featureSet = new Map<string, number | string>()
+
+    public featureSet(feature: string): number | string | undefined {
+        return this._featureSet.get(feature)
+    }
+
     /** Constructs a new connection that uses the given socket to communicate with Xdebug. */
     constructor(socket: Transport) {
         super(socket)
@@ -999,7 +1005,9 @@ export class Connection extends DbgpConnection {
      *  - notify_ok
      */
     public async sendFeatureSetCommand(feature: string, value: string | number): Promise<FeatureSetResponse> {
-        return new FeatureSetResponse(await this._enqueueCommand('feature_set', `-n ${feature} -v ${value}`), this)
+        const res = new FeatureSetResponse(await this._enqueueCommand('feature_set', `-n ${feature} -v ${value}`), this)
+        this._featureSet.set(feature, value)
+        return res
     }
 
     // ---------------------------- breakpoints ------------------------------------

@@ -946,4 +946,21 @@ describe('PHP Debug Adapter', () => {
             await client.assertOutput('console', 'skipping entry point')
         })
     })
+
+    describe('exception info', () => {
+        it('should show exception info', async () => {
+            const program = path.join(TEST_PROJECT, 'error.php')
+
+            await client.launch({ program })
+            await client.setExceptionBreakpointsRequest({ filters: ['Exception'] })
+            const [, { threadId }] = await Promise.all([
+                client.configurationDoneRequest(),
+                assertStoppedLocation('exception', program, 12),
+            ])
+            const response = await client.exceptionInfoRequest({ threadId })
+            assert.equal(response.body.exceptionId, 'Exception')
+            assert.equal(response.body.description, 'this is an exception')
+            await Promise.all([client.continueRequest({ threadId }), client.waitForEvent('terminated')])
+        })
+    })
 })
