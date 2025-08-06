@@ -20,6 +20,7 @@ import { getConfiguredEnvironment } from './envfile'
 import { XdebugCloudConnection } from './cloud'
 import { shouldIgnoreException } from './ignore'
 import { varExportProperty } from './varExport'
+import { supportedEngine } from './xdebugUtils'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -249,6 +250,7 @@ class PhpDebugSession extends vscode.DebugSession {
             supportTerminateDebuggee: true,
             supportsDelayedStackTraceLoading: false,
             supportsClipboardContext: true,
+            supportsExceptionInfoRequest: true,
         }
         this.sendResponse(response)
     }
@@ -522,29 +524,24 @@ class PhpDebugSession extends vscode.DebugSession {
 
         // support for breakpoints
         let feat: xdebug.FeatureGetResponse
-        const supportedEngine =
-            initPacket.engineName === 'Xdebug' &&
-            semver.valid(initPacket.engineVersion, { loose: true }) &&
-            semver.gte(initPacket.engineVersion, '3.0.0', { loose: true })
-        const supportedEngine32 =
-            initPacket.engineName === 'Xdebug' &&
-            semver.valid(initPacket.engineVersion, { loose: true }) &&
-            semver.gte(initPacket.engineVersion, '3.2.0', { loose: true })
+        const supportedEngine30 = supportedEngine(initPacket, '3.0.0')
+        const supportedEngine32 = supportedEngine(initPacket, '3.2.0')
+        const supportedEngine35 = supportedEngine(initPacket, '3.5.0')
         if (
-            supportedEngine ||
+            supportedEngine30 ||
             ((feat = await connection.sendFeatureGetCommand('resolved_breakpoints')) && feat.supported === '1')
         ) {
             await connection.sendFeatureSetCommand('resolved_breakpoints', '1')
         }
         if (
-            supportedEngine ||
+            supportedEngine30 ||
             ((feat = await connection.sendFeatureGetCommand('notify_ok')) && feat.supported === '1')
         ) {
             await connection.sendFeatureSetCommand('notify_ok', '1')
             connection.on('notify_user', (notify: xdebug.UserNotify) => this.handleUserNotify(notify, connection))
         }
         if (
-            supportedEngine ||
+            supportedEngine30 ||
             ((feat = await connection.sendFeatureGetCommand('extended_properties')) && feat.supported === '1')
         ) {
             await connection.sendFeatureSetCommand('extended_properties', '1')
@@ -555,6 +552,12 @@ class PhpDebugSession extends vscode.DebugSession {
                 feat.supported === '1')
         ) {
             await connection.sendFeatureSetCommand('breakpoint_include_return_value', '1')
+        }
+        if (
+            supportedEngine35 ||
+            ((feat = await connection.sendFeatureGetCommand('virtual_exception_value')) && feat.supported === '1')
+        ) {
+            await connection.sendFeatureSetCommand('virtual_exception_value', '1')
         }
 
         // override features from launch.json
@@ -1528,6 +1531,79 @@ class PhpDebugSession extends vscode.DebugSession {
             response.success = false
             this.sendResponse(response)
         }
+    }
+
+    protected async exceptionInfoRequest(
+        response: VSCodeDebugProtocol.ExceptionInfoResponse,
+        args: VSCodeDebugProtocol.ExceptionInfoArguments
+    ): Promise<void> {
+        const connection = this._connections.get(args.threadId)
+        if (!connection) {
+            throw new Error('Unknown thread ID')
+        }
+
+        const status = this._statuses.get(connection)!
+
+        let ex: VSCodeDebugProtocol.ExceptionDetails | undefined
+
+        if (connection.featureSet('virtual_exception_value')) {
+            let old_max_depth: number = 3
+            try {
+                const { stack } = await connection.sendStackGetCommand() // CACHE?
+
+                if (stack.length > 0) {
+                    const ctx = await stack[0].getContexts() // CACHE
+                    old_max_depth = <number>connection.featureSet('max_depth') ?? 1
+                    if (old_max_depth < 3) {
+                        await connection.sendFeatureSetCommand('max_depth', 3)
+                    }                    
+
+                    const res = await connection.sendPropertyGetNameCommand('$__EXCEPTION', ctx[0])
+
+                    const s = res.property.children.find(
+                        p => p.name === 'trace' || p.name === '*Exception*trace' || p.name === '*Error*trace'
+                    )
+
+                    const at = `Created at ${res.property.children.find(p => p.name == 'file')?.value ?? '**UNKNOWN**'}:${
+                        res.property.children.find(p => p.name == 'line')?.value ?? '?'
+                    }\n`
+                    const st = s?.children
+                            .map(
+                                (t, i) =>
+                                    `at ${
+                                        t.children.find(p => p.name == 'class')?.value ?? ''}${
+                                        t.children.find(p => p.name == 'type')?.value ?? ''
+                                    }${t.children.find(p => p.name == 'function')?.value ?? '?'}() (${
+                                        t.children.find(p => p.name == 'file')?.value ?? '**UNKNOWN**'}:${
+                                        t.children.find(p => p.name == 'line')?.value ?? '?'
+                                    })`
+                            )
+                            .join('\n')
+                    ex = {
+                        message: res.property.children.find(p => p.name === 'message')?.value ?? undefined,
+                        typeName: res.property.class,
+                        fullTypeName: res.property.class,
+                        evaluateName: '$__EXCEPTION',
+                        stackTrace: `${at}${st}`,
+                        // TODO process inner/previous exception
+                    }
+                }
+            } catch {
+                // Probably $__EXCEPTION not present
+            } finally {
+                if (old_max_depth < 3) {
+                    await connection.sendFeatureSetCommand('max_depth', old_max_depth)
+                }
+            }
+        }
+
+        response.body = {
+            exceptionId: status.exception.name,
+            breakMode: 'always',
+            description: status.exception.message,
+            details: ex,
+        }
+        this.sendResponse(response)
     }
 }
 
