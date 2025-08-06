@@ -845,9 +845,9 @@ export class Connection extends DbgpConnection {
         return this._pendingExecuteCommand
     }
 
-    private _featureSet = new Map<string, number|string>()
+    private _featureSet = new Map<string, number | string>()
 
-    public featureSet(feature:string): number|string|undefined {
+    public featureSet(feature: string): number | string | undefined {
         return this._featureSet.get(feature)
     }
 

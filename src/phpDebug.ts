@@ -1547,7 +1547,7 @@ class PhpDebugSession extends vscode.DebugSession {
         let ex: VSCodeDebugProtocol.ExceptionDetails | undefined
 
         if (connection.featureSet('virtual_exception_value')) {
-            let old_max_depth: number = 3
+            let old_max_depth = 3
             try {
                 const { stack } = await connection.sendStackGetCommand() // CACHE?
 
@@ -1556,7 +1556,7 @@ class PhpDebugSession extends vscode.DebugSession {
                     old_max_depth = <number>connection.featureSet('max_depth') ?? 1
                     if (old_max_depth < 3) {
                         await connection.sendFeatureSetCommand('max_depth', 3)
-                    }                    
+                    }
 
                     const res = await connection.sendPropertyGetNameCommand('$__EXCEPTION', ctx[0])
 
@@ -1564,27 +1564,25 @@ class PhpDebugSession extends vscode.DebugSession {
                         p => p.name === 'trace' || p.name === '*Exception*trace' || p.name === '*Error*trace'
                     )
 
-                    const at = `Created at ${res.property.children.find(p => p.name == 'file')?.value ?? '**UNKNOWN**'}:${
-                        res.property.children.find(p => p.name == 'line')?.value ?? '?'
-                    }\n`
+                    const at = `Created at ${
+                        res.property.children.find(p => p.name == 'file')?.value ?? '**UNKNOWN**'
+                    }:${res.property.children.find(p => p.name == 'line')?.value ?? '?'}\n`
                     const st = s?.children
-                            .map(
-                                (t, i) =>
-                                    `at ${
-                                        t.children.find(p => p.name == 'class')?.value ?? ''}${
-                                        t.children.find(p => p.name == 'type')?.value ?? ''
-                                    }${t.children.find(p => p.name == 'function')?.value ?? '?'}() (${
-                                        t.children.find(p => p.name == 'file')?.value ?? '**UNKNOWN**'}:${
-                                        t.children.find(p => p.name == 'line')?.value ?? '?'
-                                    })`
-                            )
-                            .join('\n')
+                        .map(
+                            (t, i) =>
+                                `at ${t.children.find(p => p.name == 'class')?.value ?? ''}${
+                                    t.children.find(p => p.name == 'type')?.value ?? ''
+                                }${t.children.find(p => p.name == 'function')?.value ?? '?'}() (${
+                                    t.children.find(p => p.name == 'file')?.value ?? '**UNKNOWN**'
+                                }:${t.children.find(p => p.name == 'line')?.value ?? '?'})`
+                        )
+                        .join('\n')
                     ex = {
                         message: res.property.children.find(p => p.name === 'message')?.value ?? undefined,
                         typeName: res.property.class,
                         fullTypeName: res.property.class,
                         evaluateName: '$__EXCEPTION',
-                        stackTrace: `${at}${st}`,
+                        stackTrace: `${at}${st ?? ''}`,
                         // TODO process inner/previous exception
                     }
                 }
