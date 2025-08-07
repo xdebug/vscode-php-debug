@@ -80,7 +80,7 @@
     "eslint-config-prettier": "^8.10.2",
     "eslint-plugin-jsdoc": "^52.0.4",
     "husky": "^9.1.7",
-    "mocha": "^10.8.2",
+    "mocha": "^11.7.1",
     "nyc": "^15.1.0",
     "prettier": "2.7.1",
     "semantic-release": "^19.0.5",
