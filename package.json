@@ -51,7 +51,7 @@
     "file-url": "^3.0.0",
     "iconv-lite": "^0.6.3",
     "minimatch": "^10.0.3",
-    "moment": "^2.29.4",
+    "moment": "^2.30.1",
     "relateurl": "^0.2.7",
     "semver": "^7.5.2",
     "string-replace-async": "^2.0.0",
