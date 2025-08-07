@@ -55,7 +55,7 @@
     "relateurl": "^0.2.7",
     "semver": "^7.5.2",
     "string-replace-async": "^2.0.0",
-    "which": "^2.0.2"
+    "which": "^5.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.3.0",
