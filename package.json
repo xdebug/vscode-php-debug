@@ -47,7 +47,7 @@
     "@vscode/debugprotocol": "^1.68.0",
     "@xmldom/xmldom": "^0.8.4",
     "buffer-crc32": "^1.0.0",
-    "dotenv": "^16.6.1",
+    "dotenv": "^17.2.1",
     "file-url": "^3.0.0",
     "iconv-lite": "^0.6.3",
     "minimatch": "^10.0.3",
