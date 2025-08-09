@@ -8,7 +8,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
+      "managerFilePatterns": ["/^.github/workflows/.+\\.ya?ml$/"],
       "matchStrings": ["xdebug: xdebug-(?<currentValue>\\S+).*# renovate:keep-up-to-date"],
       "depNameTemplate": "xdebug",
       "packageNameTemplate": "xdebug/xdebug",
@@ -17,7 +17,7 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
+      "managerFilePatterns": ["/^.github/workflows/.+\\.ya?ml$/"],
       "matchStrings": ["php: '(?<currentValue>[^']+)'.*# renovate:keep-up-to-date"],
       "depNameTemplate": "php",
       "packageNameTemplate": "php/php-src",
@@ -26,7 +26,7 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^.github/workflows/.+\\.ya?ml$"],
+      "managerFilePatterns": ["/^.github/workflows/.+\\.ya?ml$/"],
       "matchStrings": ["node-version: '(?<currentValue>[^']+)'.*# renovate:keep-up-to-date"],
       "depNameTemplate": "node",
       "packageNameTemplate": "nodejs/node",
