@@ -92,7 +92,7 @@ export class DbgpConnection extends EventEmitter {
                 // append the last piece of the response
                 const lastResponsePiece = data.slice(0, this._dataLength - this._chunksDataLength)
                 this._chunks.push(lastResponsePiece)
-                this._chunksDataLength += data.length
+                this._chunksDataLength += lastResponsePiece.length
                 const response = Buffer.concat(this._chunks, this._chunksDataLength)
                 // call response handler
                 const xml = iconv.decode(response, ENCODING)
