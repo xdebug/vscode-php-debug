@@ -155,10 +155,8 @@ export class ProxyConnect extends EventEmitter {
     /** Parse data from response server and emit the relevant notification. */
     private _responseStrategy(data: Buffer) {
         try {
-            const documentElement = this._parser.parseFromString(
-                decode(data, ENCODING),
-                'application/xml'
-            ).documentElement
+            const documentElement = this._parser.parseFromString(decode(data, ENCODING), 'application/xml')
+                .documentElement!
             const isSuccessful = documentElement.getAttribute('success') === '1'
             const error = documentElement.firstChild
             if (isSuccessful && documentElement.nodeName === 'proxyinit') {

@@ -97,16 +97,13 @@ export class DbgpConnection extends EventEmitter {
                 // call response handler
                 const xml = iconv.decode(response, ENCODING)
                 const parser = new DOMParser({
-                    errorHandler: {
-                        warning: warning => {
-                            this.emit('warning', warning)
-                        },
-                        error: error => {
-                            this.emit('error', error instanceof Error ? error : new Error(error as string))
-                        },
-                        fatalError: error => {
-                            this.emit('error', error instanceof Error ? error : new Error(error as string))
-                        },
+                    onError: (level, msg) => {
+                        if (level === 'warning') {
+                            this.emit('warning', msg)
+                        }
+                        if (level === 'error' || level === 'fatalError') {
+                            this.emit('error', new Error(msg))
+                        }
                     },
                 })
                 this.emit('log', `-> ${xml.replace(/[\0\n]/g, '')}`)
