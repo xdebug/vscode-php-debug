@@ -20,6 +20,7 @@ import { XdebugCloudConnection } from './cloud'
 import { shouldIgnoreException } from './ignore'
 import { varExportProperty } from './varExport'
 import { supportedEngine } from './xdebugUtils'
+import { varJsonProperty } from './varJson'
 
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
@@ -54,6 +55,11 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
         }
     }
     return displayValue
+}
+
+export interface EvaluateExtendedArguments extends VSCodeDebugProtocol.EvaluateArguments {
+    /** The variable for which to retrieve its children. The `variablesReference` must have been obtained in the current suspended state. See 'Lifetime of Object References' in the Overview section for details. */
+    variablesReference?: number
 }
 
 /**
@@ -1496,9 +1502,18 @@ class PhpDebugSession extends vscode.DebugSession {
         this.shutdown()
     }
 
+    private getPropertyFromReference(variablesReference?: number): xdebug.Property | undefined {
+        if (variablesReference && this._properties.has(variablesReference)) {
+            return this._properties.get(variablesReference)!
+        } /*else if (variablesReference && this._evalResultProperties.has(variablesReference)) {
+                    return this._evalResultProperties.get(variablesReference)!
+                }*/
+        return
+    }
+
     protected async evaluateRequest(
         response: VSCodeDebugProtocol.EvaluateResponse,
-        args: VSCodeDebugProtocol.EvaluateArguments
+        args: EvaluateExtendedArguments
     ): Promise<void> {
         try {
             if (!args.frameId) {
@@ -1525,10 +1540,26 @@ class PhpDebugSession extends vscode.DebugSession {
                 if (res.property) {
                     result = res.property
                 }
-            } else if (args.context === 'clipboard') {
-                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
-                response.body = { result: await varExportProperty(res.property), variablesReference: 0 }
+            } else if (args.context === 'clipboard-var_export') {
+                const property =
+                    this.getPropertyFromReference(args.variablesReference) ??
+                    (await (async () => {
+                        const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                        const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
+                        return res.property
+                    })())
+                response.body = { result: await varExportProperty(property), variablesReference: 0 }
+                this.sendResponse(response)
+                return
+            } else if (args.context === 'clipboard-json') {
+                const property =
+                    this.getPropertyFromReference(args.variablesReference) ??
+                    (await (async () => {
+                        const ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                        const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
+                        return res.property
+                    })())
+                response.body = { result: await varJsonProperty(property), variablesReference: 0 }
                 this.sendResponse(response)
                 return
             } else if (args.context === 'watch') {
