@@ -831,41 +831,45 @@ describe('PHP Debug Adapter', () => {
             await client.configurationDoneRequest()
             const { frame } = await assertStoppedLocation('breakpoint', program, 19)
 
-            const response = (
-                await client.evaluateRequest({
-                    context: 'clipboard',
-                    frameId: frame.id,
-                    expression: '$anInt',
-                })
-            ).body
 
-            assert.equal(response.result, '123')
-            assert.equal(response.variablesReference, 0)
+            interface TestCase {
+                context: string
+                expression: string
+                result: string
+                hasVariablesReference: boolean
+            }
 
-            const response2 = (
-                await client.evaluateRequest({
-                    context: 'clipboard',
-                    frameId: frame.id,
-                    expression: '$aString',
-                })
-            ).body
+            const testCases: TestCase[] = [
+                { context: 'hover', expression: '$anInt', result: '123', hasVariablesReference: false },
+                { context: 'hover', expression: '$aString', result: '"123"', hasVariablesReference: false },
+                { context: 'hover', expression: '$anArray', result: 'array(3)', hasVariablesReference: true },
+                { context: 'clipboard', expression: '$anInt', result: '123', hasVariablesReference: false },
+                { context: 'clipboard', expression: '$aString', result: "'123'", hasVariablesReference: false },
+                { context: 'clipboard', expression: '$anArray', result: 'array (\n  0 => 1,\n  test => 2,\n  test2 => \n  array (\n    t => 123,\n  ),\n)', hasVariablesReference: false },
+                { context: 'clipboard-json', expression: '$anInt', result: '123', hasVariablesReference: false },
+                { context: 'clipboard-json', expression: '$aString', result: "\"123\"", hasVariablesReference: false },
+                { context: 'clipboard-json', expression: '$anArray', result: '{\n "0": 1,\n "test": 2,\n "test2": {\n  "t": 123\n }\n}', hasVariablesReference: false },
+                { context: 'clipboard-raw', expression: '$anInt', result: '123', hasVariablesReference: false },
+                { context: 'clipboard-raw', expression: '$aString', result: "123", hasVariablesReference: false },
+                { context: 'clipboard-raw', expression: '$anArray', result: 'array(3)', hasVariablesReference: false },
+            ]
 
-            assert.equal(response2.result, "'123'")
-            assert.equal(response2.variablesReference, 0)
+            for (const testCase of testCases) {
+                const response = (
+                    await client.evaluateRequest({
+                        context: testCase.context as any,
+                        frameId: frame.id,
+                        expression: testCase.expression,
+                    })
+                ).body
 
-            const response3 = (
-                await client.evaluateRequest({
-                    context: 'clipboard',
-                    frameId: frame.id,
-                    expression: '$anArray',
-                })
-            ).body
-
-            assert.equal(
-                response3.result,
-                'array (\n  0 => 1,\n  test => 2,\n  test2 => \n  array (\n    t => 123,\n  ),\n)'
-            )
-            assert.equal(response3.variablesReference, 0)
+                assert.equal(response.result, testCase.result, `Failed for ${testCase.context} - ${testCase.expression}`)
+                if (testCase.hasVariablesReference) {
+                    assert.notEqual(response.variablesReference, 0, `Expected variablesReference for ${testCase.context} - ${testCase.expression}`)
+                } else {
+                    assert.equal(response.variablesReference, 0, `Unexpected variablesReference for ${testCase.context} - ${testCase.expression}`)
+                }
+            }        
         })
     })
 

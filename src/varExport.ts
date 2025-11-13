@@ -42,16 +42,15 @@ export async function varExportProperty(property: xdebug.Property, indent: strin
         // for null, uninitialized, resource, etc. show the type
         displayValue = property.value || property.type === 'string' ? property.value : property.type
         if (property.type === 'string') {
-            // escaping ?
             if (property.size > property.value.length) {
-                // get value
                 const p2 = await property.context.stackFrame.connection.sendPropertyValueNameCommand(
                     property.fullName,
                     property.context
                 )
                 displayValue = p2.value
             }
-            displayValue = `'${displayValue}'`
+            const escaped = displayValue.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            displayValue = `'${escaped}'`
         } else if (property.type === 'bool') {
             displayValue = Boolean(parseInt(displayValue, 10)).toString()
         }

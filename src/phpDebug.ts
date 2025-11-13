@@ -32,7 +32,7 @@ if (process.env['VSCODE_NLS_CONFIG']) {
 }
 
 /** formats a xdebug property value for VS Code */
-function formatPropertyValue(property: xdebug.BaseProperty): string {
+function formatPropertyValue(property: xdebug.BaseProperty, quoteString: boolean = true): string {
     let displayValue: string
     if (property.hasChildren || property.type === 'array' || property.type === 'object') {
         if (property.type === 'array') {
@@ -48,7 +48,7 @@ function formatPropertyValue(property: xdebug.BaseProperty): string {
     } else {
         // for null, uninitialized, resource, etc. show the type
         displayValue = property.value || property.type === 'string' ? property.value : property.type
-        if (property.type === 'string') {
+        if (property.type === 'string' && quoteString) {
             displayValue = `"${displayValue}"`
         } else if (property.type === 'bool') {
             displayValue = Boolean(parseInt(displayValue, 10)).toString()
@@ -1525,6 +1525,7 @@ class PhpDebugSession extends vscode.DebugSession {
             const stackFrame = this._stackFrames.get(args.frameId)!
             const connection = stackFrame.connection
             let result: xdebug.BaseProperty | null = null
+
             if (args.context === 'hover') {
                 // try to get variable from property_get
                 const ctx = await stackFrame.getContexts() // TODO CACHE THIS
@@ -1532,49 +1533,46 @@ class PhpDebugSession extends vscode.DebugSession {
                 if (res.property) {
                     result = res.property
                 }
-            } else if (args.context === 'repl') {
-                const uuid = randomUUID()
-                await connection.sendEvalCommand(`$GLOBALS['eval_cache']['${uuid}']=${args.expression}`)
-                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                const res = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx[1])
-                if (res.property) {
-                    result = res.property
-                }
-            } else if (args.context === 'clipboard-var_export') {
-                const property =
-                    this.getPropertyFromReference(args.variablesReference) ??
-                    (await (async () => {
-                        const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                        const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
-                        return res.property
-                    })())
-                response.body = { result: await varExportProperty(property), variablesReference: 0 }
-                this.sendResponse(response)
-                return
-            } else if (args.context === 'clipboard-json') {
-                const property =
-                    this.getPropertyFromReference(args.variablesReference) ??
-                    (await (async () => {
-                        const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                        const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
-                        return res.property
-                    })())
-                response.body = { result: await varJsonProperty(property), variablesReference: 0 }
-                this.sendResponse(response)
-                return
-            } else if (args.context === 'watch') {
-                const uuid = randomUUID()
-                await connection.sendEvalCommand(`$GLOBALS['eval_cache']['watch']['${uuid}']=${args.expression}`)
-                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                const res = await connection.sendPropertyGetNameCommand(`$eval_cache['watch']['${uuid}']`, ctx[1])
-                if (res.property) {
-                    result = res.property
-                }
             } else {
-                const res = await connection.sendEvalCommand(args.expression)
-                if (res.result) {
-                    result = res.result
+                let property = this.getPropertyFromReference(args.variablesReference)
+                let ctx
+                if (!property) {
+                    // try to get variable
+                    ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                    try {
+                        // we might need to try other contexts too?
+                        const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
+                        property = res.property
+                    } catch {
+                        // ignore we failed, lets try evaling
+                    }
                 }
+                if (!property) {
+                    const uuid = randomUUID()
+                    await connection.sendEvalCommand(`$GLOBALS['eval_cache']['${uuid}']=${args.expression}`)
+                    const res = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx![1])
+                    property = res.property
+                }
+                result = property
+            }
+
+            if (result && args.context === 'clipboard-var_export') {
+                response.body = { result: await varExportProperty(result as xdebug.Property), variablesReference: 0 }
+                this.sendResponse(response)
+                return
+            } else if (result && args.context === 'clipboard-json') {
+                response.body = { result: await varJsonProperty(result as xdebug.Property), variablesReference: 0 }
+                this.sendResponse(response)
+                return
+            } else if (result && args.context === 'clipboard-raw') {
+                response.body = { result: formatPropertyValue(result, false), variablesReference: 0 }
+                this.sendResponse(response)
+                return
+            } else if (result && this._initializeArgs.clientID !== 'vscode' && args.context === 'clipboard') {
+                // special case for NON-vscode clients where we cant add extra clipboard related contexts and var_export should be the default
+                response.body = { result: await varExportProperty(result as xdebug.Property), variablesReference: 0 }
+                this.sendResponse(response)
+                return
             }
 
             if (result) {

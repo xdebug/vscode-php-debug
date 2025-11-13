@@ -189,4 +189,12 @@ export function activate(context: vscode.ExtensionContext) {
             }
         )
     )
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'extension.php-debug.copyRaw',
+            async (arg: IVariablesContext, p2: any, p3: any) => {
+                await copyVar(arg, 'clipboard-raw')
+            }
+        )
+    )
 }
