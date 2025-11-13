@@ -49,7 +49,7 @@ export async function varExportProperty(property: xdebug.Property, indent: strin
                 )
                 displayValue = p2.value
             }
-            const escaped = displayValue.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const escaped = displayValue.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
             displayValue = `'${escaped}'`
         } else if (property.type === 'bool') {
             displayValue = Boolean(parseInt(displayValue, 10)).toString()

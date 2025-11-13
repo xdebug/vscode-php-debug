@@ -831,7 +831,6 @@ describe('PHP Debug Adapter', () => {
             await client.configurationDoneRequest()
             const { frame } = await assertStoppedLocation('breakpoint', program, 19)
 
-
             interface TestCase {
                 context: string
                 expression: string
@@ -845,12 +844,22 @@ describe('PHP Debug Adapter', () => {
                 { context: 'hover', expression: '$anArray', result: 'array(3)', hasVariablesReference: true },
                 { context: 'clipboard', expression: '$anInt', result: '123', hasVariablesReference: false },
                 { context: 'clipboard', expression: '$aString', result: "'123'", hasVariablesReference: false },
-                { context: 'clipboard', expression: '$anArray', result: 'array (\n  0 => 1,\n  test => 2,\n  test2 => \n  array (\n    t => 123,\n  ),\n)', hasVariablesReference: false },
+                {
+                    context: 'clipboard',
+                    expression: '$anArray',
+                    result: 'array (\n  0 => 1,\n  test => 2,\n  test2 => \n  array (\n    t => 123,\n  ),\n)',
+                    hasVariablesReference: false,
+                },
                 { context: 'clipboard-json', expression: '$anInt', result: '123', hasVariablesReference: false },
-                { context: 'clipboard-json', expression: '$aString', result: "\"123\"", hasVariablesReference: false },
-                { context: 'clipboard-json', expression: '$anArray', result: '{\n "0": 1,\n "test": 2,\n "test2": {\n  "t": 123\n }\n}', hasVariablesReference: false },
+                { context: 'clipboard-json', expression: '$aString', result: '"123"', hasVariablesReference: false },
+                {
+                    context: 'clipboard-json',
+                    expression: '$anArray',
+                    result: '{\n "0": 1,\n "test": 2,\n "test2": {\n  "t": 123\n }\n}',
+                    hasVariablesReference: false,
+                },
                 { context: 'clipboard-raw', expression: '$anInt', result: '123', hasVariablesReference: false },
-                { context: 'clipboard-raw', expression: '$aString', result: "123", hasVariablesReference: false },
+                { context: 'clipboard-raw', expression: '$aString', result: '123', hasVariablesReference: false },
                 { context: 'clipboard-raw', expression: '$anArray', result: 'array(3)', hasVariablesReference: false },
             ]
 
@@ -863,13 +872,25 @@ describe('PHP Debug Adapter', () => {
                     })
                 ).body
 
-                assert.equal(response.result, testCase.result, `Failed for ${testCase.context} - ${testCase.expression}`)
+                assert.equal(
+                    response.result,
+                    testCase.result,
+                    `Failed for ${testCase.context} - ${testCase.expression}`
+                )
                 if (testCase.hasVariablesReference) {
-                    assert.notEqual(response.variablesReference, 0, `Expected variablesReference for ${testCase.context} - ${testCase.expression}`)
+                    assert.notEqual(
+                        response.variablesReference,
+                        0,
+                        `Expected variablesReference for ${testCase.context} - ${testCase.expression}`
+                    )
                 } else {
-                    assert.equal(response.variablesReference, 0, `Unexpected variablesReference for ${testCase.context} - ${testCase.expression}`)
+                    assert.equal(
+                        response.variablesReference,
+                        0,
+                        `Unexpected variablesReference for ${testCase.context} - ${testCase.expression}`
+                    )
                 }
-            }        
+            }
         })
     })
 

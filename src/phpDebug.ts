@@ -1535,7 +1535,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 }
             } else {
                 let property = this.getPropertyFromReference(args.variablesReference)
-                let ctx
+                let ctx: xdebug.Context[]
                 if (!property) {
                     // try to get variable
                     ctx = await stackFrame.getContexts() // TODO CACHE THIS
