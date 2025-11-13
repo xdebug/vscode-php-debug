@@ -1,13 +1,6 @@
 import { assert } from 'chai'
 import { describe, it, beforeEach, afterEach } from 'mocha'
-
-// Inline the function for testing without vscode dependency
-function resolveEnvVariables(value: string): string {
-    return value.replace(/\$\{env:([^}]+)\}/g, (match, envVar: string) => {
-        const envValue = process.env[envVar]
-        return envValue !== undefined ? envValue : match
-    })
-}
+import { resolveEnvVariables } from '../envResolver'
 
 describe('Environment Variable Resolution', () => {
     let originalEnv: NodeJS.ProcessEnv
