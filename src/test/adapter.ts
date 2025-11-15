@@ -843,6 +843,7 @@ describe('PHP Debug Adapter', () => {
                 { context: 'hover', expression: '$aString', result: '"123"', hasVariablesReference: false },
                 { context: 'hover', expression: '$anArray', result: 'array(3)', hasVariablesReference: true },
                 { context: 'hover', expression: '$aBoolean', result: 'true', hasVariablesReference: false },
+                { context: 'hover', expression: '$aFloat', result: '1.23', hasVariablesReference: false },
                 { context: 'clipboard', expression: '$anInt', result: '123', hasVariablesReference: false },
                 { context: 'clipboard', expression: '$aString', result: "'123'", hasVariablesReference: false },
                 {
@@ -852,6 +853,7 @@ describe('PHP Debug Adapter', () => {
                     hasVariablesReference: false,
                 },
                 { context: 'clipboard', expression: '$aBoolean', result: 'true', hasVariablesReference: false },
+                { context: 'clipboard', expression: '$aFloat', result: '1.23', hasVariablesReference: false },
                 { context: 'clipboard-json', expression: '$anInt', result: '123', hasVariablesReference: false },
                 { context: 'clipboard-json', expression: '$aString', result: '"123"', hasVariablesReference: false },
                 {
@@ -861,10 +863,12 @@ describe('PHP Debug Adapter', () => {
                     hasVariablesReference: false,
                 },
                 { context: 'clipboard-json', expression: '$aBoolean', result: 'true', hasVariablesReference: false },
+                { context: 'clipboard-json', expression: '$aFloat', result: '1.23', hasVariablesReference: false },
                 { context: 'clipboard-raw', expression: '$anInt', result: '123', hasVariablesReference: false },
                 { context: 'clipboard-raw', expression: '$aString', result: '123', hasVariablesReference: false },
                 { context: 'clipboard-raw', expression: '$anArray', result: 'array(3)', hasVariablesReference: false },
                 { context: 'clipboard-raw', expression: '$aBoolean', result: 'true', hasVariablesReference: false },
+                { context: 'clipboard-raw', expression: '$aFloat', result: '1.23', hasVariablesReference: false },
             ]
 
             for (const testCase of testCases) {
