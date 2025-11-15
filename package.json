@@ -568,6 +568,57 @@
           "command": "extension.php-debug.runEditorContents",
           "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file"
         }
+      ],
+      "debug/variables/context": [
+        {
+          "command": "extension.php-debug.copyVarExport",
+          "group": "5_cutcopypaste@11",
+          "when": "debugType == php"
+        },
+        {
+          "command": "extension.php-debug.copyJson",
+          "group": "5_cutcopypaste@12",
+          "when": "debugType == php"
+        },
+        {
+          "command": "extension.php-debug.copyRaw",
+          "group": "5_cutcopypaste@13",
+          "when": "debugType == php"
+        }
+      ],
+      "debug/watch/context": [
+        {
+          "command": "extension.php-debug.copyVarExport",
+          "group": "3_modification@51",
+          "when": "debugType == php"
+        },
+        {
+          "command": "extension.php-debug.copyJson",
+          "group": "3_modification@52",
+          "when": "debugType == php"
+        },
+        {
+          "command": "extension.php-debug.copyRaw",
+          "group": "3_modification@53",
+          "when": "debugType == php"
+        }
+      ],
+      "debug/hover/context": [
+        {
+          "command": "extension.php-debug.copyVarExport",
+          "group": "5_cutcopypaste@11",
+          "when": "debugType == php"
+        },
+        {
+          "command": "extension.php-debug.copyJson",
+          "group": "5_cutcopypaste@12",
+          "when": "debugType == php"
+        },
+        {
+          "command": "extension.php-debug.copyRaw",
+          "group": "5_cutcopypaste@13",
+          "when": "debugType == php"
+        }
       ]
     },
     "commands": [
@@ -589,6 +640,18 @@
         "category": "PHP Debug",
         "enablement": "!inDebugMode",
         "icon": "$(play)"
+      },
+      {
+        "command": "extension.php-debug.copyVarExport",
+        "title": "Copy Value as var_export"
+      },
+      {
+        "command": "extension.php-debug.copyJson",
+        "title": "Copy Value as json_encode"
+      },
+      {
+        "command": "extension.php-debug.copyRaw",
+        "title": "Copy Value as raw"
       }
     ],
     "keybindings": [

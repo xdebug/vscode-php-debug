@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
 import { WorkspaceFolder, DebugConfiguration, CancellationToken } from 'vscode'
-import { LaunchRequestArguments } from './phpDebug'
+import { EvaluateExtendedArguments, LaunchRequestArguments } from './phpDebug'
 import * as which from 'which'
 import * as path from 'path'
+import { DebugProtocol } from '@vscode/debugprotocol'
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -142,5 +143,58 @@ export function activate(context: vscode.ExtensionContext) {
                 },
             })
         })
+    )
+
+    /* This is coppied from vscode/src/vs/workbench/contrib/debug/browser/variablesView.ts */
+    interface IVariablesContext {
+        sessionId: string | undefined
+        container: DebugProtocol.Variable | DebugProtocol.Scope | DebugProtocol.EvaluateArguments
+        variable: DebugProtocol.Variable
+    }
+
+    /* This is coppied from @vscode/debugprotocol/lib/debugProtocol.d.ts because customRequest returns the body of the response and not the response itself */
+    interface EvaluateResponse {
+        /** The result of the evaluate request. */
+        result: string
+    }
+
+    const copyVar = async (arg: IVariablesContext, context: string) => {
+        const aci = vscode.debug.activeStackItem
+        if (aci && aci instanceof vscode.DebugStackFrame) {
+            const ret = (await vscode.debug.activeDebugSession?.customRequest('evaluate', <EvaluateExtendedArguments>{
+                context,
+                expression: arg.variable.evaluateName,
+                frameId: aci.frameId,
+                variablesReference: arg.variable.variablesReference,
+            })) as EvaluateResponse
+            await vscode.env.clipboard.writeText(ret.result)
+        } else {
+            await vscode.window.showErrorMessage('Cannot derermine active debug session')
+        }
+    }
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'extension.php-debug.copyVarExport',
+            async (arg: IVariablesContext, p2: any, p3: any) => {
+                await copyVar(arg, 'clipboard-var_export')
+            }
+        )
+    )
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'extension.php-debug.copyJson',
+            async (arg: IVariablesContext, p2: any, p3: any) => {
+                await copyVar(arg, 'clipboard-json')
+            }
+        )
+    )
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'extension.php-debug.copyRaw',
+            async (arg: IVariablesContext, p2: any, p3: any) => {
+                await copyVar(arg, 'clipboard-raw')
+            }
+        )
     )
 }
