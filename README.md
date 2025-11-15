@@ -152,7 +152,7 @@ A _Xdebug helper_ browser extension is also recommended. There the request side 
 
 ## Troubleshooting
 
-- Ask a question on [StackOverflow](https://stackoverflow.com/)
+- Ask a question on [StackOverflow](https://stackoverflow.com/questions/tagged/xdebug)
 - If you think you found a bug, [open an issue](https://github.com/xdebug/vscode-php-debug/issues)
 - Make sure you have the latest version of this extension and Xdebug installed
 - Try out a simple PHP file to recreate the issue, for example from the [testproject](https://github.com/xdebug/vscode-php-debug/tree/main/testproject)
