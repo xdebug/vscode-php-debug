@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.38.0]
+
+- Implement advanced copy functions
+- Update link to StackOverflow to encourage Xdebug tag usage
+
 ## [1.37.0]
 
 - Expection info and support for virtual exception property (Xdebug 3.5.0)
