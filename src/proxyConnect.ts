@@ -152,10 +152,28 @@ export class ProxyConnect extends EventEmitter {
         })
     }
 
+    /**
+     * The proxy protocol changed over time and initially the response was just XML.
+     * Later with re-implementation it follows the same spec as DBGp: [data length] [NULL] [xml] [NULL]
+     * @param data Recieved data
+     */
+    private _extractPacket(data: Buffer): string {
+        let packetData = data
+        const nullByteIndex = data.indexOf(0)
+        if (nullByteIndex !== -1) {
+            const lastPiece = data.subarray(0, nullByteIndex)
+            const dataLength = parseInt(decode(lastPiece, ENCODING))
+            if (!!dataLength && dataLength <= data.length - nullByteIndex - 1) {
+                packetData = data.subarray(nullByteIndex + 1, nullByteIndex + 1 + dataLength)
+            }
+        }
+        return decode(packetData, ENCODING)
+    }
+
     /** Parse data from response server and emit the relevant notification. */
     private _responseStrategy(data: Buffer) {
         try {
-            const documentElement = this._parser.parseFromString(decode(data, ENCODING), 'application/xml')
+            const documentElement = this._parser.parseFromString(this._extractPacket(data), 'application/xml')
                 .documentElement!
             const isSuccessful = documentElement.getAttribute('success') === '1'
             const error = documentElement.firstChild

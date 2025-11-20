@@ -11,6 +11,9 @@ describe('ProxyConnect', () => {
         const err = `<proxy${cmd} success="${success}"><error id="${id}"><message>${msg}</message></error></proxy${cmd}>`
         return encode(`<?xml version="1.0" encoding="UTF-8"?>\n${err}`, ENCODING)
     }
+    function _dbgpWrap(raw: Buffer): Buffer {
+        return Buffer.concat([encode(raw.length.toString() + '\0', ENCODING), raw, Buffer.from([0])])
+    }
 
     const host = 'host'
     const port = 9001
@@ -78,7 +81,7 @@ describe('ProxyConnect', () => {
         })
     })
 
-    it('should be registered', (done: Mocha.Done) => {
+    it('should be registered (new protocol)', (done: Mocha.Done) => {
         conn.on('log_response', (str: string) => {
             assert.equal(str, msgs.registerSuccess)
             done()
@@ -87,7 +90,7 @@ describe('ProxyConnect', () => {
         conn.sendProxyInitCommand().catch((err: Error) => {
             done(err)
         })
-        testSocket.emit('data', _xml('init', 1))
+        testSocket.emit('data', _dbgpWrap(_xml('init', 1)))
         testSocket.emit('close', false)
     })
 
