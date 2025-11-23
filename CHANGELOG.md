@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.38.2]
+
+- Fix problematic evaluate changes
+
 ## [1.38.1]
 
 - Fix proxy protocol to support both variants
