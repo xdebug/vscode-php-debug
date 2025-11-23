@@ -1524,44 +1524,75 @@ class PhpDebugSession extends vscode.DebugSession {
             }
             const stackFrame = this._stackFrames.get(args.frameId)!
             const connection = stackFrame.connection
-            let result: xdebug.BaseProperty | null = null
+
+            let tryPropertyGet = false
+            let tryPropertyGetGlobal = false
+            let tryEval = true
 
             if (args.context === 'hover') {
-                // try to get variable from property_get
-                const ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
-                if (res.property) {
-                    result = res.property
-                }
+                tryPropertyGet = tryPropertyGetGlobal = true
+                tryEval = false
+            } else if (args.context === 'repl') {
+                tryPropertyGet = tryPropertyGetGlobal = false
+                tryEval = true
+            } else if (args.context === 'watch') {
+                tryPropertyGet = tryPropertyGetGlobal = true
+                tryEval = true
+            } else if (args.context?.startsWith('clipboard')) {
+                tryPropertyGet = tryPropertyGetGlobal = true
+                tryEval = true
             } else {
-                let property = this.getPropertyFromReference(args.variablesReference)
-                let ctx: xdebug.Context[]
-                if (!property) {
-                    // try to get variable
-                    ctx = await stackFrame.getContexts() // TODO CACHE THIS
-                    try {
-                        // we might need to try other contexts too?
-                        const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
-                        property = res.property
-                    } catch {
-                        // ignore we failed, lets try evaling
-                    }
-                }
-                if (!property) {
-                    const uuid = randomUUID()
-                    await connection.sendEvalCommand(`$GLOBALS['eval_cache']['${uuid}']=${args.expression}`)
-                    const res = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx![1])
-                    property = res.property
-                }
-                result = property
+                // fallback
+                tryPropertyGet = tryPropertyGetGlobal = false
+                tryEval = true
             }
 
+            // TODO, we need to parse the expression to avoid using propery for things like
+            // - $arr[$key]
+            // - $x->$key
+            // - $$var
+
+            let property = this.getPropertyFromReference(args.variablesReference)
+            let ctx: xdebug.Context[] | undefined
+            if (!property && tryPropertyGet) {
+                if (!ctx) {
+                    ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                }
+                try {
+                    const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[0])
+                    property = res.property
+                } catch {
+                    // ignore we failed, lets try next option
+                }
+            }
+            if (!property && tryPropertyGetGlobal) {
+                if (!ctx) {
+                    ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                }
+                try {
+                    const res = await connection.sendPropertyGetNameCommand(args.expression, ctx[1])
+                    property = res.property
+                } catch {
+                    // ignore we failed, lets try next option
+                }
+            }
+            if (!property && tryEval) {
+                if (!ctx) {
+                    ctx = await stackFrame.getContexts() // TODO CACHE THIS
+                }
+                const uuid = randomUUID()
+                await connection.sendEvalCommand(`$GLOBALS['eval_cache']['${uuid}']=${args.expression}`)
+                const res = await connection.sendPropertyGetNameCommand(`$eval_cache['${uuid}']`, ctx[1])
+                property = res.property
+            }
+
+            const result = property
             if (result && args.context === 'clipboard-var_export') {
-                response.body = { result: await varExportProperty(result as xdebug.Property), variablesReference: 0 }
+                response.body = { result: await varExportProperty(result), variablesReference: 0 }
                 this.sendResponse(response)
                 return
             } else if (result && args.context === 'clipboard-json') {
-                response.body = { result: await varJsonProperty(result as xdebug.Property), variablesReference: 0 }
+                response.body = { result: await varJsonProperty(result), variablesReference: 0 }
                 this.sendResponse(response)
                 return
             } else if (result && args.context === 'clipboard-raw') {
@@ -1570,7 +1601,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 return
             } else if (result && this._initializeArgs.clientID !== 'vscode' && args.context === 'clipboard') {
                 // special case for NON-vscode clients where we cant add extra clipboard related contexts and var_export should be the default
-                response.body = { result: await varExportProperty(result as xdebug.Property), variablesReference: 0 }
+                response.body = { result: await varExportProperty(result), variablesReference: 0 }
                 this.sendResponse(response)
                 return
             }
