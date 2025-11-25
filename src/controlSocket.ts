@@ -20,8 +20,8 @@ export class ControlSocket {
             this.supportedPlatform() &&
             initPacket.engineName === 'Xdebug' &&
             semver.valid(initPacket.engineVersion, { loose: true }) !== null &&
-            (semver.gte(initPacket.engineVersion, '3.4.0', { loose: true }) ||
-                initPacket.engineVersion.startsWith('3.4.0'))
+            (semver.gte(initPacket.engineVersion, '3.5.0', { loose: true }) ||
+                initPacket.engineVersion.startsWith('3.5.0'))
         )
     }
 
