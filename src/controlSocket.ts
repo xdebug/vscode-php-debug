@@ -33,9 +33,9 @@ export class ControlSocket {
     async requestPause(ctrlSocket: string): Promise<void> {
         let retval
         if (process.platform === 'linux') {
-            retval = await this.executeLinux(ctrlSocket, 'pause')
+            retval = await this.executeCtrlCmd(`\0${ctrlSocket}y`.padEnd(108, 'x'), 'pause')
         } else if (process.platform === 'win32') {
-            retval = await this.executeWindows(ctrlSocket, 'pause')
+            retval = await this.executeCtrlCmd(ctrlSocket, 'pause')
         } else {
             throw new Error('Invalid platform for Xdebug control socket')
         }
@@ -43,50 +43,8 @@ export class ControlSocket {
         return
     }
 
-    private async executeLinux(ctrlSocket: string, cmd: string): Promise<string> {
-        const abs = await import('abstract-socket')
+    private async executeCtrlCmd(ctrlSocket: string, cmd: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
-            // const cs = `\0xdebug-ctrl.${pid}y`.padEnd(108, 'x')
-            const cs = `\0${ctrlSocket}`
-            try {
-                const s = abs.connect(cs, () => {
-                    s.write(`${cmd}\0`)
-                })
-                s.setTimeout(3000)
-                s.on('timeout', () => {
-                    reject(new Error('Timed out while reading from Xdebug control socket'))
-                    s.end()
-                })
-                s.on('data', data => {
-                    s.destroy()
-                    resolve(data.toString())
-                })
-                s.on('error', error => {
-                    reject(
-                        new Error(
-                            `Cannot connect to Xdebug control socket: ${String(
-                                error instanceof Error ? error.message : error
-                            )}`
-                        )
-                    )
-                })
-                return
-            } catch (error) {
-                reject(
-                    new Error(
-                        `Cannot connect to Xdebug control socket: ${String(
-                            error instanceof Error ? error.message : error
-                        )}`
-                    )
-                )
-                return
-            }
-        })
-    }
-
-    private async executeWindows(ctrlSocket: string, cmd: string): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
-            //const s = net.createConnection(`\\\\.\\pipe\\xdebug-ctrl.${pid}`, () => {
             const s = net.createConnection(ctrlSocket, () => {
                 s.end(`${cmd}\0`)
             })
@@ -100,7 +58,6 @@ export class ControlSocket {
                 resolve(data.toString())
             })
             s.on('error', error => {
-                // sadly this happens all the time - even on normal server-side-close, but luckily the promise is already resolved
                 reject(
                     new Error(
                         `Cannot connect to Xdebug control socket: ${String(
@@ -109,6 +66,7 @@ export class ControlSocket {
                     )
                 )
             })
+            return
         })
     }
 }
