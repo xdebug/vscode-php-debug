@@ -58,6 +58,7 @@ export class ControlSocket {
                     s.end()
                 })
                 s.on('data', data => {
+                    s.destroy()
                     resolve(data.toString())
                 })
                 s.on('error', error => {
@@ -95,6 +96,7 @@ export class ControlSocket {
                 s.end()
             })
             s.on('data', data => {
+                s.destroy()
                 resolve(data.toString())
             })
             s.on('error', error => {
