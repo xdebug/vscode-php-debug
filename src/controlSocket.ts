@@ -35,7 +35,7 @@ export class ControlSocket {
         if (process.platform === 'linux') {
             retval = await this.executeCtrlCmd(`\0${ctrlSocket}y`.padEnd(108, 'x'), 'pause')
         } else if (process.platform === 'win32') {
-            retval = await this.executeCtrlCmd(ctrlSocket, 'pause')
+            retval = await this.executeCtrlCmd(`\\\\.\\pipe\\${ctrlSocket}`, 'pause')
         } else {
             throw new Error('Invalid platform for Xdebug control socket')
         }
