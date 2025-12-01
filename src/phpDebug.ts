@@ -21,7 +21,7 @@ import { shouldIgnoreException } from './ignore'
 import { varExportProperty } from './varExport'
 import { supportedEngine } from './xdebugUtils'
 import { varJsonProperty } from './varJson'
-
+import { ControlSocket } from './controlSocket'
 if (process.env['VSCODE_NLS_CONFIG']) {
     try {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
@@ -1432,10 +1432,30 @@ class PhpDebugSession extends vscode.DebugSession {
         }
     }
 
-    protected pauseRequest(
+    protected async pauseRequest(
         response: VSCodeDebugProtocol.PauseResponse,
         args: VSCodeDebugProtocol.PauseArguments
-    ): void {
+    ): Promise<void> {
+        const connection = this._connections.get(args.threadId)
+        if (!connection) {
+            return this.sendErrorResponse(response, new Error(`Unknown thread ID ${args.threadId}`))
+        }
+
+        const initPacket = await connection.waitForInitPacket()
+        const controlSocket = new ControlSocket()
+        if (controlSocket.supportedInitPacket(initPacket)) {
+            if (this._skippingFiles.has(args.threadId)) {
+                this._skippingFiles.set(args.threadId, false)
+            }
+            try {
+                await controlSocket.requestPause(initPacket.ctrlSocket)
+                this.sendResponse(response)
+                return
+            } catch (error) {
+                this.sendErrorResponse(response, error as Error)
+            }
+        }
+
         if (this._skippingFiles.has(args.threadId)) {
             this._skippingFiles.set(args.threadId, false)
             this.sendResponse(response)
