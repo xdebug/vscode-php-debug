@@ -72,7 +72,7 @@
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vscode/debugadapter-testsupport": "^1.68.0",
-    "@vscode/vsce": "^3.6.0",
+    "@vscode/vsce": "^3.7.1",
     "chai": "^4.3.10",
     "chai-as-promised": "^7.1.2",
     "copyfiles": "^2.4.1",
