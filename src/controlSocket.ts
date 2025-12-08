@@ -4,6 +4,9 @@ import * as CP from 'child_process'
 import { promisify } from 'util'
 import { supportedEngine } from './xdebugUtils'
 import { DOMParser } from '@xmldom/xmldom'
+import * as fs from 'fs'
+import { decode } from 'iconv-lite'
+import { ENCODING } from './dbgp'
 
 export class ControlSocket {
     /**
@@ -58,7 +61,11 @@ export class ControlSocket {
             })
             s.on('data', data => {
                 s.destroy()
-                resolve(data.toString())
+                if (data.length > 0 && data.at(data.length - 1) == 0) {
+                    resolve(decode(data.subarray(0, data.length - 1), ENCODING))
+                } else {
+                    resolve(decode(data, ENCODING))
+                }
             })
             s.on('error', error => {
                 reject(
@@ -74,10 +81,9 @@ export class ControlSocket {
     }
 
     async listControlSockets(): Promise<XdebugRunningProcess[]> {
-        let retval:XdebugRunningProcess[]
+        let retval: XdebugRunningProcess[]
         if (process.platform === 'linux') {
-            // TODO
-            throw new Error('Invalid platform for Xdebug control socket')
+            retval = await this.listControlSocketsLinux()
         } else if (process.platform === 'win32') {
             retval = await this.listControlSocketsWin()
         } else {
@@ -97,6 +103,23 @@ export class ControlSocket {
         return retval2
     }
 
+    private async listControlSocketsLinux(): Promise<XdebugRunningProcess[]> {
+        const re = /@(xdebug-ctrl\.\d+)$/
+
+        const data = await fs.promises.readFile('/proc/net/unix')
+        const lines = data.toString().split('\n')
+        const sockets: XdebugRunningProcess[] = []
+
+        for (const line of lines) {
+            const matches = line.match(re)
+            if (matches && matches.length > 0) {
+                sockets.push({ ctrlSocket: matches[1] })
+            }
+        }
+
+        return sockets
+    }
+
     private async listControlSocketsWin(): Promise<XdebugRunningProcess[]> {
         const exec = promisify(CP.exec)
         try {
@@ -108,7 +131,6 @@ export class ControlSocket {
                 .map<XdebugRunningProcess>(v => <XdebugRunningProcess>{ ctrlSocket: v })
 
             return retval
-
         } catch (err) {
             if (err instanceof Error && (<ExecError>err).stderr == 'File Not Found\r\n') {
                 return []
@@ -124,7 +146,7 @@ interface ExecError extends Error {
 
 export interface XdebugRunningProcess {
     readonly ctrlSocket: string
-    ps: ControlPS
+    ps?: ControlPS
     // todo
 }
 

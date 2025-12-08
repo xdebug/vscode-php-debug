@@ -567,6 +567,10 @@
         {
           "command": "extension.php-debug.runEditorContents",
           "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file"
+        },
+        {
+          "command": "extension.php-debug.pauseXdebugControlSocket",
+          "when": "isLinux || isWindows"
         }
       ],
       "debug/variables/context": [
