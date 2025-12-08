@@ -642,6 +642,11 @@
         "icon": "$(play)"
       },
       {
+        "command": "extension.php-debug.pauseXdebugControlSocket",
+        "title": "Pause PHP process (Xdebug Control Socket)",
+        "category": "PHP Debug"
+      },
+      {
         "command": "extension.php-debug.copyVarExport",
         "title": "Copy Value as var_export"
       },

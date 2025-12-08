@@ -4,6 +4,7 @@ import { EvaluateExtendedArguments, LaunchRequestArguments } from './phpDebug'
 import * as which from 'which'
 import * as path from 'path'
 import { DebugProtocol } from '@vscode/debugprotocol'
+import { ControlSocket } from './controlSocket'
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -196,5 +197,32 @@ export function activate(context: vscode.ExtensionContext) {
                 await copyVar(arg, 'clipboard-raw')
             }
         )
+    )
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.php-debug.pauseXdebugControlSocket', async () => {
+            // check compat
+            const controlSocket = new ControlSocket()
+            const sockets = await controlSocket.listControlSockets()
+
+            // loading indicator
+            if (sockets.length == 0) {
+                await vscode.window.showInformationMessage('No Xdebug control sockets found...')
+                return
+            }
+
+            const qpi = sockets.map<vscode.QuickPickItem>(
+                v =>
+                    <vscode.QuickPickItem>{
+                        label: v.ctrlSocket,
+                        description: v.ps ? `Mem: ${v.ps.memory}` : '',
+                        detail: v.ps ? v.ps.fileUri : '',
+                    }
+            )
+            const i = await vscode.window.showQuickPick(qpi, { canPickMany: false })
+            if (i) {
+                await controlSocket.requestPause(i.label)
+            }
+        })
     )
 }
