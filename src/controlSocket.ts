@@ -33,7 +33,7 @@ export class ControlSocket {
     async requestPause(ctrlSocket: string): Promise<void> {
         let retval
         if (process.platform === 'linux') {
-            retval = await this.executeCtrlCmd(`\0${ctrlSocket}y`.padEnd(108, 'x'), 'pause')
+            retval = await this.executeCtrlCmd(`\0${ctrlSocket}`, 'pause')
         } else if (process.platform === 'win32') {
             retval = await this.executeCtrlCmd(`\\\\.\\pipe\\${ctrlSocket}`, 'pause')
         } else {
