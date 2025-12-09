@@ -567,6 +567,10 @@
         {
           "command": "extension.php-debug.runEditorContents",
           "when": "resourceLangId == php && !inDiffEditor && resourceScheme == file"
+        },
+        {
+          "command": "extension.php-debug.pauseXdebugControlSocket",
+          "when": "isLinux || isWindows"
         }
       ],
       "debug/variables/context": [
@@ -640,6 +644,11 @@
         "category": "PHP Debug",
         "enablement": "!inDebugMode",
         "icon": "$(play)"
+      },
+      {
+        "command": "extension.php-debug.pauseXdebugControlSocket",
+        "title": "Pause PHP process (Xdebug Control Socket)",
+        "category": "PHP Debug"
       },
       {
         "command": "extension.php-debug.copyVarExport",
