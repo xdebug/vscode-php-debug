@@ -201,16 +201,22 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('extension.php-debug.pauseXdebugControlSocket', async () => {
-            // check compat
             const controlSocket = new ControlSocket()
-            const sockets = await controlSocket.listControlSockets()
+            const sockets = await vscode.window.withProgress(
+                {
+                    location: vscode.ProgressLocation.Window,
+                    title: 'Loading PHP processes...',
+                },
+                async progress => {
+                    progress.report({ increment: 0 })
 
-            // loading indicator
-            if (sockets.length == 0) {
-                await vscode.window.showInformationMessage('No Xdebug control sockets found...')
-                return
-            }
+                    const sockets = await controlSocket.listControlSockets()
 
+                    progress.report({ increment: 100 })
+
+                    return sockets
+                }
+            )
             const qpi = sockets.map<vscode.QuickPickItem>(
                 v =>
                     <vscode.QuickPickItem>{
@@ -219,7 +225,7 @@ export function activate(context: vscode.ExtensionContext) {
                         detail: v.ps ? v.ps.fileUri : '',
                     }
             )
-            const i = await vscode.window.showQuickPick(qpi, { canPickMany: false })
+            const i = await vscode.window.showQuickPick(qpi, { canPickMany: false, title: 'Select a PHP process...' })
             if (i) {
                 await controlSocket.requestPause(i.label)
             }
