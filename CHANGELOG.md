@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [1.39.0]
 
 - Xdebug control socket support for pause on Linux and Windows (Xdebug 3.5).
+- Add Deprecations to predefined exception filter
 
 ## [1.38.2]
 
