@@ -125,6 +125,7 @@ Options specific to CLI debugging:
 - Run without debugging
 - DBGp Proxy registration and unregistration support
 - Xdebug Cloud support
+- Xdebug Control Sockets
 
 ## Remote Host Debugging
 
@@ -149,6 +150,16 @@ The debugger can register itself to a DBGp proxy with a IDE Key. The proxy will 
 The official implementation of the [dbgpProxy](https://xdebug.org/docs/dbgpProxy).
 
 A _Xdebug helper_ browser extension is also recommended. There the request side IDE key can be easily configured.
+
+## Xdebug Control Sockets
+
+With Xdebug 3.5+, a new feature enables IDEs to trigger pauses in PHP execution. This extension supports Xdebug Control Sockets in two ways:
+
+1. **Pause during active debugging**: The _pause_ button triggers a control socket pause command, allowing you to pause PHP execution even in loops without breakpoints.
+
+2. **Pause any PHP process**: The VS Code command `Pause PHP process (Xdebug Control Socket)` lists all PHP Control Sockets on your system, letting you pause any process or initiate a debug connection. Ensure the debugger is listening for incoming connections.
+
+For setup instructions, see the [Xdebug control_socket documentation](https://xdebug.org/docs/step_debug#control_socket).
 
 ## Troubleshooting
 
