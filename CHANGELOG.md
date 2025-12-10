@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.39.1]
+
+- Fix copy formatting on empty array.
+
 ## [1.39.0]
 
 - Xdebug control socket support for pause on Linux and Windows (Xdebug 3.5).

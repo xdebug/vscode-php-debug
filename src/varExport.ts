@@ -8,13 +8,20 @@ export async function varExportProperty(property: xdebug.Property, indent: strin
 
     let displayValue: string
     if (property.hasChildren || property.type === 'array' || property.type === 'object') {
-        if (!property.children || property.children.length === 0) {
-            // TODO: also take into account the number of children for pagination
-            property.children = await property.getChildren()
+        let properties: xdebug.Property[]
+        if (property.hasChildren) {
+            if (property.children.length === property.numberOfChildren) {
+                properties = property.children
+            } else {
+                // TODO: also take into account the number of children for pagination
+                properties = await property.getChildren()
+            }
+        } else {
+            properties = []
         }
         displayValue = (
             await Promise.all(
-                property.children.map(async property => {
+                properties.map(async property => {
                     const indent2 = indent + '  '
                     if (property.hasChildren) {
                         return `${indent2}${property.name} => \n${indent2}${await varExportProperty(
