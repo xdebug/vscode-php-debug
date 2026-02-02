@@ -146,6 +146,17 @@ export function activate(context: vscode.ExtensionContext) {
         })
     )
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.php-debug.listenForXdebug', async () => {
+            await vscode.debug.startDebugging(undefined, {
+                name: 'Listen for Xdebug',
+                type: 'php',
+                request: 'launch',
+                port: 9003,
+            })
+        })
+    )
+
     /* This is coppied from vscode/src/vs/workbench/contrib/debug/browser/variablesView.ts */
     interface IVariablesContext {
         sessionId: string | undefined
