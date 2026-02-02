@@ -661,6 +661,9 @@
       {
         "command": "extension.php-debug.copyRaw",
         "title": "Copy Value as raw"
+      },
+      {
+        "command": "extension.php-debug.listenForXdebug"
       }
     ],
     "keybindings": [
@@ -673,6 +676,13 @@
         "command": "extension.php-debug.startWithStopOnEntry",
         "key": "F11",
         "when": "!inDebugMode && activeViewlet == 'workbench.view.debug' && debugConfigurationType == 'php'"
+      }
+    ],
+    "viewsWelcome": [
+      {
+        "view": "debug",
+        "contents": "[Listen for Xdebug](command:extension.php-debug.listenForXdebug)",
+        "when": "debugStartLanguage == php"
       }
     ]
   }
