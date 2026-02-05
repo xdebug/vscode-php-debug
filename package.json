@@ -21,7 +21,7 @@
     }
   ],
   "engines": {
-    "vscode": "^1.66.1",
+    "vscode": "^1.999.0",
     "node": "^20.18.2"
   },
   "sponsor": {
@@ -67,7 +67,7 @@
     "@types/node": "^16.18.126",
     "@types/relateurl": "^0.2.33",
     "@types/semver": "^7.7.0",
-    "@types/vscode": "^1.66.0",
+    "@types/vscode": "^1.109.0",
     "@types/which": "^3.0.4",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
