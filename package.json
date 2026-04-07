@@ -663,7 +663,8 @@
         "title": "Copy Value as raw"
       },
       {
-        "command": "extension.php-debug.listenForXdebug"
+        "command": "extension.php-debug.listenForXdebug",
+        "title": "Listen for Xdebug"
       }
     ],
     "keybindings": [
