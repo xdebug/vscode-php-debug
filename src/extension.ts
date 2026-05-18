@@ -3,6 +3,7 @@ import { WorkspaceFolder, DebugConfiguration, CancellationToken } from 'vscode'
 import { EvaluateExtendedArguments, LaunchRequestArguments } from './phpDebug'
 import * as which from 'which'
 import * as path from 'path'
+import { resolveEnvVariables } from './envResolver'
 import { DebugProtocol } from '@vscode/debugprotocol'
 import { ControlSocket } from './controlSocket'
 
@@ -73,29 +74,32 @@ export function activate(context: vscode.ExtensionContext) {
                         }
                     }
                 }
-                if (folder && folder.uri.scheme !== 'file') {
-                    // replace
-                    if (debugConfiguration.pathMappings) {
-                        for (const key in debugConfiguration.pathMappings) {
-                            debugConfiguration.pathMappings[key] = debugConfiguration.pathMappings[key].replace(
-                                '${workspaceFolder}',
-                                folder.uri.toString()
-                            )
+                if (debugConfiguration.pathMappings) {
+                    const resolvedMappings: { [index: string]: string } = {}
+                    for (const [serverPath, localPath] of Object.entries(debugConfiguration.pathMappings)) {
+                        const resolvedServerPath = resolveEnvVariables(serverPath)
+                        let resolvedLocalPath = resolveEnvVariables(localPath)
+
+                        if (folder && folder.uri.scheme !== 'file') {
+                            resolvedLocalPath = resolvedLocalPath.replace('${workspaceFolder}', folder.uri.toString())
                         }
+
+                        resolvedMappings[resolvedServerPath] = resolvedLocalPath
                     }
-                    // The following path are currently NOT mapped
-                    /*
-                    debugConfiguration.skipEntryPaths = debugConfiguration.skipEntryPaths?.map(v =>
-                        v.replace('${workspaceFolder}', folder.uri.toString())
-                    )
-                    debugConfiguration.skipFiles = debugConfiguration.skipFiles?.map(v =>
-                        v.replace('${workspaceFolder}', folder.uri.toString())
-                    )
-                    debugConfiguration.ignore = debugConfiguration.ignore?.map(v =>
-                        v.replace('${workspaceFolder}', folder.uri.toString())
-                    )
-                    */
+                    debugConfiguration.pathMappings = resolvedMappings
                 }
+                // The following path are currently NOT mapped
+                /*
+                debugConfiguration.skipEntryPaths = debugConfiguration.skipEntryPaths?.map(v =>
+                    v.replace('${workspaceFolder}', folder.uri.toString())
+                )
+                debugConfiguration.skipFiles = debugConfiguration.skipFiles?.map(v =>
+                    v.replace('${workspaceFolder}', folder.uri.toString())
+                )
+                debugConfiguration.ignore = debugConfiguration.ignore?.map(v =>
+                    v.replace('${workspaceFolder}', folder.uri.toString())
+                )
+                */
                 return debugConfiguration
             },
         })
