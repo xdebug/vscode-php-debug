@@ -62,6 +62,11 @@ export interface EvaluateExtendedArguments extends VSCodeDebugProtocol.EvaluateA
     variablesReference?: number
 }
 
+interface EvaluateArgsWithSource extends VSCodeDebugProtocol.EvaluateArguments {
+    /** Extended evaluate args that include source location for hover context. */
+    source?: VSCodeDebugProtocol.Source
+}
+
 /**
  * This interface should always match the schema found in the mock-debug extension manifest.
  */
@@ -1535,6 +1540,41 @@ class PhpDebugSession extends vscode.DebugSession {
         return
     }
 
+    /** Checks if the hovered expression is being called (followed by parentheses). */
+    private isHoverOnCallable(args: EvaluateArgsWithSource): boolean {
+        if (!args.expression || !args.source?.path || !args.line) {
+            return false
+        }
+
+        try {
+            let filePath: string
+            if (args.source.path.startsWith('file://')) {
+                filePath = url.fileURLToPath(args.source.path)
+            } else {
+                filePath = decodeURIComponent(new URL(args.source.path).pathname)
+            }
+
+            const lines = fs.readFileSync(filePath, 'utf-8').split('\n')
+            const srcLine = lines[args.line - 1]
+            if (!srcLine) {
+                return false
+            }
+
+            const searchStart = args.column !== undefined ? Math.max(0, args.column - 1 - args.expression.length) : 0
+            const idx = srcLine.indexOf(args.expression, searchStart)
+            if (idx === -1) {
+                return false
+            }
+
+            return srcLine
+                .substring(idx + args.expression.length)
+                .trimStart()
+                .startsWith('(')
+        } catch {
+            return false
+        }
+    }
+
     protected async evaluateRequest(
         response: VSCodeDebugProtocol.EvaluateResponse,
         args: EvaluateExtendedArguments
@@ -1554,6 +1594,10 @@ class PhpDebugSession extends vscode.DebugSession {
             let tryEval = true
 
             if (args.context === 'hover') {
+                if (this.isHoverOnCallable(args)) {
+                    this.sendErrorResponse(response, 0, '')
+                    return
+                }
                 tryPropertyGet = tryPropertyGetGlobal = true
                 tryEval = false
             } else if (args.context === 'repl') {
@@ -1571,7 +1615,7 @@ class PhpDebugSession extends vscode.DebugSession {
                 tryEval = true
             }
 
-            // TODO, we need to parse the expression to avoid using propery for things like
+            // TODO, we need to parse the expression to avoid using property for things like
             // - $arr[$key]
             // - $x->$key
             // - $$var
