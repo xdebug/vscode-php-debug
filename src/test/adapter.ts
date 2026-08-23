@@ -849,7 +849,7 @@ describe('PHP Debug Adapter', () => {
                 {
                     context: 'clipboard',
                     expression: '$anArray',
-                    result: 'array (\n  0 => 1,\n  test => 2,\n  test2 => \n  array (\n    t => 123,\n  ),\n)',
+                    result: "array (\n  0 => 1,\n  'test' => 2,\n  'test2' => \n  array (\n    't' => 123,\n  ),\n)",
                     hasVariablesReference: false,
                 },
                 { context: 'clipboard', expression: '$aBoolean', result: 'true', hasVariablesReference: false },
