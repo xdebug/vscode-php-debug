@@ -22,14 +22,12 @@ export async function varExportProperty(property: xdebug.Property, indent: strin
         displayValue = (
             await Promise.all(
                 properties.map(async property => {
+                    const name = /^-?[0-9]+$/.test(property.name) ? `${property.name}` : `'${property.name}'`
                     const indent2 = indent + '  '
                     if (property.hasChildren) {
-                        return `${indent2}${property.name} => \n${indent2}${await varExportProperty(
-                            property,
-                            indent2
-                        )},`
+                        return `${indent2}${name} => \n${indent2}${await varExportProperty(property, indent2)},`
                     } else {
-                        return `${indent2}${property.name} => ${await varExportProperty(property, indent2)},`
+                        return `${indent2}${name} => ${await varExportProperty(property, indent2)},`
                     }
                 })
             )
