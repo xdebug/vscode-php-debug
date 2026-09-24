@@ -141,6 +141,19 @@ To make VS Code map the files on the server to the right files on your local mac
 }
 ```
 
+### Environment Variables in Path Mappings
+
+You can use environment variables in `pathMappings` using the `${env:VARIABLE_NAME}` syntax. This is useful for dynamic paths that vary between environments or users:
+
+```json
+"pathMappings": {
+  "${env:DOCKER_WEB_ROOT}": "${workspaceFolder}",
+  "/app": "${env:PROJECT_PATH}"
+}
+```
+
+The environment variables are resolved when the debug session starts. If a variable is not defined, the literal string (e.g., `${env:UNDEFINED_VAR}`) will be kept as-is.
+
 Please also note that setting any of the CLI debugging options will not work with remote host debugging, because the script is always launched locally. If you want to debug a CLI script on a remote host, you need to launch it manually from the command line.
 
 ## Proxy support
